@@ -9,15 +9,15 @@ A arquitetura segue o padrão MVVM, com separação clara entre a camada de apre
 ```mermaid
 graph TD
     subgraph "SelectML.Client (WPF)"
-        View[MainWindow (View)] -->|DataBinding| VM[MainViewModel (ViewModel)]
-        VM -->|Gerencia| FSW[FileSystemWatcher Service]
-        VM -->|Utiliza| PL[PluginLoader Service]
+        View[MainWindow_View] -->|DataBinding| VM[MainViewModel_ViewModel]
+        VM -->|Gerencia| FSW[FileSystemWatcher_Service]
+        VM -->|Utiliza| PL[PluginLoader_Service]
         VM -->|Persistência| CS[ConfigService]
     end
 
     subgraph "SelectML.Core (Shared Contracts)"
         IMP[<< Interface >>\nIMachineParser]
-        DTO[MeasurementData (DTO)]
+        DTO[MeasurementData_DTO]
     end
 
     subgraph "Plugins (External Assemblies)"
@@ -26,7 +26,7 @@ graph TD
     end
 
     PL -->|Reflection/Load| PV
-    FSW -->|Event: Created| VM
+    FSW -->|Event:Created| VM
 ```
 
 ## 2. Modelo de Concorrência e Threading
