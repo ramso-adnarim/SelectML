@@ -287,7 +287,7 @@ namespace SelectML.Client.ViewModels
         {
             var builder = new Microsoft.Data.SqlClient.SqlConnectionStringBuilder();
             builder.DataSource = !string.IsNullOrEmpty(DbServer) ? DbServer : @"localhost\MLSQLExpress";
-            builder.InitialCatalog = "SelectML"; // Assumed default DB based on requirements context
+            builder.InitialCatalog = "MeasurLink10"; // Assumed default DB based on requirements context
             builder.TrustServerCertificate = true; // Often needed for local devs
 
             if (DbUseWindowsAuth)
@@ -298,7 +298,7 @@ namespace SelectML.Client.ViewModels
             {
                 builder.IntegratedSecurity = false;
                 builder.UserID = !string.IsNullOrEmpty(DbUser) ? DbUser : "sa";
-                builder.Password = !string.IsNullOrEmpty(DbPassword) ? DbPassword : "";
+                builder.Password = !string.IsNullOrEmpty(DbPassword) ? DbPassword : "Me@sur1ink$alone";
             }
 
             ConnectionString = builder.ConnectionString;
