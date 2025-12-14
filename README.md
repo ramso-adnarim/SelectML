@@ -36,9 +36,9 @@ graph TD
     C -->|Debounce & Retry| D{Arquivo Liberado?}
     D -- Não --> D
     D -- Sim --> E[Plugin Parser]
-    E -->|Lê (Latin1)| F[Objeto MeasurementData]
+    E -->|Lê Latin1| F[Objeto MeasurementData]
     F -->|Bind| G[Interface WPF]
-    F -->|Escreve (UTF8-BOM)| H[CSV Padronizado]
+    F -->|Escreve UTF8-BOM| H[CSV Padronizado]
     H --> I[Integração / Banco de Dados]
 ```
 
