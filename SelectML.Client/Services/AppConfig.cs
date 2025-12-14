@@ -15,6 +15,7 @@ namespace SelectML.Client.Services
         public bool DbUseWindowsAuth { get; set; } = false;
         public string DbUser { get; set; } = "sa";
         public string DbPassword { get; set; } = "Me@sur1ink$alone";
+        public string DbName { get; set; } = "SelectML";
     }
 
     public class ConfigService

@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 using Microsoft.Data.SqlClient;
 using SelectML.Core;
@@ -24,7 +25,7 @@ namespace SelectML.Client.Services
                 SELECT TOP 1 s.StationName
                 FROM dbo.ActiveRun ar
                 JOIN dbo.Station s ON ar.StationID = s.StationID
-                WHERE ar.RunName = @BatchNumber";
+                WHERE ar.BatchNumber = @BatchNumber";
 
             try
             {
@@ -45,6 +46,37 @@ namespace SelectML.Client.Services
                 // For now, we return null so the fallback mechanism works.
                 return null;
             }
+        }
+
+        public async Task<IEnumerable<string>> GetAvailableDatabasesAsync(string connectionString)
+        {
+            var databases = new List<string>();
+            string query = "SELECT name FROM sys.databases WHERE name NOT IN ('master', 'tempdb', 'model', 'msdb')";
+
+            try
+            {
+                using (var connection = new SqlConnection(connectionString))
+                {
+                    await connection.OpenAsync();
+                    using (var command = new SqlCommand(query, connection))
+                    {
+                        using (var reader = await command.ExecuteReaderAsync())
+                        {
+                            while (await reader.ReadAsync())
+                            {
+                                databases.Add(reader.GetString(0));
+                            }
+                        }
+                    }
+                }
+            }
+            catch (Exception)
+            {
+                // Should propagate error or return empty to indicate failure in UI
+                throw;
+            }
+
+            return databases;
         }
     }
 }

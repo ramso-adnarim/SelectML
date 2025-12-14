@@ -111,6 +111,27 @@
                                                  PasswordChanged="DbPasswordBox_PasswordChanged"/>
                                 </StackPanel>
                             </Grid>
+
+                            <!-- Base de Dados (Initial Catalog) -->
+                            <TextBlock Text="Base de Dados (Initial Catalog):" FontSize="11" Foreground="#666" Margin="0,5,0,0"/>
+                            <Grid Margin="0,2,0,5">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="30"/>
+                                </Grid.ColumnDefinitions>
+
+                                <ComboBox ItemsSource="{Binding AvailableDatabases}"
+                                          Text="{Binding DbName}"
+                                          IsEditable="True"
+                                          IsEnabled="{Binding IsConfigEnabled}"
+                                          Height="25"/>
+
+                                <Button Grid.Column="1" Command="{Binding LoadDatabasesCommand}"
+                                        Content="↻"
+                                        ToolTip="Listar Bancos de Dados"
+                                        IsEnabled="{Binding IsConfigEnabled}"
+                                        Margin="5,0,0,0" FontWeight="Bold"/>
+                            </Grid>
                         </StackPanel>
                     </Border>
                 </StackPanel>

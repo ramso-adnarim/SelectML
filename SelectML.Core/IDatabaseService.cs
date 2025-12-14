@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using System.Threading.Tasks;
 
 namespace SelectML.Core
@@ -5,5 +6,6 @@ namespace SelectML.Core
     public interface IDatabaseService
     {
         Task<string?> GetStationNameAsync(string batchNumber);
+        Task<IEnumerable<string>> GetAvailableDatabasesAsync(string connectionString);
     }
 }

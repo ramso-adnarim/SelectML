@@ -1,6 +1,3 @@
-using SelectML.Client.MVVM;
-using SelectML.Client.Services;
-using SelectML.Core;
 using System;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
@@ -10,7 +7,9 @@ using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows;
-using System.Windows.Input;
+using SelectML.Client.MVVM;
+using SelectML.Client.Services;
+using SelectML.Core;
 
 namespace SelectML.Client.ViewModels
 {
@@ -37,6 +36,7 @@ namespace SelectML.Client.ViewModels
         private bool _dbUseWindowsAuth = false;
         private string _dbUser = "sa";
         private string _dbPassword = "Me@sur1ink$alone";
+        private string _dbName = "SelectML";
 
         private IMachineParser _selectedParser;
         private string _partName;
@@ -49,10 +49,12 @@ namespace SelectML.Client.ViewModels
             _configService = new ConfigService();
             AvailableParsers = new ObservableCollection<IMachineParser>();
             MeasuredResults = new ObservableCollection<ResultItem>();
+            AvailableDatabases = new ObservableCollection<string>();
 
             // Comandos
             SelectDirectoryCommand = new RelayCommand(ExecuteSelectDirectory, CanChangeConfig);
             SaveConfigCommand = new RelayCommand(ExecuteSaveConfig);
+            LoadDatabasesCommand = new RelayCommand(ExecuteLoadDatabases, CanChangeConfig);
 
             // Comandos de Ação
             SendCommand = new RelayCommand(ExecuteSend, CanExecuteAction);
@@ -65,6 +67,7 @@ namespace SelectML.Client.ViewModels
         // --- Propriedades de UI ---
 
         public ObservableCollection<IMachineParser> AvailableParsers { get; set; }
+        public ObservableCollection<string> AvailableDatabases { get; set; }
         public ObservableCollection<ResultItem> MeasuredResults { get; set; }
 
         public bool IsConfigLocked
@@ -88,9 +91,10 @@ namespace SelectML.Client.ViewModels
                 _isPendingAction = value;
                 OnPropertyChanged();
                 OnPropertyChanged(nameof(IsMonitoring)); // Inverse logic usually helpful for UI
-                System.Windows.Application.Current.Dispatcher.Invoke(() =>
+                Application.Current.Dispatcher.Invoke(() =>
                 {
-                    CommandManager.InvalidateRequerySuggested();
+                   SendCommand.RaiseCanExecuteChanged();
+                   CancelCommand.RaiseCanExecuteChanged();
                 });
             }
         }
@@ -175,6 +179,17 @@ namespace SelectML.Client.ViewModels
             }
         }
 
+        public string DbName
+        {
+            get => _dbName;
+            set
+            {
+                _dbName = value;
+                OnPropertyChanged();
+                BuildConnectionString();
+            }
+        }
+
         public IMachineParser SelectedParser
         {
             get => _selectedParser;
@@ -196,6 +211,7 @@ namespace SelectML.Client.ViewModels
         // --- Comandos ---
         public RelayCommand SelectDirectoryCommand { get; }
         public RelayCommand SaveConfigCommand { get; }
+        public RelayCommand LoadDatabasesCommand { get; }
         public RelayCommand SendCommand { get; }
         public RelayCommand CancelCommand { get; }
 
@@ -220,6 +236,14 @@ namespace SelectML.Client.ViewModels
             DbUseWindowsAuth = config.DbUseWindowsAuth;
             DbUser = !string.IsNullOrEmpty(config.DbUser) ? config.DbUser : "sa";
             DbPassword = !string.IsNullOrEmpty(config.DbPassword) ? config.DbPassword : "Me@sur1ink$alone";
+
+            // Set DbName separately to avoid triggering BuildConnectionString multiple times unnecessarily,
+            // or ensure it defaults correctly.
+            _dbName = !string.IsNullOrEmpty(config.DbName) ? config.DbName : "SelectML";
+            OnPropertyChanged(nameof(DbName));
+
+            // Populate AvailableDatabases with at least the current one if not empty
+            if (!string.IsNullOrEmpty(_dbName)) AvailableDatabases.Add(_dbName);
 
             // Build connection string from loaded fields
             BuildConnectionString();
@@ -268,6 +292,7 @@ namespace SelectML.Client.ViewModels
                 config.DbUseWindowsAuth = DbUseWindowsAuth;
                 config.DbUser = DbUser;
                 config.DbPassword = DbPassword;
+                config.DbName = DbName;
                 config.ConnectionString = ConnectionString;
 
                 _configService.Save(config);
@@ -283,11 +308,60 @@ namespace SelectML.Client.ViewModels
             }
         }
 
+        private async void ExecuteLoadDatabases(object obj)
+        {
+            try
+            {
+                StatusMessage = "Listando bancos de dados...";
+
+                // Build a connection string to master
+                var builder = new Microsoft.Data.SqlClient.SqlConnectionStringBuilder();
+                builder.DataSource = !string.IsNullOrEmpty(DbServer) ? DbServer : @"localhost\MLSQLExpress";
+                builder.InitialCatalog = "master";
+                builder.TrustServerCertificate = true;
+
+                if (DbUseWindowsAuth)
+                {
+                    builder.IntegratedSecurity = true;
+                }
+                else
+                {
+                    builder.IntegratedSecurity = false;
+                    builder.UserID = !string.IsNullOrEmpty(DbUser) ? DbUser : "sa";
+                    builder.Password = !string.IsNullOrEmpty(DbPassword) ? DbPassword : "";
+                }
+
+                var dbs = await _databaseService.GetAvailableDatabasesAsync(builder.ConnectionString);
+
+                AvailableDatabases.Clear();
+                foreach (var db in dbs)
+                {
+                    AvailableDatabases.Add(db);
+                }
+
+                if (AvailableDatabases.Contains(DbName))
+                {
+                   // keep selection
+                }
+                else if (AvailableDatabases.Count > 0)
+                {
+                    DbName = AvailableDatabases[0];
+                }
+
+                StatusMessage = "Lista de bancos de dados atualizada.";
+            }
+            catch (Exception ex)
+            {
+                System.Windows.MessageBox.Show($"Erro ao listar bancos de dados: {ex.Message}", "Erro de Conexão");
+                StatusMessage = "Erro ao conectar no banco de dados.";
+            }
+        }
+
         private void BuildConnectionString()
         {
             var builder = new Microsoft.Data.SqlClient.SqlConnectionStringBuilder();
             builder.DataSource = !string.IsNullOrEmpty(DbServer) ? DbServer : @"localhost\MLSQLExpress";
-            builder.InitialCatalog = "MeasurLink10"; // Assumed default DB based on requirements context
+            builder.InitialCatalog = !string.IsNullOrEmpty(DbName) ? DbName : "SelectML";
             builder.TrustServerCertificate = true; // Often needed for local devs
 
             if (DbUseWindowsAuth)
@@ -298,7 +372,7 @@ namespace SelectML.Client.ViewModels
             {
                 builder.IntegratedSecurity = false;
                 builder.UserID = !string.IsNullOrEmpty(DbUser) ? DbUser : "sa";
-                builder.Password = !string.IsNullOrEmpty(DbPassword) ? DbPassword : "Me@sur1ink$alone";
+                builder.Password = !string.IsNullOrEmpty(DbPassword) ? DbPassword : "";
             }
 
             ConnectionString = builder.ConnectionString;
