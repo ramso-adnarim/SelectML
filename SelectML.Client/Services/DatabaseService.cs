@@ -25,7 +25,7 @@ namespace SelectML.Client.Services
                 SELECT TOP 1 s.StationName
                 FROM dbo.ActiveRun ar
                 JOIN dbo.Station s ON ar.StationID = s.StationID
-                WHERE ar.BatchNumber = @BatchNumber";
+                WHERE ar.RunName = @BatchNumber";
 
             try
             {

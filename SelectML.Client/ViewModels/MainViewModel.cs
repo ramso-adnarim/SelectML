@@ -1,3 +1,6 @@
+using SelectML.Client.MVVM;
+using SelectML.Client.Services;
+using SelectML.Core;
 using System;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
@@ -7,9 +10,7 @@ using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows;
-using SelectML.Client.MVVM;
-using SelectML.Client.Services;
-using SelectML.Core;
+using System.Windows.Input;
 
 namespace SelectML.Client.ViewModels
 {
@@ -91,10 +92,9 @@ namespace SelectML.Client.ViewModels
                 _isPendingAction = value;
                 OnPropertyChanged();
                 OnPropertyChanged(nameof(IsMonitoring)); // Inverse logic usually helpful for UI
-                Application.Current.Dispatcher.Invoke(() =>
+                System.Windows.Application.Current.Dispatcher.Invoke(() =>
                 {
-                   SendCommand.RaiseCanExecuteChanged();
-                   CancelCommand.RaiseCanExecuteChanged();
+                    CommandManager.InvalidateRequerySuggested();
                 });
             }
         }
