@@ -29,4 +29,10 @@
     <PackageReference Include="Microsoft.Data.SqlClient" Version="5.1.5" />
   </ItemGroup>
 
+  <ItemGroup>
+    <None Update="appsettings.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+
 </Project>

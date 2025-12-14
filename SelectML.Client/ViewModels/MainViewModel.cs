@@ -32,10 +32,10 @@ namespace SelectML.Client.ViewModels
         private string _connectionString;
 
         // Database Config Fields
-        private string _dbServer;
-        private bool _dbUseWindowsAuth;
-        private string _dbUser;
-        private string _dbPassword;
+        private string _dbServer = @"localhost\MLSQLExpress";
+        private bool _dbUseWindowsAuth = false;
+        private string _dbUser = "sa";
+        private string _dbPassword = "Me@sur1ink$alone";
 
         private IMachineParser _selectedParser;
         private string _partName;
@@ -286,7 +286,7 @@ namespace SelectML.Client.ViewModels
         private void BuildConnectionString()
         {
             var builder = new Microsoft.Data.SqlClient.SqlConnectionStringBuilder();
-            builder.DataSource = DbServer;
+            builder.DataSource = !string.IsNullOrEmpty(DbServer) ? DbServer : @"localhost\MLSQLExpress";
             builder.InitialCatalog = "SelectML"; // Assumed default DB based on requirements context
             builder.TrustServerCertificate = true; // Often needed for local devs
 
@@ -297,8 +297,8 @@ namespace SelectML.Client.ViewModels
             else
             {
                 builder.IntegratedSecurity = false;
-                builder.UserID = DbUser;
-                builder.Password = DbPassword;
+                builder.UserID = !string.IsNullOrEmpty(DbUser) ? DbUser : "sa";
+                builder.Password = !string.IsNullOrEmpty(DbPassword) ? DbPassword : "";
             }
 
             ConnectionString = builder.ConnectionString;
