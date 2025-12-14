@@ -1,6 +1,3 @@
-using SelectML.Client.MVVM;
-using SelectML.Client.Services;
-using SelectML.Core;
 using System;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
@@ -10,7 +7,9 @@ using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows;
-using System.Windows.Input;
+using SelectML.Client.MVVM;
+using SelectML.Client.Services;
+using SelectML.Core;
 
 namespace SelectML.Client.ViewModels
 {
@@ -31,6 +30,13 @@ namespace SelectML.Client.ViewModels
         // Dados
         private string _watchDirectory;
         private string _connectionString;
+
+        // Database Config Fields
+        private string _dbServer;
+        private bool _dbUseWindowsAuth;
+        private string _dbUser;
+        private string _dbPassword;
+
         private IMachineParser _selectedParser;
         private string _partName;
         private string _batchNumber;
@@ -81,9 +87,10 @@ namespace SelectML.Client.ViewModels
                 _isPendingAction = value;
                 OnPropertyChanged();
                 OnPropertyChanged(nameof(IsMonitoring)); // Inverse logic usually helpful for UI
-                System.Windows.Application.Current.Dispatcher.Invoke(() =>
+                Application.Current.Dispatcher.Invoke(() =>
                 {
-                    CommandManager.InvalidateRequerySuggested();
+                   SendCommand.RaiseCanExecuteChanged();
+                   CancelCommand.RaiseCanExecuteChanged();
                 });
             }
         }
@@ -119,6 +126,53 @@ namespace SelectML.Client.ViewModels
         {
             get => _connectionString;
             set { _connectionString = value; OnPropertyChanged(); }
+        }
+
+        public string DbServer
+        {
+            get => _dbServer;
+            set
+            {
+                _dbServer = value;
+                OnPropertyChanged();
+                BuildConnectionString();
+            }
+        }
+
+        public bool DbUseWindowsAuth
+        {
+            get => _dbUseWindowsAuth;
+            set
+            {
+                _dbUseWindowsAuth = value;
+                OnPropertyChanged();
+                OnPropertyChanged(nameof(IsDbAuthEnabled));
+                BuildConnectionString();
+            }
+        }
+
+        public bool IsDbAuthEnabled => !DbUseWindowsAuth;
+
+        public string DbUser
+        {
+            get => _dbUser;
+            set
+            {
+                _dbUser = value;
+                OnPropertyChanged();
+                BuildConnectionString();
+            }
+        }
+
+        public string DbPassword
+        {
+            get => _dbPassword;
+            set
+            {
+                _dbPassword = value;
+                OnPropertyChanged();
+                BuildConnectionString();
+            }
         }
 
         public IMachineParser SelectedParser
@@ -161,7 +215,14 @@ namespace SelectML.Client.ViewModels
             if (!string.IsNullOrEmpty(config.WatchDirectory))
                 WatchDirectory = config.WatchDirectory;
 
-            ConnectionString = config.ConnectionString;
+            // Load individual DB fields
+            DbServer = !string.IsNullOrEmpty(config.DbServer) ? config.DbServer : @"localhost\MLSQLExpress";
+            DbUseWindowsAuth = config.DbUseWindowsAuth;
+            DbUser = !string.IsNullOrEmpty(config.DbUser) ? config.DbUser : "sa";
+            DbPassword = !string.IsNullOrEmpty(config.DbPassword) ? config.DbPassword : "Me@sur1ink$alone";
+
+            // Build connection string from loaded fields
+            BuildConnectionString();
 
             if (!string.IsNullOrEmpty(config.LastPluginName))
             {
@@ -198,14 +259,20 @@ namespace SelectML.Client.ViewModels
                     return;
                 }
 
-                var config = _configService.Load(); // Reload to keep existing keys like ConnectionString
+                var config = _configService.Load(); // Reload to keep existing keys
                 config.WatchDirectory = WatchDirectory;
                 config.LastPluginName = SelectedParser.MachineName;
+
+                // Save DB fields
+                config.DbServer = DbServer;
+                config.DbUseWindowsAuth = DbUseWindowsAuth;
+                config.DbUser = DbUser;
+                config.DbPassword = DbPassword;
                 config.ConnectionString = ConnectionString;
 
                 _configService.Save(config);
 
-                // Re-initialize database service in case connection string changed in file externally (unlikely flow but safe)
+                // Re-initialize database service
                 _databaseService = new DatabaseService(config.ConnectionString);
 
                 StartWatcher();
@@ -214,6 +281,27 @@ namespace SelectML.Client.ViewModels
                 ConfigButtonText = "Editar Configuração";
                 IsExpanded = false;
             }
+        }
+
+        private void BuildConnectionString()
+        {
+            var builder = new Microsoft.Data.SqlClient.SqlConnectionStringBuilder();
+            builder.DataSource = DbServer;
+            builder.InitialCatalog = "SelectML"; // Assumed default DB based on requirements context
+            builder.TrustServerCertificate = true; // Often needed for local devs
+
+            if (DbUseWindowsAuth)
+            {
+                builder.IntegratedSecurity = true;
+            }
+            else
+            {
+                builder.IntegratedSecurity = false;
+                builder.UserID = DbUser;
+                builder.Password = DbPassword;
+            }
+
+            ConnectionString = builder.ConnectionString;
         }
 
         private void StartWatcher()

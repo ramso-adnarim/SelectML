@@ -9,6 +9,12 @@ namespace SelectML.Client.Services
         public string WatchDirectory { get; set; }
         public string LastPluginName { get; set; }
         public string ConnectionString { get; set; }
+
+        // Database Connection Fields
+        public string DbServer { get; set; } = @"localhost\MLSQLExpress";
+        public bool DbUseWindowsAuth { get; set; } = false;
+        public string DbUser { get; set; } = "sa";
+        public string DbPassword { get; set; } = "Me@sur1ink$alone";
     }
 
     public class ConfigService

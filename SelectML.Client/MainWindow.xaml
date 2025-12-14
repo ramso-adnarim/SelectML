@@ -70,10 +70,49 @@
                                 Content="..." Width="40" Margin="5,0,0,0"/>
                     </Grid>
 
-                    <TextBlock Text="SQL Connection String:" FontWeight="SemiBold" Foreground="#333" Margin="0,10,0,0"/>
-                    <TextBox Text="{Binding ConnectionString}"
-                             IsEnabled="{Binding IsConfigEnabled}"
-                             VerticalContentAlignment="Center" Height="30" Margin="0,5,0,0"/>
+                    <!-- Configuração SQL Database -->
+                    <TextBlock Text="Configuração Banco de Dados:" FontWeight="SemiBold" Foreground="#333" Margin="0,10,0,5"/>
+                    <Border BorderBrush="#EEEEEE" BorderThickness="1" Padding="10" Background="#FAFAFA">
+                        <StackPanel>
+                            <!-- Servidor -->
+                            <TextBlock Text="Servidor:" FontSize="11" Foreground="#666"/>
+                            <TextBox Text="{Binding DbServer, UpdateSourceTrigger=PropertyChanged}"
+                                     IsEnabled="{Binding IsConfigEnabled}"
+                                     Height="25" Margin="0,2,0,5"/>
+
+                            <!-- Autenticação Windows -->
+                            <CheckBox Content="Autenticação Windows"
+                                      IsChecked="{Binding DbUseWindowsAuth}"
+                                      IsEnabled="{Binding IsConfigEnabled}"
+                                      Margin="0,5,0,5"/>
+
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="10"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+
+                                <!-- Login -->
+                                <StackPanel Grid.Column="0">
+                                    <TextBlock Text="Login:" FontSize="11" Foreground="#666"/>
+                                    <TextBox Text="{Binding DbUser, UpdateSourceTrigger=PropertyChanged}"
+                                             IsEnabled="{Binding IsDbAuthEnabled}"
+                                             Height="25" Margin="0,2,0,0"/>
+                                </StackPanel>
+
+                                <!-- Senha -->
+                                <StackPanel Grid.Column="2">
+                                    <TextBlock Text="Senha:" FontSize="11" Foreground="#666"/>
+                                    <PasswordBox x:Name="DbPasswordBox"
+                                                 IsEnabled="{Binding IsDbAuthEnabled}"
+                                                 PasswordChar="*"
+                                                 Height="25" Margin="0,2,0,0"
+                                                 PasswordChanged="DbPasswordBox_PasswordChanged"/>
+                                </StackPanel>
+                            </Grid>
+                        </StackPanel>
+                    </Border>
                 </StackPanel>
 
                 <!-- Botão Salvar/Editar -->
