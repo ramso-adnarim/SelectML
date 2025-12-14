@@ -1,4 +1,7 @@
-﻿using System;
+using SelectML.Client.MVVM;
+using SelectML.Client.Services;
+using SelectML.Core;
+using System;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.IO;
@@ -7,9 +10,7 @@ using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows;
-using SelectML.Client.MVVM;
-using SelectML.Client.Services;
-using SelectML.Core;
+using System.Windows.Input;
 
 namespace SelectML.Client.ViewModels
 {
@@ -17,6 +18,7 @@ namespace SelectML.Client.ViewModels
     {
         private readonly PluginLoader _pluginLoader;
         private readonly ConfigService _configService;
+        private IDatabaseService _databaseService;
         private FileSystemWatcher _watcher;
 
         // Propriedades de Estado da UI
@@ -24,12 +26,23 @@ namespace SelectML.Client.ViewModels
         private string _configButtonText = "Salvar e Iniciar";
         private bool _isExpanded = true;
         private string _statusMessage = "Aguardando configuração...";
+        private bool _isPendingAction;
 
         // Dados
         private string _watchDirectory;
+        private string _connectionString;
+
+        // Database Config Fields
+        private string _dbServer = @"localhost\MLSQLExpress";
+        private bool _dbUseWindowsAuth = false;
+        private string _dbUser = "sa";
+        private string _dbPassword = "Me@sur1ink$alone";
+        private string _dbName = "SelectML";
+
         private IMachineParser _selectedParser;
         private string _partName;
         private string _batchNumber;
+        private MeasurementData _currentData; // Store current data for processing
 
         public MainViewModel()
         {
@@ -37,14 +50,16 @@ namespace SelectML.Client.ViewModels
             _configService = new ConfigService();
             AvailableParsers = new ObservableCollection<IMachineParser>();
             MeasuredResults = new ObservableCollection<ResultItem>();
+            AvailableDatabases = new ObservableCollection<string>();
 
             // Comandos
             SelectDirectoryCommand = new RelayCommand(ExecuteSelectDirectory, CanChangeConfig);
             SaveConfigCommand = new RelayCommand(ExecuteSaveConfig);
+            LoadDatabasesCommand = new RelayCommand(ExecuteLoadDatabases, CanChangeConfig);
 
-            // Comandos manuais mantidos para teste
-            SendCommand = new RelayCommand(ExecuteSend, CanSend);
-            CancelCommand = new RelayCommand(ExecuteCancel);
+            // Comandos de Ação
+            SendCommand = new RelayCommand(ExecuteSend, CanExecuteAction);
+            CancelCommand = new RelayCommand(ExecuteCancel, CanExecuteAction);
 
             LoadParsers();
             LoadConfiguration();
@@ -53,6 +68,7 @@ namespace SelectML.Client.ViewModels
         // --- Propriedades de UI ---
 
         public ObservableCollection<IMachineParser> AvailableParsers { get; set; }
+        public ObservableCollection<string> AvailableDatabases { get; set; }
         public ObservableCollection<ResultItem> MeasuredResults { get; set; }
 
         public bool IsConfigLocked
@@ -67,6 +83,24 @@ namespace SelectML.Client.ViewModels
         }
 
         public bool IsConfigEnabled => !IsConfigLocked;
+
+        public bool IsPendingAction
+        {
+            get => _isPendingAction;
+            set
+            {
+                _isPendingAction = value;
+                OnPropertyChanged();
+                OnPropertyChanged(nameof(IsMonitoring)); // Inverse logic usually helpful for UI
+                System.Windows.Application.Current.Dispatcher.Invoke(() =>
+                {
+                    CommandManager.InvalidateRequerySuggested();
+                });
+            }
+        }
+
+        // Helper to check if monitoring is effectively active for UI binding purposes
+        public bool IsMonitoring => IsConfigLocked && !IsPendingAction;
 
         public string ConfigButtonText
         {
@@ -92,6 +126,70 @@ namespace SelectML.Client.ViewModels
             set { _watchDirectory = value; OnPropertyChanged(); }
         }
 
+        public string ConnectionString
+        {
+            get => _connectionString;
+            set { _connectionString = value; OnPropertyChanged(); }
+        }
+
+        public string DbServer
+        {
+            get => _dbServer;
+            set
+            {
+                _dbServer = value;
+                OnPropertyChanged();
+                BuildConnectionString();
+            }
+        }
+
+        public bool DbUseWindowsAuth
+        {
+            get => _dbUseWindowsAuth;
+            set
+            {
+                _dbUseWindowsAuth = value;
+                OnPropertyChanged();
+                OnPropertyChanged(nameof(IsDbAuthEnabled));
+                BuildConnectionString();
+            }
+        }
+
+        public bool IsDbAuthEnabled => !DbUseWindowsAuth;
+
+        public string DbUser
+        {
+            get => _dbUser;
+            set
+            {
+                _dbUser = value;
+                OnPropertyChanged();
+                BuildConnectionString();
+            }
+        }
+
+        public string DbPassword
+        {
+            get => _dbPassword;
+            set
+            {
+                _dbPassword = value;
+                OnPropertyChanged();
+                BuildConnectionString();
+            }
+        }
+
+        public string DbName
+        {
+            get => _dbName;
+            set
+            {
+                _dbName = value;
+                OnPropertyChanged();
+                BuildConnectionString();
+            }
+        }
+
         public IMachineParser SelectedParser
         {
             get => _selectedParser;
@@ -113,6 +211,7 @@ namespace SelectML.Client.ViewModels
         // --- Comandos ---
         public RelayCommand SelectDirectoryCommand { get; }
         public RelayCommand SaveConfigCommand { get; }
+        public RelayCommand LoadDatabasesCommand { get; }
         public RelayCommand SendCommand { get; }
         public RelayCommand CancelCommand { get; }
 
@@ -132,6 +231,23 @@ namespace SelectML.Client.ViewModels
             if (!string.IsNullOrEmpty(config.WatchDirectory))
                 WatchDirectory = config.WatchDirectory;
 
+            // Load individual DB fields
+            DbServer = !string.IsNullOrEmpty(config.DbServer) ? config.DbServer : @"localhost\MLSQLExpress";
+            DbUseWindowsAuth = config.DbUseWindowsAuth;
+            DbUser = !string.IsNullOrEmpty(config.DbUser) ? config.DbUser : "sa";
+            DbPassword = !string.IsNullOrEmpty(config.DbPassword) ? config.DbPassword : "Me@sur1ink$alone";
+
+            // Set DbName separately to avoid triggering BuildConnectionString multiple times unnecessarily,
+            // or ensure it defaults correctly.
+            _dbName = !string.IsNullOrEmpty(config.DbName) ? config.DbName : "SelectML";
+            OnPropertyChanged(nameof(DbName));
+
+            // Populate AvailableDatabases with at least the current one if not empty
+            if (!string.IsNullOrEmpty(_dbName)) AvailableDatabases.Add(_dbName);
+
+            // Build connection string from loaded fields
+            BuildConnectionString();
+
             if (!string.IsNullOrEmpty(config.LastPluginName))
             {
                 SelectedParser = AvailableParsers.FirstOrDefault(p => p.MachineName == config.LastPluginName);
@@ -139,6 +255,9 @@ namespace SelectML.Client.ViewModels
 
             if (SelectedParser == null && AvailableParsers.Count > 0)
                 SelectedParser = AvailableParsers[0];
+
+            // Initialize Database Service
+            _databaseService = new DatabaseService(config.ConnectionString);
         }
 
         private void ExecuteSaveConfig(object obj)
@@ -164,12 +283,22 @@ namespace SelectML.Client.ViewModels
                     return;
                 }
 
-                var config = new AppConfig
-                {
-                    WatchDirectory = WatchDirectory,
-                    LastPluginName = SelectedParser.MachineName
-                };
+                var config = _configService.Load(); // Reload to keep existing keys
+                config.WatchDirectory = WatchDirectory;
+                config.LastPluginName = SelectedParser.MachineName;
+
+                // Save DB fields
+                config.DbServer = DbServer;
+                config.DbUseWindowsAuth = DbUseWindowsAuth;
+                config.DbUser = DbUser;
+                config.DbPassword = DbPassword;
+                config.DbName = DbName;
+                config.ConnectionString = ConnectionString;
+
                 _configService.Save(config);
+
+                // Re-initialize database service
+                _databaseService = new DatabaseService(config.ConnectionString);
 
                 StartWatcher();
 
@@ -177,6 +306,76 @@ namespace SelectML.Client.ViewModels
                 ConfigButtonText = "Editar Configuração";
                 IsExpanded = false;
             }
+        }
+
+        private async void ExecuteLoadDatabases(object obj)
+        {
+            try
+            {
+                StatusMessage = "Listando bancos de dados...";
+
+                // Build a connection string to master
+                var builder = new Microsoft.Data.SqlClient.SqlConnectionStringBuilder();
+                builder.DataSource = !string.IsNullOrEmpty(DbServer) ? DbServer : @"localhost\MLSQLExpress";
+                builder.InitialCatalog = "master";
+                builder.TrustServerCertificate = true;
+
+                if (DbUseWindowsAuth)
+                {
+                    builder.IntegratedSecurity = true;
+                }
+                else
+                {
+                    builder.IntegratedSecurity = false;
+                    builder.UserID = !string.IsNullOrEmpty(DbUser) ? DbUser : "sa";
+                    builder.Password = !string.IsNullOrEmpty(DbPassword) ? DbPassword : "";
+                }
+
+                var dbs = await _databaseService.GetAvailableDatabasesAsync(builder.ConnectionString);
+
+                AvailableDatabases.Clear();
+                foreach (var db in dbs)
+                {
+                    AvailableDatabases.Add(db);
+                }
+
+                if (AvailableDatabases.Contains(DbName))
+                {
+                   // keep selection
+                }
+                else if (AvailableDatabases.Count > 0)
+                {
+                    DbName = AvailableDatabases[0];
+                }
+
+                StatusMessage = "Lista de bancos de dados atualizada.";
+            }
+            catch (Exception ex)
+            {
+                System.Windows.MessageBox.Show($"Erro ao listar bancos de dados: {ex.Message}", "Erro de Conexão");
+                StatusMessage = "Erro ao conectar no banco de dados.";
+            }
+        }
+
+        private void BuildConnectionString()
+        {
+            var builder = new Microsoft.Data.SqlClient.SqlConnectionStringBuilder();
+            builder.DataSource = !string.IsNullOrEmpty(DbServer) ? DbServer : @"localhost\MLSQLExpress";
+            builder.InitialCatalog = !string.IsNullOrEmpty(DbName) ? DbName : "SelectML";
+            builder.TrustServerCertificate = true; // Often needed for local devs
+
+            if (DbUseWindowsAuth)
+            {
+                builder.IntegratedSecurity = true;
+            }
+            else
+            {
+                builder.IntegratedSecurity = false;
+                builder.UserID = !string.IsNullOrEmpty(DbUser) ? DbUser : "sa";
+                builder.Password = !string.IsNullOrEmpty(DbPassword) ? DbPassword : "";
+            }
+
+            ConnectionString = builder.ConnectionString;
         }
 
         private void StartWatcher()
@@ -216,6 +415,11 @@ namespace SelectML.Client.ViewModels
 
         private async void OnFileCreated(object sender, FileSystemEventArgs e)
         {
+            // If we are already pending an action, ignore new files?
+            // Or better: the requirement says "IsPendingAction = true".
+            // A common pattern is to stop listening or ignore events while pending.
+            if (IsPendingAction) return;
+
             if (!SelectedParser.CanParse(e.FullPath)) return;
 
             if (!await WaitForFileAccess(e.FullPath))
@@ -226,7 +430,7 @@ namespace SelectML.Client.ViewModels
 
             try
             {
-                UpdateStatus($"Processando arquivo: {e.Name}...");
+                UpdateStatus($"Lendo arquivo: {e.Name}...");
 
                 var data = SelectedParser.Parse(e.FullPath);
 
@@ -234,6 +438,10 @@ namespace SelectML.Client.ViewModels
                 {
                     System.Windows.Application.Current.Dispatcher.Invoke(() =>
                     {
+                        // Store data for later processing
+                        _currentData = data;
+
+                        // Populate UI
                         PartName = data.PartName;
                         BatchNumber = data.BatchNumber;
                         MeasuredResults.Clear();
@@ -241,11 +449,11 @@ namespace SelectML.Client.ViewModels
                         {
                             MeasuredResults.Add(new ResultItem { Characteristic = item.Key, Value = item.Value });
                         }
+
+                        // Human-in-the-loop: Stop auto-save, wait for user
+                        IsPendingAction = true;
+                        StatusMessage = "Dados carregados. Verifique e clique em Enviar.";
                     });
-
-                    GenerateOutputCsv(data);
-
-                    UpdateStatus($"Sucesso! Dados de {data.PartName} processados.");
                 }
                 else
                 {
@@ -258,30 +466,71 @@ namespace SelectML.Client.ViewModels
             }
         }
 
-        private void GenerateOutputCsv(MeasurementData data)
+        private bool CanExecuteAction(object obj)
         {
+            return IsPendingAction;
+        }
+
+        private async void ExecuteSend(object obj)
+        {
+            if (_currentData == null) return;
+
             try
             {
+                IsPendingAction = false; // Disable buttons immediately to prevent double click
+                StatusMessage = "Salvando dados...";
+
+                // Determine Output Path using Database Service
                 string outputDir = Path.Combine(WatchDirectory, "Output");
-                if (!Directory.Exists(outputDir)) Directory.CreateDirectory(outputDir);
 
-                string fileName = $"Result_{data.PartName}_{DateTime.Now:yyyyMMdd_HHmmss}.csv";
-                string fullPath = Path.Combine(outputDir, fileName);
+                string stationName = await _databaseService.GetStationNameAsync(_currentData.BatchNumber);
 
+                string targetSubDir = !string.IsNullOrWhiteSpace(stationName) ? stationName : "Unidentified";
+                string targetPath = Path.Combine(outputDir, targetSubDir);
+
+                if (!Directory.Exists(targetPath)) Directory.CreateDirectory(targetPath);
+
+                string fileName = $"Result_{_currentData.PartName}_{DateTime.Now:yyyyMMdd_HHmmss}.csv";
+                string fullPath = Path.Combine(targetPath, fileName);
+
+                // Generate CSV
                 var sb = new StringBuilder();
-                sb.AppendLine(data.PartName);
-                sb.AppendLine(data.BatchNumber);
-                sb.AppendLine(string.Join(",", data.Results.Keys));
-                var values = data.Results.Values.Select(v => v.ToString(System.Globalization.CultureInfo.InvariantCulture));
+                sb.AppendLine(_currentData.PartName);
+                sb.AppendLine(_currentData.BatchNumber);
+                sb.AppendLine(string.Join(",", _currentData.Results.Keys));
+                var values = _currentData.Results.Values.Select(v => v.ToString(System.Globalization.CultureInfo.InvariantCulture));
                 sb.AppendLine(string.Join(",", values));
 
-                // CORREÇÃO AQUI: Usar UTF8 com BOM (true) para compatibilidade com Excel
-                File.WriteAllText(fullPath, sb.ToString(), new UTF8Encoding(true));
+                // Write with UTF8 BOM
+                await File.WriteAllTextAsync(fullPath, sb.ToString(), new UTF8Encoding(true));
+
+                UpdateStatus($"Sucesso! Salvo em {targetSubDir}\\{fileName}");
+
+                // Clear UI Logic
+                ResetUI();
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine(ex.Message);
+                IsPendingAction = true; // Re-enable if failed
+                UpdateStatus($"Erro ao salvar: {ex.Message}");
+                System.Windows.MessageBox.Show($"Erro ao salvar: {ex.Message}", "Erro", MessageBoxButton.OK, MessageBoxImage.Error);
             }
+        }
+
+        private void ExecuteCancel(object obj)
+        {
+            IsPendingAction = false;
+            UpdateStatus("Operação cancelada. Monitoramento retomado.");
+            ResetUI();
+        }
+
+        private void ResetUI()
+        {
+            _currentData = null;
+            PartName = string.Empty;
+            BatchNumber = string.Empty;
+            MeasuredResults.Clear();
+            // IsPendingAction is already false
         }
 
         private async Task<bool> WaitForFileAccess(string filePath, int timeoutSeconds = 5)
@@ -319,9 +568,6 @@ namespace SelectML.Client.ViewModels
                 WatchDirectory = dlg.SelectedPath;
             }
         }
-        private void ExecuteSend(object obj) { }
-        private bool CanSend(object obj) => true;
-        private void ExecuteCancel(object obj) { }
 
         public event PropertyChangedEventHandler PropertyChanged;
         protected void OnPropertyChanged([CallerMemberName] string name = null)
