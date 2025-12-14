@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.IO;
 using System.Text.Json;
 
@@ -8,6 +8,7 @@ namespace SelectML.Client.Services
     {
         public string WatchDirectory { get; set; }
         public string LastPluginName { get; set; }
+        public string ConnectionString { get; set; }
     }
 
     public class ConfigService

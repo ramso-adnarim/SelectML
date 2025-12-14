@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.IO;
@@ -17,6 +17,7 @@ namespace SelectML.Client.ViewModels
     {
         private readonly PluginLoader _pluginLoader;
         private readonly ConfigService _configService;
+        private IDatabaseService _databaseService;
         private FileSystemWatcher _watcher;
 
         // Propriedades de Estado da UI
@@ -24,12 +25,14 @@ namespace SelectML.Client.ViewModels
         private string _configButtonText = "Salvar e Iniciar";
         private bool _isExpanded = true;
         private string _statusMessage = "Aguardando configuração...";
+        private bool _isPendingAction;
 
         // Dados
         private string _watchDirectory;
         private IMachineParser _selectedParser;
         private string _partName;
         private string _batchNumber;
+        private MeasurementData _currentData; // Store current data for processing
 
         public MainViewModel()
         {
@@ -42,9 +45,9 @@ namespace SelectML.Client.ViewModels
             SelectDirectoryCommand = new RelayCommand(ExecuteSelectDirectory, CanChangeConfig);
             SaveConfigCommand = new RelayCommand(ExecuteSaveConfig);
 
-            // Comandos manuais mantidos para teste
-            SendCommand = new RelayCommand(ExecuteSend, CanSend);
-            CancelCommand = new RelayCommand(ExecuteCancel);
+            // Comandos de Ação
+            SendCommand = new RelayCommand(ExecuteSend, CanExecuteAction);
+            CancelCommand = new RelayCommand(ExecuteCancel, CanExecuteAction);
 
             LoadParsers();
             LoadConfiguration();
@@ -67,6 +70,25 @@ namespace SelectML.Client.ViewModels
         }
 
         public bool IsConfigEnabled => !IsConfigLocked;
+
+        public bool IsPendingAction
+        {
+            get => _isPendingAction;
+            set
+            {
+                _isPendingAction = value;
+                OnPropertyChanged();
+                OnPropertyChanged(nameof(IsMonitoring)); // Inverse logic usually helpful for UI
+                Application.Current.Dispatcher.Invoke(() =>
+                {
+                   SendCommand.RaiseCanExecuteChanged();
+                   CancelCommand.RaiseCanExecuteChanged();
+                });
+            }
+        }
+
+        // Helper to check if monitoring is effectively active for UI binding purposes
+        public bool IsMonitoring => IsConfigLocked && !IsPendingAction;
 
         public string ConfigButtonText
         {
@@ -139,6 +161,9 @@ namespace SelectML.Client.ViewModels
 
             if (SelectedParser == null && AvailableParsers.Count > 0)
                 SelectedParser = AvailableParsers[0];
+
+            // Initialize Database Service
+            _databaseService = new DatabaseService(config.ConnectionString);
         }
 
         private void ExecuteSaveConfig(object obj)
@@ -164,12 +189,14 @@ namespace SelectML.Client.ViewModels
                     return;
                 }
 
-                var config = new AppConfig
-                {
-                    WatchDirectory = WatchDirectory,
-                    LastPluginName = SelectedParser.MachineName
-                };
+                var config = _configService.Load(); // Reload to keep existing keys like ConnectionString
+                config.WatchDirectory = WatchDirectory;
+                config.LastPluginName = SelectedParser.MachineName;
+
                 _configService.Save(config);
+
+                // Re-initialize database service in case connection string changed in file externally (unlikely flow but safe)
+                _databaseService = new DatabaseService(config.ConnectionString);
 
                 StartWatcher();
 
@@ -216,6 +243,11 @@ namespace SelectML.Client.ViewModels
 
         private async void OnFileCreated(object sender, FileSystemEventArgs e)
         {
+            // If we are already pending an action, ignore new files?
+            // Or better: the requirement says "IsPendingAction = true".
+            // A common pattern is to stop listening or ignore events while pending.
+            if (IsPendingAction) return;
+
             if (!SelectedParser.CanParse(e.FullPath)) return;
 
             if (!await WaitForFileAccess(e.FullPath))
@@ -226,7 +258,7 @@ namespace SelectML.Client.ViewModels
 
             try
             {
-                UpdateStatus($"Processando arquivo: {e.Name}...");
+                UpdateStatus($"Lendo arquivo: {e.Name}...");
 
                 var data = SelectedParser.Parse(e.FullPath);
 
@@ -234,6 +266,10 @@ namespace SelectML.Client.ViewModels
                 {
                     System.Windows.Application.Current.Dispatcher.Invoke(() =>
                     {
+                        // Store data for later processing
+                        _currentData = data;
+
+                        // Populate UI
                         PartName = data.PartName;
                         BatchNumber = data.BatchNumber;
                         MeasuredResults.Clear();
@@ -241,11 +277,11 @@ namespace SelectML.Client.ViewModels
                         {
                             MeasuredResults.Add(new ResultItem { Characteristic = item.Key, Value = item.Value });
                         }
+
+                        // Human-in-the-loop: Stop auto-save, wait for user
+                        IsPendingAction = true;
+                        StatusMessage = "Dados carregados. Verifique e clique em Enviar.";
                     });
-
-                    GenerateOutputCsv(data);
-
-                    UpdateStatus($"Sucesso! Dados de {data.PartName} processados.");
                 }
                 else
                 {
@@ -258,30 +294,71 @@ namespace SelectML.Client.ViewModels
             }
         }
 
-        private void GenerateOutputCsv(MeasurementData data)
+        private bool CanExecuteAction(object obj)
         {
+            return IsPendingAction;
+        }
+
+        private async void ExecuteSend(object obj)
+        {
+            if (_currentData == null) return;
+
             try
             {
+                IsPendingAction = false; // Disable buttons immediately to prevent double click
+                StatusMessage = "Salvando dados...";
+
+                // Determine Output Path using Database Service
                 string outputDir = Path.Combine(WatchDirectory, "Output");
-                if (!Directory.Exists(outputDir)) Directory.CreateDirectory(outputDir);
 
-                string fileName = $"Result_{data.PartName}_{DateTime.Now:yyyyMMdd_HHmmss}.csv";
-                string fullPath = Path.Combine(outputDir, fileName);
+                string stationName = await _databaseService.GetStationNameAsync(_currentData.BatchNumber);
 
+                string targetSubDir = !string.IsNullOrWhiteSpace(stationName) ? stationName : "Unidentified";
+                string targetPath = Path.Combine(outputDir, targetSubDir);
+
+                if (!Directory.Exists(targetPath)) Directory.CreateDirectory(targetPath);
+
+                string fileName = $"Result_{_currentData.PartName}_{DateTime.Now:yyyyMMdd_HHmmss}.csv";
+                string fullPath = Path.Combine(targetPath, fileName);
+
+                // Generate CSV
                 var sb = new StringBuilder();
-                sb.AppendLine(data.PartName);
-                sb.AppendLine(data.BatchNumber);
-                sb.AppendLine(string.Join(",", data.Results.Keys));
-                var values = data.Results.Values.Select(v => v.ToString(System.Globalization.CultureInfo.InvariantCulture));
+                sb.AppendLine(_currentData.PartName);
+                sb.AppendLine(_currentData.BatchNumber);
+                sb.AppendLine(string.Join(",", _currentData.Results.Keys));
+                var values = _currentData.Results.Values.Select(v => v.ToString(System.Globalization.CultureInfo.InvariantCulture));
                 sb.AppendLine(string.Join(",", values));
 
-                // CORREÇÃO AQUI: Usar UTF8 com BOM (true) para compatibilidade com Excel
-                File.WriteAllText(fullPath, sb.ToString(), new UTF8Encoding(true));
+                // Write with UTF8 BOM
+                await File.WriteAllTextAsync(fullPath, sb.ToString(), new UTF8Encoding(true));
+
+                UpdateStatus($"Sucesso! Salvo em {targetSubDir}\\{fileName}");
+
+                // Clear UI Logic
+                ResetUI();
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine(ex.Message);
+                IsPendingAction = true; // Re-enable if failed
+                UpdateStatus($"Erro ao salvar: {ex.Message}");
+                System.Windows.MessageBox.Show($"Erro ao salvar: {ex.Message}", "Erro", MessageBoxButton.OK, MessageBoxImage.Error);
             }
+        }
+
+        private void ExecuteCancel(object obj)
+        {
+            IsPendingAction = false;
+            UpdateStatus("Operação cancelada. Monitoramento retomado.");
+            ResetUI();
+        }
+
+        private void ResetUI()
+        {
+            _currentData = null;
+            PartName = string.Empty;
+            BatchNumber = string.Empty;
+            MeasuredResults.Clear();
+            // IsPendingAction is already false
         }
 
         private async Task<bool> WaitForFileAccess(string filePath, int timeoutSeconds = 5)
@@ -319,9 +396,6 @@ namespace SelectML.Client.ViewModels
                 WatchDirectory = dlg.SelectedPath;
             }
         }
-        private void ExecuteSend(object obj) { }
-        private bool CanSend(object obj) => true;
-        private void ExecuteCancel(object obj) { }
 
         public event PropertyChangedEventHandler PropertyChanged;
         protected void OnPropertyChanged([CallerMemberName] string name = null)
