@@ -30,6 +30,7 @@ namespace SelectML.Client.ViewModels
 
         // Dados
         private string _watchDirectory;
+        private string _connectionString;
         private IMachineParser _selectedParser;
         private string _partName;
         private string _batchNumber;
@@ -114,6 +115,12 @@ namespace SelectML.Client.ViewModels
             set { _watchDirectory = value; OnPropertyChanged(); }
         }
 
+        public string ConnectionString
+        {
+            get => _connectionString;
+            set { _connectionString = value; OnPropertyChanged(); }
+        }
+
         public IMachineParser SelectedParser
         {
             get => _selectedParser;
@@ -154,6 +161,8 @@ namespace SelectML.Client.ViewModels
             if (!string.IsNullOrEmpty(config.WatchDirectory))
                 WatchDirectory = config.WatchDirectory;
 
+            ConnectionString = config.ConnectionString;
+
             if (!string.IsNullOrEmpty(config.LastPluginName))
             {
                 SelectedParser = AvailableParsers.FirstOrDefault(p => p.MachineName == config.LastPluginName);
@@ -192,6 +201,7 @@ namespace SelectML.Client.ViewModels
                 var config = _configService.Load(); // Reload to keep existing keys like ConnectionString
                 config.WatchDirectory = WatchDirectory;
                 config.LastPluginName = SelectedParser.MachineName;
+                config.ConnectionString = ConnectionString;
 
                 _configService.Save(config);
 
