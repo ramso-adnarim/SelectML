@@ -79,6 +79,8 @@ namespace SelectML.Client.ViewModels
                 _isConfigLocked = value;
                 OnPropertyChanged();
                 OnPropertyChanged(nameof(IsConfigEnabled));
+                OnPropertyChanged(nameof(IsMonitoring));
+                OnPropertyChanged(nameof(IsSqlCredentialsEnabled));
             }
         }
 
@@ -92,6 +94,7 @@ namespace SelectML.Client.ViewModels
                 _isPendingAction = value;
                 OnPropertyChanged();
                 OnPropertyChanged(nameof(IsMonitoring)); // Inverse logic usually helpful for UI
+                OnPropertyChanged(nameof(IsSqlCredentialsEnabled));
                 System.Windows.Application.Current.Dispatcher.Invoke(() =>
                 {
                     CommandManager.InvalidateRequerySuggested();
@@ -101,6 +104,8 @@ namespace SelectML.Client.ViewModels
 
         // Helper to check if monitoring is effectively active for UI binding purposes
         public bool IsMonitoring => IsConfigLocked && !IsPendingAction;
+
+        public bool IsSqlCredentialsEnabled => !IsMonitoring && !DbUseWindowsAuth;
 
         public string ConfigButtonText
         {
@@ -151,6 +156,7 @@ namespace SelectML.Client.ViewModels
                 _dbUseWindowsAuth = value;
                 OnPropertyChanged();
                 OnPropertyChanged(nameof(IsDbAuthEnabled));
+                OnPropertyChanged(nameof(IsSqlCredentialsEnabled));
                 BuildConnectionString();
             }
         }
@@ -199,13 +205,23 @@ namespace SelectML.Client.ViewModels
         public string PartName
         {
             get => _partName;
-            set { _partName = value; OnPropertyChanged(); }
+            set
+            {
+                _partName = value;
+                OnPropertyChanged();
+                CommandManager.InvalidateRequerySuggested();
+            }
         }
 
         public string BatchNumber
         {
             get => _batchNumber;
-            set { _batchNumber = value; OnPropertyChanged(); }
+            set
+            {
+                _batchNumber = value;
+                OnPropertyChanged();
+                CommandManager.InvalidateRequerySuggested();
+            }
         }
 
         // --- Comandos ---
@@ -468,7 +484,7 @@ namespace SelectML.Client.ViewModels
 
         private bool CanExecuteAction(object obj)
         {
-            return IsPendingAction;
+            return IsPendingAction && !string.IsNullOrWhiteSpace(PartName) && !string.IsNullOrWhiteSpace(BatchNumber);
         }
 
         private async void ExecuteSend(object obj)

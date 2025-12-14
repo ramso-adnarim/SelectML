@@ -1,4 +1,4 @@
-﻿<Window x:Class="SelectML.Client.MainWindow"
+<Window x:Class="SelectML.Client.MainWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
@@ -12,6 +12,9 @@
     <!-- Recurso para o Conversor de Cores -->
     <Window.Resources>
         <conv:BooleanToBrushConverter x:Key="BooleanToBrushConverter"/>
+        <conv:InverseBooleanConverter x:Key="InverseBooleanConverter"/>
+        <conv:BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter"/>
+        <conv:WidthAdjustmentConverter x:Key="WidthAdjustmentConverter"/>
     </Window.Resources>
 
     <Grid Margin="15">
@@ -33,9 +36,36 @@
         </Grid.RowDefinitions>
 
         <!-- 1. Área de Configuração Expansível -->
-        <Expander Grid.Row="0" Header="Configuração do Monitoramento" 
+        <Expander Grid.Row="0"
                   IsExpanded="{Binding IsExpanded}"
                   BorderBrush="#DDDDDD" BorderThickness="1" Background="White" Padding="10" Grid.ColumnSpan="2">
+            <Expander.Header>
+                <Grid Width="{Binding RelativeSource={RelativeSource Mode=FindAncestor, AncestorType={x:Type Expander}}, Path=ActualWidth, Converter={StaticResource WidthAdjustmentConverter}, FallbackValue=650}">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+                    <TextBlock Text="Configuração do Monitoramento" FontWeight="SemiBold" VerticalAlignment="Center"/>
+
+                    <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center" Margin="0,0,30,0"
+                                Visibility="{Binding IsMonitoring, Converter={StaticResource BooleanToVisibilityConverter}}">
+                        <Ellipse Width="10" Height="10" Fill="Green" x:Name="OnlineIndicator"/>
+                        <TextBlock Text="Online" Foreground="Green" Margin="5,0,0,0" VerticalAlignment="Center" FontWeight="Bold"/>
+
+                        <StackPanel.Triggers>
+                            <EventTrigger RoutedEvent="Loaded">
+                                <BeginStoryboard>
+                                    <Storyboard RepeatBehavior="Forever" AutoReverse="True">
+                                        <DoubleAnimation Storyboard.TargetName="OnlineIndicator"
+                                                         Storyboard.TargetProperty="Opacity"
+                                                         From="1.0" To="0.4" Duration="0:0:1"/>
+                                    </Storyboard>
+                                </BeginStoryboard>
+                            </EventTrigger>
+                        </StackPanel.Triggers>
+                    </StackPanel>
+                </Grid>
+            </Expander.Header>
             <Grid Margin="0,5,0,0">
                 <Grid.RowDefinitions>
                     <RowDefinition Height="Auto"/>
@@ -97,7 +127,7 @@
                                 <StackPanel Grid.Column="0">
                                     <TextBlock Text="Login:" FontSize="11" Foreground="#666"/>
                                     <TextBox Text="{Binding DbUser, UpdateSourceTrigger=PropertyChanged}"
-                                             IsEnabled="{Binding IsDbAuthEnabled}"
+                                             IsEnabled="{Binding IsSqlCredentialsEnabled}"
                                              Height="25" Margin="0,2,0,0"/>
                                 </StackPanel>
 
@@ -105,7 +135,7 @@
                                 <StackPanel Grid.Column="2">
                                     <TextBlock Text="Senha:" FontSize="11" Foreground="#666"/>
                                     <PasswordBox x:Name="DbPasswordBox"
-                                                 IsEnabled="{Binding IsDbAuthEnabled}"
+                                                 IsEnabled="{Binding IsSqlCredentialsEnabled}"
                                                  PasswordChar="*"
                                                  Height="25" Margin="0,2,0,0"
                                                  PasswordChanged="DbPasswordBox_PasswordChanged"/>
@@ -165,12 +195,16 @@
 
                     <StackPanel Grid.Column="0">
                         <TextBlock Text="CÓDIGO DA CORRIDA/LOTE:" Foreground="#555" FontSize="11" FontWeight="Bold"/>
-                        <TextBox Text="{Binding BatchNumber}" IsReadOnly="True" Background="#FAFAFA" Height="30" FontSize="14" Margin="0,2,0,0" Padding="5"/>
+                        <TextBox Text="{Binding BatchNumber, UpdateSourceTrigger=PropertyChanged}"
+                                 IsReadOnly="{Binding IsPendingAction, Converter={StaticResource InverseBooleanConverter}}"
+                                 Background="#FAFAFA" Height="30" FontSize="14" Margin="0,2,0,0" Padding="5"/>
                     </StackPanel>
 
                     <StackPanel Grid.Column="2">
                         <TextBlock Text="CÓDIGO DA PEÇA:" Foreground="#555" FontSize="11" FontWeight="Bold"/>
-                        <TextBox Text="{Binding PartName}" IsReadOnly="True" Background="#FAFAFA" Height="30" FontSize="14" Margin="0,2,0,0" Padding="5"/>
+                        <TextBox Text="{Binding PartName, UpdateSourceTrigger=PropertyChanged}"
+                                 IsReadOnly="{Binding IsPendingAction, Converter={StaticResource InverseBooleanConverter}}"
+                                 Background="#FAFAFA" Height="30" FontSize="14" Margin="0,2,0,0" Padding="5"/>
                     </StackPanel>
                 </Grid>
             </StackPanel>
