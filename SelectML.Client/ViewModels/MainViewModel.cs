@@ -592,7 +592,7 @@ namespace SelectML.Client.ViewModels
 
                 if (IsAutoMode)
                 {
-                    RequestShowBalloonTip?.Invoke("SelectML - Processado", $"Arquivo salvo: {fileName}");
+                    RequestShowBalloonTip?.Invoke("Processamento concluído", $"Arquivo salvo: {fileName}");
                 }
 
                 ResetUI();
