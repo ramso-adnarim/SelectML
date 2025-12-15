@@ -11,6 +11,8 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Input;
+using System.Windows.Media;
+using System.Windows.Media.Imaging;
 
 namespace SelectML.Client.ViewModels
 {
@@ -28,7 +30,7 @@ namespace SelectML.Client.ViewModels
         private string _statusMessage = "Aguardando configuração...";
         private bool _isPendingAction;
         private bool _isAutoMode;
-        private string _trayIconSource = "pack://application:,,,/Resources/Logo_Gray.ico";
+        private ImageSource _trayIconSource;
 
         // Timers
         private System.Windows.Threading.DispatcherTimer _iconTimer;
@@ -62,6 +64,9 @@ namespace SelectML.Client.ViewModels
             AvailableParsers = new ObservableCollection<IMachineParser>();
             MeasuredResults = new ObservableCollection<ResultItem>();
             AvailableDatabases = new ObservableCollection<string>();
+
+            // Initial Icon
+            UpdateTrayIcon("Resources/Logo_Gray.ico");
 
             // Comandos
             SelectDirectoryCommand = new RelayCommand(ExecuteSelectDirectory, CanChangeConfig);
@@ -123,7 +128,7 @@ namespace SelectML.Client.ViewModels
             set { _isAutoMode = value; OnPropertyChanged(); }
         }
 
-        public string TrayIconSource
+        public ImageSource TrayIconSource
         {
             get => _trayIconSource;
             set { _trayIconSource = value; OnPropertyChanged(); }
@@ -442,7 +447,7 @@ namespace SelectML.Client.ViewModels
                 _iconTimer = new System.Windows.Threading.DispatcherTimer { Interval = TimeSpan.FromMilliseconds(800) };
                 _iconTimer.Tick += (s, e) =>
                 {
-                    TrayIconSource = _iconToggle ? "pack://application:,,,/Resources/icon_green_1.ico" : "pack://application:,,,/Resources/icon_green_2.ico";
+                    UpdateTrayIcon(_iconToggle ? "Resources/icon_green_1.ico" : "Resources/icon_green_2.ico");
                     _iconToggle = !_iconToggle;
                 };
                 _iconTimer.Start();
@@ -468,7 +473,23 @@ namespace SelectML.Client.ViewModels
                 _iconTimer.Stop();
                 _iconTimer = null;
             }
-            TrayIconSource = "pack://application:,,,/Resources/Logo_Gray.ico";
+            UpdateTrayIcon("Resources/Logo_Gray.ico");
+        }
+
+        private void UpdateTrayIcon(string resourcePath)
+        {
+            try
+            {
+                // Use explicit Pack URI with Assembly Name (SelectML.Client)
+                var uri = new Uri($"pack://application:,,,/SelectML.Client;component/{resourcePath}");
+                var icon = new BitmapImage(uri);
+                icon.Freeze(); // Make it cross-thread accessible if needed
+                TrayIconSource = icon;
+            }
+            catch (Exception)
+            {
+                // Fallback or log?
+            }
         }
 
         // --- Lógica de Negócio ---
