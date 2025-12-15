@@ -8,6 +8,7 @@ using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
+using Hardcodet.Wpf.TaskbarNotification;
 using SelectML.Client.ViewModels;
 
 namespace SelectML.Client
@@ -21,20 +22,28 @@ namespace SelectML.Client
             // Aqui vinculamos o ViewModel à Tela
             // Isso garante que o código só rode quando a aplicação iniciar,
             // evitando erros no editor visual do Visual Studio.
-            this.DataContext = new MainViewModel();
+            var vm = new MainViewModel();
+            this.DataContext = vm;
+
+            // Subscribe to VM events
+            vm.RequestShowBalloonTip += (title, msg) => MyNotifyIcon.ShowBalloonTip(title, msg, BalloonIcon.Info);
+            vm.RequestRestoreWindow += () =>
+            {
+                Show();
+                WindowState = WindowState.Normal;
+                Activate();
+            };
+            vm.RequestMinimizeWindow += () =>
+            {
+                WindowState = WindowState.Minimized;
+            };
 
             // Load window placement from settings
             LoadWindowPlacement();
 
             // Initialize PasswordBox if ViewModel has value
-            if (this.DataContext is MainViewModel vm && !string.IsNullOrEmpty(vm.DbPassword))
+            if (!string.IsNullOrEmpty(vm.DbPassword))
             {
-               // Note: Accessing DbPasswordBox requires it to be named in XAML
-               // Since we are in Constructor, standard FindName might not work yet if template is not applied,
-               // but for Window content it should be fine after InitializeComponent.
-               // However, to keep it simple and robust, we rely on the user re-entering password if needed
-               // OR we can't easily set it back without exposing it.
-               // For this task, setting the password box from code behind is acceptable.
                DbPasswordBox.Password = vm.DbPassword;
             }
         }
@@ -71,8 +80,19 @@ namespace SelectML.Client
             }
         }
 
+        protected override void OnStateChanged(EventArgs e)
+        {
+            if (WindowState == WindowState.Minimized)
+            {
+                Hide();
+            }
+            base.OnStateChanged(e);
+        }
+
         protected override void OnClosing(System.ComponentModel.CancelEventArgs e)
         {
+            MyNotifyIcon.Dispose();
+
             try
             {
                 var settings = Properties.Settings.Default;
