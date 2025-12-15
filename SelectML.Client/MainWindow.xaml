@@ -19,10 +19,6 @@
     </Window.Resources>
 
     <Grid Margin="15">
-        <tb:TaskbarIcon x:Name="MyNotifyIcon"
-                        IconSource="{Binding TrayIconSource}"
-                        ToolTipText="{Binding StatusMessage}"
-                        DoubleClickCommand="{Binding RestoreFromTrayCommand}" />
         <Grid.ColumnDefinitions>
             <ColumnDefinition Width="87*"/>
             <ColumnDefinition Width="248*"/>
@@ -39,6 +35,11 @@
             <RowDefinition Height="Auto"/>
             <!-- Rodapé -->
         </Grid.RowDefinitions>
+
+        <tb:TaskbarIcon x:Name="MyNotifyIcon"
+                        IconSource="{Binding TrayIconSource}"
+                        ToolTipText="{Binding StatusMessage}"
+                        DoubleClickCommand="{Binding RestoreFromTrayCommand}" />
 
         <!-- 1. Área de Configuração Expansível -->
         <Expander Grid.Row="0"
