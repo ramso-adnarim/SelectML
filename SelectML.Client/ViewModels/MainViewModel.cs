@@ -32,6 +32,10 @@ namespace SelectML.Client.ViewModels
         private bool _isAutoMode;
         private ImageSource _trayIconSource;
 
+        // Icons
+        private ImageSource _iconGreen;
+        private ImageSource _iconGrey;
+
         // Timers
         private System.Windows.Threading.DispatcherTimer _iconTimer;
         private bool _iconToggle;
@@ -65,8 +69,12 @@ namespace SelectML.Client.ViewModels
             MeasuredResults = new ObservableCollection<ResultItem>();
             AvailableDatabases = new ObservableCollection<string>();
 
-            // Initial Icon
-            UpdateTrayIcon("Resources/icon_grey.ico");
+            // Pre-load Icons
+            _iconGrey = LoadIcon("Resources/icon_grey.ico");
+            _iconGreen = LoadIcon("Resources/icon_green.ico");
+
+            // Set Initial Icon
+            TrayIconSource = _iconGrey;
 
             // Comandos
             SelectDirectoryCommand = new RelayCommand(ExecuteSelectDirectory, CanChangeConfig);
@@ -447,7 +455,7 @@ namespace SelectML.Client.ViewModels
                 _iconTimer = new System.Windows.Threading.DispatcherTimer { Interval = TimeSpan.FromMilliseconds(800) };
                 _iconTimer.Tick += (s, e) =>
                 {
-                    UpdateTrayIcon(_iconToggle ? "Resources/icon_green.ico" : "Resources/icon_grey.ico");
+                    TrayIconSource = _iconToggle ? _iconGreen : _iconGrey;
                     _iconToggle = !_iconToggle;
                 };
                 _iconTimer.Start();
@@ -473,22 +481,22 @@ namespace SelectML.Client.ViewModels
                 _iconTimer.Stop();
                 _iconTimer = null;
             }
-            UpdateTrayIcon("Resources/icon_grey.ico");
+            TrayIconSource = _iconGrey;
         }
 
-        private void UpdateTrayIcon(string resourcePath)
+        private ImageSource LoadIcon(string resourcePath)
         {
             try
             {
-                // Use explicit Pack URI with Assembly Name (SelectML.Client)
                 var uri = new Uri($"pack://application:,,,/SelectML.Client;component/{resourcePath}");
                 var icon = new BitmapImage(uri);
-                icon.Freeze(); // Make it cross-thread accessible if needed
-                TrayIconSource = icon;
+                icon.Freeze();
+                return icon;
             }
-            catch (Exception)
+            catch (Exception ex)
             {
-                // Fallback or log?
+                StatusMessage = $"Erro ao carregar ícone {resourcePath}: {ex.Message}";
+                return null;
             }
         }
 
