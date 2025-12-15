@@ -23,11 +23,12 @@
     <Resource Include="SelectML-logo-light.ico" />
     <Resource Include="SelectML-logo-short-light.ico" />
     <Resource Include="SelectML-logo-short-light.png" />
+    <Resource Include="Resources\**\*.ico" />
   </ItemGroup>
 
   <ItemGroup>
     <PackageReference Include="Microsoft.Data.SqlClient" Version="6.1.3" />
-    <PackageReference Include="Hardcodet.NotifyIcon.Wpf" Version="2.0.1" />
+    <PackageReference Include="Hardcodet.NotifyIcon.Wpf" Version="1.1.0" />
   </ItemGroup>
 
   <ItemGroup>

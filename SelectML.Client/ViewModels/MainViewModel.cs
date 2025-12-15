@@ -28,7 +28,7 @@ namespace SelectML.Client.ViewModels
         private string _statusMessage = "Aguardando configuração...";
         private bool _isPendingAction;
         private bool _isAutoMode;
-        private string _trayIconSource = "Resources/Logo_Gray.ico";
+        private string _trayIconSource = "pack://application:,,,/Resources/Logo_Gray.ico";
 
         // Timers
         private System.Windows.Threading.DispatcherTimer _iconTimer;
@@ -442,7 +442,7 @@ namespace SelectML.Client.ViewModels
                 _iconTimer = new System.Windows.Threading.DispatcherTimer { Interval = TimeSpan.FromMilliseconds(800) };
                 _iconTimer.Tick += (s, e) =>
                 {
-                    TrayIconSource = _iconToggle ? "Resources/icon_green_1.ico" : "Resources/icon_green_2.ico";
+                    TrayIconSource = _iconToggle ? "pack://application:,,,/Resources/icon_green_1.ico" : "pack://application:,,,/Resources/icon_green_2.ico";
                     _iconToggle = !_iconToggle;
                 };
                 _iconTimer.Start();
@@ -468,7 +468,7 @@ namespace SelectML.Client.ViewModels
                 _iconTimer.Stop();
                 _iconTimer = null;
             }
-            TrayIconSource = "Resources/Logo_Gray.ico";
+            TrayIconSource = "pack://application:,,,/Resources/Logo_Gray.ico";
         }
 
         // --- Lógica de Negócio ---
