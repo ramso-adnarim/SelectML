@@ -11,6 +11,8 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Input;
+using System.Windows.Media;
+using System.Windows.Media.Imaging;
 
 namespace SelectML.Client.ViewModels
 {
@@ -27,6 +29,21 @@ namespace SelectML.Client.ViewModels
         private bool _isExpanded = true;
         private string _statusMessage = "Aguardando configuração...";
         private bool _isPendingAction;
+        private bool _isAutoMode;
+        private ImageSource _trayIconSource;
+
+        // Icons
+        private ImageSource _iconGreen;
+        private ImageSource _iconGrey;
+
+        // Timers
+        private System.Windows.Threading.DispatcherTimer _iconTimer;
+        private bool _iconToggle;
+
+        // Events
+        public event Action<string, string> RequestShowBalloonTip;
+        public event Action RequestRestoreWindow;
+        public event Action RequestMinimizeWindow;
 
         // Dados
         private string _watchDirectory;
@@ -52,6 +69,13 @@ namespace SelectML.Client.ViewModels
             MeasuredResults = new ObservableCollection<ResultItem>();
             AvailableDatabases = new ObservableCollection<string>();
 
+            // Pre-load Icons
+            _iconGrey = LoadIcon("Resources/icon_grey.ico");
+            _iconGreen = LoadIcon("Resources/icon_green.ico");
+
+            // Set Initial Icon
+            TrayIconSource = _iconGrey;
+
             // Comandos
             SelectDirectoryCommand = new RelayCommand(ExecuteSelectDirectory, CanChangeConfig);
             SaveConfigCommand = new RelayCommand(ExecuteSaveConfig);
@@ -60,6 +84,10 @@ namespace SelectML.Client.ViewModels
             // Comandos de Ação
             SendCommand = new RelayCommand(ExecuteSend, CanExecuteAction);
             CancelCommand = new RelayCommand(ExecuteCancel, CanExecuteAction);
+
+            // Window Commands
+            MinimizeToTrayCommand = new RelayCommand(o => RequestMinimizeWindow?.Invoke());
+            RestoreFromTrayCommand = new RelayCommand(o => RequestRestoreWindow?.Invoke());
 
             LoadParsers();
             LoadConfiguration();
@@ -100,6 +128,18 @@ namespace SelectML.Client.ViewModels
                     CommandManager.InvalidateRequerySuggested();
                 });
             }
+        }
+
+        public bool IsAutoMode
+        {
+            get => _isAutoMode;
+            set { _isAutoMode = value; OnPropertyChanged(); }
+        }
+
+        public ImageSource TrayIconSource
+        {
+            get => _trayIconSource;
+            set { _trayIconSource = value; OnPropertyChanged(); }
         }
 
         // Helper to check if monitoring is effectively active for UI binding purposes
@@ -230,6 +270,8 @@ namespace SelectML.Client.ViewModels
         public RelayCommand LoadDatabasesCommand { get; }
         public RelayCommand SendCommand { get; }
         public RelayCommand CancelCommand { get; }
+        public RelayCommand MinimizeToTrayCommand { get; }
+        public RelayCommand RestoreFromTrayCommand { get; }
 
         // --- Métodos de Configuração e Watcher ---
 
@@ -408,6 +450,15 @@ namespace SelectML.Client.ViewModels
 
                 _watcher.EnableRaisingEvents = true;
                 StatusMessage = $"Monitorando: {WatchDirectory} usando {SelectedParser.MachineName}";
+
+                // Start Icon Animation
+                _iconTimer = new System.Windows.Threading.DispatcherTimer { Interval = TimeSpan.FromMilliseconds(800) };
+                _iconTimer.Tick += (s, e) =>
+                {
+                    TrayIconSource = _iconToggle ? _iconGreen : _iconGrey;
+                    _iconToggle = !_iconToggle;
+                };
+                _iconTimer.Start();
             }
             catch (Exception ex)
             {
@@ -425,15 +476,34 @@ namespace SelectML.Client.ViewModels
                 _watcher.Dispose();
                 _watcher = null;
             }
+            if (_iconTimer != null)
+            {
+                _iconTimer.Stop();
+                _iconTimer = null;
+            }
+            TrayIconSource = _iconGrey;
+        }
+
+        private ImageSource LoadIcon(string resourcePath)
+        {
+            try
+            {
+                var uri = new Uri($"pack://application:,,,/SelectML.Client;component/{resourcePath}");
+                var icon = new BitmapImage(uri);
+                icon.Freeze();
+                return icon;
+            }
+            catch (Exception ex)
+            {
+                StatusMessage = $"Erro ao carregar ícone {resourcePath}: {ex.Message}";
+                return null;
+            }
         }
 
         // --- Lógica de Negócio ---
 
         private async void OnFileCreated(object sender, FileSystemEventArgs e)
         {
-            // If we are already pending an action, ignore new files?
-            // Or better: the requirement says "IsPendingAction = true".
-            // A common pattern is to stop listening or ignore events while pending.
             if (IsPendingAction) return;
 
             if (!SelectedParser.CanParse(e.FullPath)) return;
@@ -452,12 +522,10 @@ namespace SelectML.Client.ViewModels
 
                 if (data.IsValid)
                 {
-                    System.Windows.Application.Current.Dispatcher.Invoke(() =>
+                    await System.Windows.Application.Current.Dispatcher.InvokeAsync(async () =>
                     {
-                        // Store data for later processing
                         _currentData = data;
 
-                        // Populate UI
                         PartName = data.PartName;
                         BatchNumber = data.BatchNumber;
                         MeasuredResults.Clear();
@@ -466,9 +534,16 @@ namespace SelectML.Client.ViewModels
                             MeasuredResults.Add(new ResultItem { Characteristic = item.Key, Value = item.Value });
                         }
 
-                        // Human-in-the-loop: Stop auto-save, wait for user
-                        IsPendingAction = true;
-                        StatusMessage = "Dados carregados. Verifique e clique em Enviar.";
+                        if (IsAutoMode)
+                        {
+                            await GenerateOutputCsv(data);
+                        }
+                        else
+                        {
+                            IsPendingAction = true;
+                            StatusMessage = "Dados carregados. Verifique e clique em Enviar.";
+                            RequestRestoreWindow?.Invoke();
+                        }
                     });
                 }
                 else
@@ -490,46 +565,59 @@ namespace SelectML.Client.ViewModels
         private async void ExecuteSend(object obj)
         {
             if (_currentData == null) return;
+            IsPendingAction = false;
+            await GenerateOutputCsv(_currentData);
+        }
 
+        private async Task GenerateOutputCsv(MeasurementData data)
+        {
             try
             {
-                IsPendingAction = false; // Disable buttons immediately to prevent double click
                 StatusMessage = "Salvando dados...";
 
-                // Determine Output Path using Database Service
                 string outputDir = Path.Combine(WatchDirectory, "Output");
 
-                string stationName = await _databaseService.GetStationNameAsync(_currentData.BatchNumber);
+                string stationName = await _databaseService.GetStationNameAsync(data.BatchNumber);
 
                 string targetSubDir = !string.IsNullOrWhiteSpace(stationName) ? stationName : "Unidentified";
                 string targetPath = Path.Combine(outputDir, targetSubDir);
 
                 if (!Directory.Exists(targetPath)) Directory.CreateDirectory(targetPath);
 
-                string fileName = $"Result_{_currentData.PartName}_{DateTime.Now:yyyyMMdd_HHmmss}.csv";
+                string fileName = $"Result_{data.PartName}_{DateTime.Now:yyyyMMdd_HHmmss}.csv";
                 string fullPath = Path.Combine(targetPath, fileName);
 
-                // Generate CSV
                 var sb = new StringBuilder();
-                sb.AppendLine(_currentData.PartName);
-                sb.AppendLine(_currentData.BatchNumber);
-                sb.AppendLine(string.Join(",", _currentData.Results.Keys));
-                var values = _currentData.Results.Values.Select(v => v.ToString(System.Globalization.CultureInfo.InvariantCulture));
+                sb.AppendLine(data.PartName);
+                sb.AppendLine(data.BatchNumber);
+                sb.AppendLine(string.Join(",", data.Results.Keys));
+                var values = data.Results.Values.Select(v => v.ToString(System.Globalization.CultureInfo.InvariantCulture));
                 sb.AppendLine(string.Join(",", values));
 
-                // Write with UTF8 BOM
                 await File.WriteAllTextAsync(fullPath, sb.ToString(), new UTF8Encoding(true));
 
                 UpdateStatus($"Sucesso! Salvo em {targetSubDir}\\{fileName}");
 
-                // Clear UI Logic
+                if (IsAutoMode)
+                {
+                    RequestShowBalloonTip?.Invoke("SelectML - Processado", $"Arquivo salvo: {fileName}");
+                }
+
                 ResetUI();
             }
             catch (Exception ex)
             {
-                IsPendingAction = true; // Re-enable if failed
+                IsPendingAction = true;
                 UpdateStatus($"Erro ao salvar: {ex.Message}");
-                System.Windows.MessageBox.Show($"Erro ao salvar: {ex.Message}", "Erro", MessageBoxButton.OK, MessageBoxImage.Error);
+
+                if (IsAutoMode)
+                {
+                    RequestRestoreWindow?.Invoke();
+                }
+                else
+                {
+                    System.Windows.MessageBox.Show($"Erro ao salvar: {ex.Message}", "Erro", MessageBoxButton.OK, MessageBoxImage.Error);
+                }
             }
         }
 
