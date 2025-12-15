@@ -66,7 +66,7 @@ namespace SelectML.Client.ViewModels
             AvailableDatabases = new ObservableCollection<string>();
 
             // Initial Icon
-            UpdateTrayIcon("Resources/Logo_Gray.ico");
+            UpdateTrayIcon("Resources/icon_grey.ico");
 
             // Comandos
             SelectDirectoryCommand = new RelayCommand(ExecuteSelectDirectory, CanChangeConfig);
@@ -447,7 +447,7 @@ namespace SelectML.Client.ViewModels
                 _iconTimer = new System.Windows.Threading.DispatcherTimer { Interval = TimeSpan.FromMilliseconds(800) };
                 _iconTimer.Tick += (s, e) =>
                 {
-                    UpdateTrayIcon(_iconToggle ? "Resources/icon_green_1.ico" : "Resources/icon_green_2.ico");
+                    UpdateTrayIcon(_iconToggle ? "Resources/icon_green.ico" : "Resources/icon_grey.ico");
                     _iconToggle = !_iconToggle;
                 };
                 _iconTimer.Start();
@@ -473,7 +473,7 @@ namespace SelectML.Client.ViewModels
                 _iconTimer.Stop();
                 _iconTimer = null;
             }
-            UpdateTrayIcon("Resources/Logo_Gray.ico");
+            UpdateTrayIcon("Resources/icon_grey.ico");
         }
 
         private void UpdateTrayIcon(string resourcePath)
@@ -592,7 +592,7 @@ namespace SelectML.Client.ViewModels
 
                 if (IsAutoMode)
                 {
-                    RequestShowBalloonTip?.Invoke("Processamento concluído", $"Arquivo salvo: {fileName}");
+                    RequestShowBalloonTip?.Invoke("SelectML - Processado", $"Arquivo salvo: {fileName}");
                 }
 
                 ResetUI();
