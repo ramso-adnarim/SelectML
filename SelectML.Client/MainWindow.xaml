@@ -44,15 +44,17 @@
                         DoubleClickCommand="{Binding RestoreFromTrayCommand}" />
 
         <!-- Theme Toggle Button -->
-        <Button Grid.Row="0" Command="{Binding ToggleThemeCommand}" HorizontalAlignment="Right" VerticalAlignment="Top" Margin="0,5,5,5" Grid.ColumnSpan="2"
-                Width="30" Height="30" Background="Transparent" BorderThickness="0" ToolTip="Alternar Tema">
-             <TextBlock FontSize="16">
+        <Button Grid.Row="0" Command="{Binding ToggleThemeCommand}" HorizontalAlignment="Right" VerticalAlignment="Top" Margin="0,2,10,0" Grid.ColumnSpan="2"
+                Width="24" Height="24" Background="Transparent" BorderThickness="0" ToolTip="Alternar Tema">
+             <TextBlock FontSize="14" VerticalAlignment="Center" HorizontalAlignment="Center">
                  <TextBlock.Style>
                      <Style TargetType="TextBlock">
-                         <Setter Property="Text" Value="🌙"/>
+                         <Setter Property="Text" Value="☾"/>
+                         <Setter Property="Foreground" Value="{DynamicResource TextBrush}"/>
                          <Style.Triggers>
                              <DataTrigger Binding="{Binding IsDarkMode}" Value="True">
-                                 <Setter Property="Text" Value="☀️"/>
+                                 <Setter Property="Text" Value="☀"/>
+                                 <Setter Property="Foreground" Value="#FFD700"/>
                              </DataTrigger>
                          </Style.Triggers>
                      </Style>
@@ -133,6 +135,9 @@
                             <TextBlock Text="Servidor:" FontSize="11" Foreground="{DynamicResource TextBrush}"/>
                             <TextBox Text="{Binding DbServer, UpdateSourceTrigger=PropertyChanged}"
                                      IsEnabled="{Binding IsConfigEnabled}"
+                                     Background="{DynamicResource InputBackgroundBrush}"
+                                     Foreground="{DynamicResource TextBrush}"
+                                     CaretBrush="{DynamicResource TextBrush}"
                                      Height="25" Margin="0,2,0,5"/>
 
                             <!-- Autenticação Windows -->
@@ -153,6 +158,9 @@
                                     <TextBlock Text="Login:" FontSize="11" Foreground="{DynamicResource TextBrush}"/>
                                     <TextBox Text="{Binding DbUser, UpdateSourceTrigger=PropertyChanged}"
                                              IsEnabled="{Binding IsSqlCredentialsEnabled}"
+                                             Background="{DynamicResource InputBackgroundBrush}"
+                                             Foreground="{DynamicResource TextBrush}"
+                                             CaretBrush="{DynamicResource TextBrush}"
                                              Height="25" Margin="0,2,0,0"/>
                                 </StackPanel>
 
@@ -161,6 +169,9 @@
                                     <TextBlock Text="Senha:" FontSize="11" Foreground="{DynamicResource TextBrush}"/>
                                     <PasswordBox x:Name="DbPasswordBox"
                                                  IsEnabled="{Binding IsSqlCredentialsEnabled}"
+                                                 Background="{DynamicResource InputBackgroundBrush}"
+                                                 Foreground="{DynamicResource TextBrush}"
+                                                 CaretBrush="{DynamicResource TextBrush}"
                                                  PasswordChar="*"
                                                  Height="25" Margin="0,2,0,0"
                                                  PasswordChanged="DbPasswordBox_PasswordChanged"/>
@@ -222,14 +233,20 @@
                         <TextBlock Text="CÓDIGO DA CORRIDA/LOTE:" Foreground="{DynamicResource TextBrush}" FontSize="11" FontWeight="Bold"/>
                         <TextBox Text="{Binding BatchNumber, UpdateSourceTrigger=PropertyChanged}"
                                  IsReadOnly="{Binding IsPendingAction, Converter={StaticResource InverseBooleanConverter}}"
-                                 Background="{DynamicResource InputBackgroundBrush}" Height="30" FontSize="14" Margin="0,2,0,0" Padding="5"/>
+                                 Background="{DynamicResource InputBackgroundBrush}"
+                                 Foreground="{DynamicResource TextBrush}"
+                                 CaretBrush="{DynamicResource TextBrush}"
+                                 Height="30" FontSize="14" Margin="0,2,0,0" Padding="5"/>
                     </StackPanel>
 
                     <StackPanel Grid.Column="2">
                         <TextBlock Text="CÓDIGO DA PEÇA:" Foreground="{DynamicResource TextBrush}" FontSize="11" FontWeight="Bold"/>
                         <TextBox Text="{Binding PartName, UpdateSourceTrigger=PropertyChanged}"
                                  IsReadOnly="{Binding IsPendingAction, Converter={StaticResource InverseBooleanConverter}}"
-                                 Background="{DynamicResource InputBackgroundBrush}" Height="30" FontSize="14" Margin="0,2,0,0" Padding="5"/>
+                                 Background="{DynamicResource InputBackgroundBrush}"
+                                 Foreground="{DynamicResource TextBrush}"
+                                 CaretBrush="{DynamicResource TextBrush}"
+                                 Height="30" FontSize="14" Margin="0,2,0,0" Padding="5"/>
                     </StackPanel>
                 </Grid>
             </StackPanel>
