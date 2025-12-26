@@ -18,7 +18,7 @@
         <conv:WidthAdjustmentConverter x:Key="WidthAdjustmentConverter"/>
     </Window.Resources>
 
-    <Grid Margin="15">
+    <Grid Margin="15,5,15,15">
         <Grid.ColumnDefinitions>
             <ColumnDefinition Width="87*"/>
             <ColumnDefinition Width="248*"/>
@@ -45,8 +45,8 @@
 
         <!-- Theme Toggle Button -->
         <Button Grid.Row="0" Command="{Binding ToggleThemeCommand}" HorizontalAlignment="Right" VerticalAlignment="Top" Margin="0,2,10,0" Grid.ColumnSpan="2"
-                Width="24" Height="24" Background="Transparent" BorderThickness="0" ToolTip="Alternar Tema">
-             <TextBlock FontSize="14" VerticalAlignment="Center" HorizontalAlignment="Center">
+                Width="20" Height="20" Background="Transparent" BorderThickness="0" ToolTip="Alternar Tema">
+             <TextBlock FontSize="12" VerticalAlignment="Center" HorizontalAlignment="Center">
                  <TextBlock.Style>
                      <Style TargetType="TextBlock">
                          <Setter Property="Text" Value="☾"/>
@@ -54,7 +54,7 @@
                          <Style.Triggers>
                              <DataTrigger Binding="{Binding IsDarkMode}" Value="True">
                                  <Setter Property="Text" Value="☀"/>
-                                 <Setter Property="Foreground" Value="#FFD700"/>
+                                 <Setter Property="Foreground" Value="White"/>
                              </DataTrigger>
                          </Style.Triggers>
                      </Style>
