@@ -13,6 +13,7 @@ using System.Windows;
 using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
+using Serilog;
 
 namespace SelectML.Client.ViewModels
 {
@@ -31,6 +32,7 @@ namespace SelectML.Client.ViewModels
         private bool _isPendingAction;
         private bool _isAutoMode;
         private ImageSource _trayIconSource;
+        private bool _isDarkMode;
 
         // Icons
         private ImageSource _iconGreen;
@@ -80,6 +82,7 @@ namespace SelectML.Client.ViewModels
             SelectDirectoryCommand = new RelayCommand(ExecuteSelectDirectory, CanChangeConfig);
             SaveConfigCommand = new RelayCommand(ExecuteSaveConfig);
             LoadDatabasesCommand = new RelayCommand(ExecuteLoadDatabases, CanChangeConfig);
+            ToggleThemeCommand = new RelayCommand(ExecuteToggleTheme);
 
             // Comandos de Ação
             SendCommand = new RelayCommand(ExecuteSend, CanExecuteAction);
@@ -91,9 +94,34 @@ namespace SelectML.Client.ViewModels
 
             LoadParsers();
             LoadConfiguration();
+
+            // Initialize Theme
+            IsDarkMode = Properties.Settings.Default.IsDarkMode;
         }
 
         // --- Propriedades de UI ---
+
+        public bool IsDarkMode
+        {
+            get => _isDarkMode;
+            set
+            {
+                if (_isDarkMode != value)
+                {
+                    _isDarkMode = value;
+                    OnPropertyChanged();
+                    // Update Settings
+                    Properties.Settings.Default.IsDarkMode = value;
+                    Properties.Settings.Default.Save();
+                    // Apply Theme
+                    if (System.Windows.Application.Current is App app)
+                    {
+                        app.SetTheme(value);
+                        Log.Information("Theme changed to {Theme}", value ? "Dark" : "Light");
+                    }
+                }
+            }
+        }
 
         public ObservableCollection<IMachineParser> AvailableParsers { get; set; }
         public ObservableCollection<string> AvailableDatabases { get; set; }
@@ -268,12 +296,18 @@ namespace SelectML.Client.ViewModels
         public RelayCommand SelectDirectoryCommand { get; }
         public RelayCommand SaveConfigCommand { get; }
         public RelayCommand LoadDatabasesCommand { get; }
+        public RelayCommand ToggleThemeCommand { get; }
         public RelayCommand SendCommand { get; }
         public RelayCommand CancelCommand { get; }
         public RelayCommand MinimizeToTrayCommand { get; }
         public RelayCommand RestoreFromTrayCommand { get; }
 
         // --- Métodos de Configuração e Watcher ---
+
+        private void ExecuteToggleTheme(object obj)
+        {
+            IsDarkMode = !IsDarkMode;
+        }
 
         private void LoadParsers()
         {
@@ -326,18 +360,21 @@ namespace SelectML.Client.ViewModels
                 IsConfigLocked = false;
                 ConfigButtonText = "Salvar e Iniciar";
                 StatusMessage = "Monitoramento pausado. Edite as configurações.";
+                Log.Information("Configuration unlocked for editing");
             }
             else
             {
                 if (string.IsNullOrWhiteSpace(WatchDirectory) || !Directory.Exists(WatchDirectory))
                 {
                     System.Windows.MessageBox.Show("Selecione um diretório válido.", "Erro", MessageBoxButton.OK, MessageBoxImage.Error);
+                    Log.Warning("Invalid watch directory selected: {Directory}", WatchDirectory);
                     return;
                 }
 
                 if (SelectedParser == null)
                 {
                     System.Windows.MessageBox.Show("Selecione um plugin de máquina.", "Erro", MessageBoxButton.OK, MessageBoxImage.Error);
+                    Log.Warning("No parser selected");
                     return;
                 }
 
@@ -354,6 +391,7 @@ namespace SelectML.Client.ViewModels
                 config.ConnectionString = ConnectionString;
 
                 _configService.Save(config);
+                Log.Information("Configuration saved");
 
                 // Re-initialize database service
                 _databaseService = new DatabaseService(config.ConnectionString);
@@ -450,6 +488,7 @@ namespace SelectML.Client.ViewModels
 
                 _watcher.EnableRaisingEvents = true;
                 StatusMessage = $"Monitorando: {WatchDirectory} usando {SelectedParser.MachineName}";
+                Log.Information("Started watching directory: {Directory}", WatchDirectory);
 
                 // Start Icon Animation
                 _iconTimer = new System.Windows.Threading.DispatcherTimer { Interval = TimeSpan.FromMilliseconds(800) };
@@ -463,6 +502,7 @@ namespace SelectML.Client.ViewModels
             catch (Exception ex)
             {
                 System.Windows.MessageBox.Show($"Erro ao iniciar monitoramento: {ex.Message}");
+                Log.Error(ex, "Failed to start monitoring");
                 IsConfigLocked = false;
             }
         }
@@ -511,12 +551,14 @@ namespace SelectML.Client.ViewModels
             if (!await WaitForFileAccess(e.FullPath))
             {
                 UpdateStatus($"Erro: Arquivo {e.Name} bloqueado ou inacessível.");
+                Log.Warning("File locked or inaccessible: {File}", e.FullPath);
                 return;
             }
 
             try
             {
                 UpdateStatus($"Lendo arquivo: {e.Name}...");
+                Log.Information("Processing file: {File}", e.Name);
 
                 var data = SelectedParser.Parse(e.FullPath);
 
@@ -549,11 +591,13 @@ namespace SelectML.Client.ViewModels
                 else
                 {
                     UpdateStatus($"Aviso: Arquivo {e.Name} não contem dados válidos.");
+                    Log.Warning("File {File} does not contain valid data", e.Name);
                 }
             }
             catch (Exception ex)
             {
                 UpdateStatus($"Erro ao processar {e.Name}: {ex.Message}");
+                Log.Error(ex, "Error processing file: {File}", e.Name);
             }
         }
 
@@ -566,6 +610,7 @@ namespace SelectML.Client.ViewModels
         {
             if (_currentData == null) return;
             IsPendingAction = false;
+            Log.Information("User manually approved data for Batch {Batch}", _currentData.BatchNumber);
             await GenerateOutputCsv(_currentData);
         }
 
@@ -670,6 +715,7 @@ namespace SelectML.Client.ViewModels
             if (dlg.ShowDialog() == System.Windows.Forms.DialogResult.OK)
             {
                 WatchDirectory = dlg.SelectedPath;
+                Log.Information("Watch directory changed to: {Directory}", WatchDirectory);
             }
         }
 
