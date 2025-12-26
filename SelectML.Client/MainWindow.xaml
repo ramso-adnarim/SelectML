@@ -44,9 +44,9 @@
                         DoubleClickCommand="{Binding RestoreFromTrayCommand}" />
 
         <!-- Theme Toggle Button -->
-        <Button Grid.Row="0" Command="{Binding ToggleThemeCommand}" HorizontalAlignment="Right" VerticalAlignment="Top" Margin="0,2,10,0" Grid.ColumnSpan="2"
-                Width="20" Height="20" Background="Transparent" BorderThickness="0" ToolTip="Alternar Tema">
-             <TextBlock FontSize="12" VerticalAlignment="Center" HorizontalAlignment="Center">
+        <Button Grid.Row="0" Command="{Binding ToggleThemeCommand}" HorizontalAlignment="Right" VerticalAlignment="Top" Margin="0,0,0,0" Grid.ColumnSpan="2"
+                Width="10" Height="10" Background="Transparent" BorderThickness="0" ToolTip="Alternar Tema">
+             <TextBlock FontSize="8" VerticalAlignment="Center" HorizontalAlignment="Center">
                  <TextBlock.Style>
                      <Style TargetType="TextBlock">
                          <Setter Property="Text" Value="☾"/>
