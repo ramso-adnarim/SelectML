@@ -114,7 +114,7 @@ namespace SelectML.Client.ViewModels
                     Properties.Settings.Default.IsDarkMode = value;
                     Properties.Settings.Default.Save();
                     // Apply Theme
-                    if (System.Windows.Application.Current is App app)
+                    if (Application.Current is App app)
                     {
                         app.SetTheme(value);
                         Log.Information("Theme changed to {Theme}", value ? "Dark" : "Light");
