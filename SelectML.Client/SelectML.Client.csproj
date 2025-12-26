@@ -11,8 +11,6 @@
 
   <ItemGroup>
     <None Remove="SelectML-logo-light.ico" />
-    <None Remove="SelectML-logo-short-light.ico" />
-    <None Remove="SelectML-logo-short-dark.ico" />
     <None Remove="SelectML-logo-short-light.png" />
   </ItemGroup>
 
@@ -22,8 +20,6 @@
 
   <ItemGroup>
     <Resource Include="SelectML-logo-light.ico" />
-    <Resource Include="SelectML-logo-short-light.ico" />
-    <Resource Include="SelectML-logo-short-dark.ico" />
     <Resource Include="SelectML-logo-short-light.png" />
     <Resource Include="Resources\**\*.ico" />
   </ItemGroup>

@@ -59,8 +59,7 @@ namespace SelectML.Client
                  string iconName = isDark ? "SelectML-logo-short-dark.ico" : "SelectML-logo-short-light.ico";
                  try
                  {
-                    // Based on file list, icons are in root, not Resources/
-                    var iconUri = new Uri($"pack://application:,,,/{iconName}");
+                    var iconUri = new Uri($"pack://application:,,,/Resources/{iconName}");
                     this.MainWindow.Icon = BitmapFrame.Create(iconUri);
                  }
                  catch (Exception ex)
