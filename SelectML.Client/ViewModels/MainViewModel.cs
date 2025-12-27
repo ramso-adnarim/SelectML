@@ -15,6 +15,7 @@ using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using Serilog;
 using SelectML.Client; // Needed for ResultItem
+using SelectML.Client.Views; // For ConfirmationWindow
 
 namespace SelectML.Client.ViewModels
 {
@@ -637,6 +638,31 @@ namespace SelectML.Client.ViewModels
         private async void ExecuteSend(object obj)
         {
             if (_currentData == null) return;
+
+            // Phase 5: Validation Check
+            if (MeasuredResults.Any(r => !r.IsRecognized))
+            {
+                if (!Properties.Settings.Default.SuppressFeatureWarning)
+                {
+                    var dlg = new ConfirmationWindow();
+                    // Need to set Owner to ensure it's modal properly if possible, but Application.Current.MainWindow works too
+                    dlg.Owner = Application.Current.MainWindow;
+
+                    var result = dlg.ShowDialog();
+
+                    if (dlg.IsDontAskAgainChecked)
+                    {
+                        Properties.Settings.Default.SuppressFeatureWarning = true;
+                        Properties.Settings.Default.Save();
+                    }
+
+                    if (result != true)
+                    {
+                        return; // User cancelled
+                    }
+                }
+            }
+
             IsPendingAction = false;
             Log.Information("User manually approved data for Batch {Batch}", _currentData.BatchNumber);
             await GenerateOutputCsv(_currentData);
