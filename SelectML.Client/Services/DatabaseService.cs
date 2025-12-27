@@ -48,6 +48,47 @@ namespace SelectML.Client.Services
             }
         }
 
+        public async Task<List<string>> GetFeaturesForRunAsync(string batchNumber)
+        {
+            var features = new List<string>();
+            if (string.IsNullOrWhiteSpace(_connectionString))
+                return features;
+
+            // Query assumes ActiveRun contains feature definitions or is the main run table
+            // Based on GetStationName usage of TOP 1, ActiveRun likely contains multiple rows per run (one per feature?)
+            string query = @"
+                SELECT FeatureName
+                FROM dbo.ActiveRun
+                WHERE RunName = @BatchNumber";
+
+            try
+            {
+                using (var connection = new SqlConnection(_connectionString))
+                {
+                    await connection.OpenAsync();
+                    using (var command = new SqlCommand(query, connection))
+                    {
+                        command.Parameters.AddWithValue("@BatchNumber", batchNumber);
+                        using (var reader = await command.ExecuteReaderAsync())
+                        {
+                            while (await reader.ReadAsync())
+                            {
+                                if (!reader.IsDBNull(0))
+                                {
+                                    features.Add(reader.GetString(0));
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            catch (Exception)
+            {
+                // Return empty list on error to prevent crash
+            }
+            return features;
+        }
+
         public async Task<IEnumerable<string>> GetAvailableDatabasesAsync(string connectionString)
         {
             var databases = new List<string>();

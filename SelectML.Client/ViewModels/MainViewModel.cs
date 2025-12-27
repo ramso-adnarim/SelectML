@@ -14,6 +14,7 @@ using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using Serilog;
+using SelectML.Client; // Needed for ResultItem
 
 namespace SelectML.Client.ViewModels
 {
@@ -61,6 +62,7 @@ namespace SelectML.Client.ViewModels
         private IMachineParser _selectedParser;
         private string _partName;
         private string _batchNumber;
+        private string _detectedStationName;
         private MeasurementData _currentData; // Store current data for processing
 
         public MainViewModel()
@@ -289,6 +291,16 @@ namespace SelectML.Client.ViewModels
                 _batchNumber = value;
                 OnPropertyChanged();
                 CommandManager.InvalidateRequerySuggested();
+            }
+        }
+
+        public string DetectedStationName
+        {
+            get => _detectedStationName;
+            set
+            {
+                _detectedStationName = value;
+                OnPropertyChanged();
             }
         }
 
@@ -570,10 +582,26 @@ namespace SelectML.Client.ViewModels
 
                         PartName = data.PartName;
                         BatchNumber = data.BatchNumber;
+
+                        // Phase 5: Early Detection and Validation
+                        DetectedStationName = await _databaseService.GetStationNameAsync(data.BatchNumber);
+                        var expectedFeatures = await _databaseService.GetFeaturesForRunAsync(data.BatchNumber);
+
                         MeasuredResults.Clear();
                         foreach (var item in data.Results)
                         {
-                            MeasuredResults.Add(new ResultItem { Characteristic = item.Key, Value = item.Value });
+                            bool isRecognized = true;
+                            if (expectedFeatures != null && expectedFeatures.Any())
+                            {
+                                isRecognized = expectedFeatures.Contains(item.Key);
+                            }
+
+                            MeasuredResults.Add(new ResultItem
+                            {
+                                Characteristic = item.Key,
+                                Value = item.Value,
+                                IsRecognized = isRecognized
+                            });
                         }
 
                         if (IsAutoMode)
@@ -622,7 +650,12 @@ namespace SelectML.Client.ViewModels
 
                 string outputDir = Path.Combine(WatchDirectory, "Output");
 
-                string stationName = await _databaseService.GetStationNameAsync(data.BatchNumber);
+                // Reuse the detected station name if available, otherwise query again (or use cached property)
+                string stationName = DetectedStationName;
+                if (string.IsNullOrEmpty(stationName))
+                {
+                    stationName = await _databaseService.GetStationNameAsync(data.BatchNumber);
+                }
 
                 string targetSubDir = !string.IsNullOrWhiteSpace(stationName) ? stationName : "Unidentified";
                 string targetPath = Path.Combine(outputDir, targetSubDir);
@@ -678,6 +711,7 @@ namespace SelectML.Client.ViewModels
             _currentData = null;
             PartName = string.Empty;
             BatchNumber = string.Empty;
+            DetectedStationName = string.Empty;
             MeasuredResults.Clear();
             // IsPendingAction is already false
         }
@@ -724,11 +758,5 @@ namespace SelectML.Client.ViewModels
         {
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
         }
-    }
-
-    public class ResultItem
-    {
-        public string Characteristic { get; set; }
-        public double Value { get; set; }
     }
 }
