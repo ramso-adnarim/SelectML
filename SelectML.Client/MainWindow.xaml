@@ -45,7 +45,7 @@
 
         <!-- Theme Toggle Button -->
         <Button Grid.Row="0" Command="{Binding ToggleThemeCommand}" HorizontalAlignment="Right" VerticalAlignment="Top" Margin="0,0,0,0" Grid.ColumnSpan="2"
-                Width="10" Height="10" Background="Transparent" BorderThickness="0" ToolTip="Alternar Tema">
+                Width="10" Height="10" Background="Transparent" BorderThickness="0" ToolTip="Alternar modo (claro/escuro)">
              <TextBlock FontSize="8" VerticalAlignment="Center" HorizontalAlignment="Center">
                  <TextBlock.Style>
                      <Style TargetType="TextBlock">
@@ -65,14 +65,14 @@
         <!-- 1. Área de Configuração Expansível -->
         <Expander Grid.Row="1"
                   IsExpanded="{Binding IsExpanded}"
-                  BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1" Background="{DynamicResource CardBackgroundBrush}" Padding="10" Grid.ColumnSpan="2">
+                  BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1" Background="{DynamicResource CardBackgroundBrush}" Padding="5" Grid.ColumnSpan="2">
             <Expander.Header>
                 <Grid Width="{Binding RelativeSource={RelativeSource Mode=FindAncestor, AncestorType={x:Type Expander}}, Path=ActualWidth, Converter={StaticResource WidthAdjustmentConverter}, FallbackValue=650}">
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="*"/>
                         <ColumnDefinition Width="Auto"/>
                     </Grid.ColumnDefinitions>
-                    <TextBlock Text="Configuração do Monitoramento" FontWeight="SemiBold" VerticalAlignment="Center" Foreground="{DynamicResource TextBrush}"/>
+                    <TextBlock Text="Configuração" FontWeight="SemiBold" VerticalAlignment="Center" Foreground="{DynamicResource TextBrush}"/>
 
                     <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center" Margin="0,0,30,0"
                                 Visibility="{Binding IsMonitoring, Converter={StaticResource BooleanToVisibilityConverter}}">
@@ -102,18 +102,18 @@
 
                 <!-- Seleção de Máquina (Plugin) -->
                 <StackPanel Grid.Row="0" Margin="0,0,0,10">
-                    <TextBlock Text="Configuração da Máquina (Plugin):" FontWeight="SemiBold" Foreground="{DynamicResource TextBrush}"/>
+                    <TextBlock Text="Equipamento (Algoritmo):" FontWeight="SemiBold" Foreground="{DynamicResource TextBrush}"/>
                     <ComboBox ItemsSource="{Binding AvailableParsers}" 
                               SelectedItem="{Binding SelectedParser}"
                               IsEnabled="{Binding IsConfigEnabled}"
                               DisplayMemberPath="MachineName"
-                              Height="30" Margin="0,5,0,0"
+                              Height="25" Margin="0,5,0,0"
                               SelectedIndex="0"/>
                 </StackPanel>
 
                 <!-- Seleção de Pasta -->
                 <StackPanel Grid.Row="1" Margin="0,0,0,15">
-                    <TextBlock Text="Diretório de Monitoramento:" FontWeight="SemiBold" Foreground="{DynamicResource TextBrush}"/>
+                    <TextBlock Text="Diretório de monitoramento:" FontWeight="SemiBold" Foreground="{DynamicResource TextBrush}"/>
                     <Grid Margin="0,5,0,0">
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="*"/>
@@ -121,14 +121,14 @@
                         </Grid.ColumnDefinitions>
                         <TextBox Text="{Binding WatchDirectory}" IsReadOnly="True" 
                                  IsEnabled="{Binding IsConfigEnabled}"
-                                 VerticalContentAlignment="Center" Height="30"/>
+                                 VerticalContentAlignment="Center" Height="25"/>
                         <Button Grid.Column="1" Command="{Binding SelectDirectoryCommand}" 
                                 IsEnabled="{Binding IsConfigEnabled}"
                                 Content="..." Width="40" Margin="5,0,0,0"/>
                     </Grid>
 
                     <!-- Configuração SQL Database -->
-                    <TextBlock Text="Configuração Banco de Dados:" FontWeight="SemiBold" Foreground="{DynamicResource TextBrush}" Margin="0,10,0,5"/>
+                    <TextBlock Text="Banco de dados:" FontWeight="SemiBold" Foreground="{DynamicResource TextBrush}" Margin="0,10,0,5"/>
                     <Border BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1" Padding="10" Background="{DynamicResource InputBackgroundBrush}">
                         <StackPanel>
                             <!-- Servidor -->
@@ -138,7 +138,7 @@
                                      Background="{DynamicResource InputBackgroundBrush}"
                                      Foreground="{DynamicResource TextBrush}"
                                      CaretBrush="{DynamicResource TextBrush}"
-                                     Height="25" Margin="0,2,0,5"/>
+                                     Height="20" Margin="0,2,0,5"/>
 
                             <!-- Autenticação Windows -->
                             <CheckBox Content="Autenticação Windows"
@@ -179,7 +179,7 @@
                             </Grid>
 
                             <!-- Base de Dados (Initial Catalog) -->
-                            <TextBlock Text="Base de Dados (Initial Catalog):" FontSize="11" Foreground="{DynamicResource TextBrush}" Margin="0,5,0,0"/>
+                            <TextBlock Text="Base de dados:" FontSize="11" Foreground="{DynamicResource TextBrush}" Margin="0,5,0,0"/>
                             <Grid Margin="0,2,0,5">
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="*"/>
@@ -194,7 +194,7 @@
 
                                 <Button Grid.Column="1" Command="{Binding LoadDatabasesCommand}"
                                         Content="↻"
-                                        ToolTip="Listar Bancos de Dados"
+                                        ToolTip="Listar base de dados"
                                         IsEnabled="{Binding IsConfigEnabled}"
                                         Margin="5,0,0,0" FontWeight="Bold"/>
                             </Grid>
@@ -206,7 +206,7 @@
                 <Button Grid.Row="2" 
                         Command="{Binding SaveConfigCommand}"
                         Content="{Binding ConfigButtonText}"
-                        Height="35" Width="150" HorizontalAlignment="Left"
+                        Height="30" Width="110" HorizontalAlignment="Left"
                         Background="{Binding IsConfigLocked, Converter={StaticResource BooleanToBrushConverter}}" 
                         FontWeight="Bold"
                         Foreground="White"/>
@@ -230,7 +230,7 @@
                     </Grid.ColumnDefinitions>
 
                     <StackPanel Grid.Column="0">
-                        <TextBlock Text="CÓDIGO DA CORRIDA/LOTE:" Foreground="{DynamicResource TextBrush}" FontSize="11" FontWeight="Bold"/>
+                        <TextBlock Text="Nome da corrida/lote:" Foreground="{DynamicResource TextBrush}" FontSize="11" FontWeight="Bold"/>
                         <TextBox Text="{Binding BatchNumber, UpdateSourceTrigger=PropertyChanged}"
                                  IsReadOnly="{Binding IsPendingAction, Converter={StaticResource InverseBooleanConverter}}"
                                  Background="{DynamicResource InputBackgroundBrush}"
@@ -240,7 +240,7 @@
                     </StackPanel>
 
                     <StackPanel Grid.Column="2">
-                        <TextBlock Text="CÓDIGO DA PEÇA:" Foreground="{DynamicResource TextBrush}" FontSize="11" FontWeight="Bold"/>
+                        <TextBlock Text="Nome da rotina:" Foreground="{DynamicResource TextBrush}" FontSize="11" FontWeight="Bold"/>
                         <TextBox Text="{Binding PartName, UpdateSourceTrigger=PropertyChanged}"
                                  IsReadOnly="{Binding IsPendingAction, Converter={StaticResource InverseBooleanConverter}}"
                                  Background="{DynamicResource InputBackgroundBrush}"
@@ -253,7 +253,7 @@
 
             <!-- Tabela de Resultados -->
             <DockPanel Grid.Row="1">
-                <TextBlock DockPanel.Dock="Top" Text="RESULTADOS DETECTADOS:" FontWeight="Bold" Margin="0,0,0,5" Foreground="{DynamicResource TextBrush}"/>
+                <TextBlock DockPanel.Dock="Top" Text="Resultados:" FontWeight="Bold" Margin="0,0,0,5" Foreground="{DynamicResource TextBrush}"/>
                 <DataGrid ItemsSource="{Binding MeasuredResults}" AutoGenerateColumns="False" 
                           CanUserAddRows="False" IsReadOnly="True" HeadersVisibility="Column"
                           GridLinesVisibility="Horizontal"
@@ -275,8 +275,8 @@
                         </Style>
                     </DataGrid.Resources>
                     <DataGrid.Columns>
-                        <DataGridTextColumn Header="Característica" Binding="{Binding Characteristic}" Width="*"/>
-                        <DataGridTextColumn Header="Valor" Binding="{Binding Value}" Width="120" FontWeight="Bold">
+                        <DataGridTextColumn Header=" Característica" Binding="{Binding Characteristic}" Width="*"/>
+                        <DataGridTextColumn Header=" Valor" Binding="{Binding Value}" Width="*" FontWeight="Bold">
                              <DataGridTextColumn.ElementStyle>
                                  <Style TargetType="TextBlock">
                                      <Setter Property="Foreground" Value="#007ACC"/>
@@ -290,13 +290,13 @@
 
         <!-- 3. Ações Human-in-the-Loop -->
         <StackPanel Grid.Row="4" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,10,0,0" Grid.ColumnSpan="2">
-            <CheckBox Content="Processamento Automático"
+            <CheckBox Content="Automático"
                       IsChecked="{Binding IsAutoMode}"
-                      VerticalAlignment="Center" Margin="0,0,20,0" FontWeight="SemiBold" Foreground="{DynamicResource TextBrush}"/>
+                      VerticalAlignment="Center" Margin="0,0,15,0" FontWeight="SemiBold" Foreground="{DynamicResource TextBrush}"/>
             <Button Command="{Binding CancelCommand}" Content="Cancelar"
-                    Width="100" Height="35" Margin="0,0,10,0" Background="#D9534F" Foreground="White" FontWeight="Bold"/>
+                    Width="80" Height="25" Margin="0,0,10,0" Background="#FF142792" Foreground="White" FontWeight="Bold"/>
             <Button Command="{Binding SendCommand}" Content="Enviar"
-                    Width="100" Height="35" Background="#5CB85C" Foreground="White" FontWeight="Bold"/>
+                    Width="80" Height="25" Background="#5CB85C" Foreground="White" FontWeight="Bold"/>
         </StackPanel>
 
         <!-- 4. Rodapé -->

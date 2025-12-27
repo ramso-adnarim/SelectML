@@ -26,7 +26,7 @@ namespace SelectML.Client.ViewModels
 
         // Propriedades de Estado da UI
         private bool _isConfigLocked;
-        private string _configButtonText = "Salvar e Iniciar";
+        private string _configButtonText = "Salvar/Iniciar";
         private bool _isExpanded = true;
         private string _statusMessage = "Aguardando configuração...";
         private bool _isPendingAction;
@@ -399,7 +399,7 @@ namespace SelectML.Client.ViewModels
                 StartWatcher();
 
                 IsConfigLocked = true;
-                ConfigButtonText = "Editar Configuração";
+                ConfigButtonText = "Editar";
                 IsExpanded = false;
             }
         }
@@ -408,7 +408,7 @@ namespace SelectML.Client.ViewModels
         {
             try
             {
-                StatusMessage = "Listando bancos de dados...";
+                StatusMessage = "Listando bases de dados...";
 
                 // Build a connection string to master
                 var builder = new Microsoft.Data.SqlClient.SqlConnectionStringBuilder();
@@ -444,11 +444,11 @@ namespace SelectML.Client.ViewModels
                     DbName = AvailableDatabases[0];
                 }
 
-                StatusMessage = "Lista de bancos de dados atualizada.";
+                StatusMessage = "Lista de bases de dados atualizada.";
             }
             catch (Exception ex)
             {
-                System.Windows.MessageBox.Show($"Erro ao listar bancos de dados: {ex.Message}", "Erro de Conexão");
+                System.Windows.MessageBox.Show($"Erro ao listar bases de dados: {ex.Message}", "Erro de Conexão");
                 StatusMessage = "Erro ao conectar no banco de dados.";
             }
         }
