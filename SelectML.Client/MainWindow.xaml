@@ -262,8 +262,7 @@
                           GridLinesVisibility="Horizontal"
                           BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1"
                           Background="{DynamicResource CardBackgroundBrush}"
-                          RowBackground="{DynamicResource AppBackgroundBrush}"
-                          AlternatingRowBackground="{DynamicResource CardBackgroundBrush}">
+                          AlternationCount="2">
                     <DataGrid.Resources>
                         <Style TargetType="DataGridColumnHeader">
                             <Setter Property="Background" Value="{DynamicResource CardBackgroundBrush}"/>
@@ -281,6 +280,9 @@
                             <Setter Property="Background" Value="{DynamicResource AppBackgroundBrush}"/>
                             <Setter Property="Foreground" Value="{DynamicResource TextBrush}"/>
                             <Style.Triggers>
+                                <Trigger Property="ItemsControl.AlternationIndex" Value="1">
+                                    <Setter Property="Background" Value="{DynamicResource CardBackgroundBrush}"/>
+                                </Trigger>
                                 <DataTrigger Binding="{Binding IsRecognized}" Value="False">
                                     <Setter Property="Background" Value="#FFCCCC"/>
                                     <Setter Property="Foreground" Value="Black"/>
