@@ -284,8 +284,7 @@
                                     <Setter Property="Background" Value="{DynamicResource CardBackgroundBrush}"/>
                                 </Trigger>
                                 <DataTrigger Binding="{Binding IsRecognized}" Value="False">
-                                    <Setter Property="Background" Value="#FFCCCC"/>
-                                    <Setter Property="Foreground" Value="Black"/>
+                                    <Setter Property="Background" Value="{DynamicResource WarningBackgroundBrush}"/>
                                     <Setter Property="ToolTip" Value="Característica não encontrada no banco"/>
                                 </DataTrigger>
                             </Style.Triggers>
