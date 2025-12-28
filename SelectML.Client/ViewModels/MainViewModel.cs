@@ -593,6 +593,7 @@ namespace SelectML.Client.ViewModels
                         var expectedFeatures = await _databaseService.GetFeaturesForRunAsync(data.BatchNumber);
 
                         MeasuredResults.Clear();
+                        bool hasUnrecognized = false;
                         foreach (var item in data.Results)
                         {
                             bool isRecognized = true;
@@ -600,6 +601,7 @@ namespace SelectML.Client.ViewModels
                             {
                                 isRecognized = expectedFeatures.Contains(item.Key);
                             }
+                            if (!isRecognized) hasUnrecognized = true;
 
                             MeasuredResults.Add(new ResultItem
                             {
@@ -611,7 +613,29 @@ namespace SelectML.Client.ViewModels
 
                         if (IsAutoMode)
                         {
-                            await GenerateOutputCsv(data);
+                            if (hasUnrecognized)
+                            {
+                                if (_sessionConfirmationAction == ConfirmationAction.SendAll)
+                                {
+                                    await GenerateOutputCsv(data);
+                                }
+                                else if (_sessionConfirmationAction == ConfirmationAction.SendRecognized)
+                                {
+                                    var filtered = GetFilteredData(data);
+                                    await GenerateOutputCsv(filtered);
+                                }
+                                else
+                                {
+                                    // Fallback to manual if no rule established
+                                    IsPendingAction = true;
+                                    StatusMessage = "Validação necessária. Verifique e envie.";
+                                    RequestRestoreWindow?.Invoke();
+                                }
+                            }
+                            else
+                            {
+                                await GenerateOutputCsv(data);
+                            }
                         }
                         else
                         {
@@ -671,17 +695,7 @@ namespace SelectML.Client.ViewModels
 
                 if (action == ConfirmationAction.SendRecognized)
                 {
-                    // Filter data
-                    var recognizedKeys = MeasuredResults.Where(r => r.IsRecognized).Select(r => r.Characteristic).ToHashSet();
-                    var filteredResults = _currentData.Results.Where(kv => recognizedKeys.Contains(kv.Key)).ToDictionary(kv => kv.Key, kv => kv.Value);
-
-                    dataToSend = new MeasurementData
-                    {
-                        PartName = _currentData.PartName,
-                        BatchNumber = _currentData.BatchNumber,
-                        MeasureDate = _currentData.MeasureDate,
-                        Results = filteredResults
-                    };
+                    dataToSend = GetFilteredData(_currentData);
                 }
                 // If action is SendAll, use original _currentData
             }
@@ -689,6 +703,20 @@ namespace SelectML.Client.ViewModels
             IsPendingAction = false;
             Log.Information("User manually approved data for Batch {Batch}", dataToSend.BatchNumber);
             await GenerateOutputCsv(dataToSend);
+        }
+
+        private MeasurementData GetFilteredData(MeasurementData source)
+        {
+            var recognizedKeys = MeasuredResults.Where(r => r.IsRecognized).Select(r => r.Characteristic).ToHashSet();
+            var filteredResults = source.Results.Where(kv => recognizedKeys.Contains(kv.Key)).ToDictionary(kv => kv.Key, kv => kv.Value);
+
+            return new MeasurementData
+            {
+                PartName = source.PartName,
+                BatchNumber = source.BatchNumber,
+                MeasureDate = source.MeasureDate,
+                Results = filteredResults
+            };
         }
 
         private async Task GenerateOutputCsv(MeasurementData data)
