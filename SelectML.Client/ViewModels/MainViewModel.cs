@@ -16,6 +16,7 @@ using System.Windows.Media.Imaging;
 using Serilog;
 using SelectML.Client; // Needed for ResultItem
 using SelectML.Client.Views; // For ConfirmationWindow
+using System.Collections.Generic;
 
 namespace SelectML.Client.ViewModels
 {
@@ -65,6 +66,9 @@ namespace SelectML.Client.ViewModels
         private string _batchNumber;
         private string _detectedStationName;
         private MeasurementData _currentData; // Store current data for processing
+
+        // Runtime state for session-based suppression
+        private ConfirmationAction _sessionConfirmationAction = ConfirmationAction.None;
 
         public MainViewModel()
         {
@@ -639,33 +643,52 @@ namespace SelectML.Client.ViewModels
         {
             if (_currentData == null) return;
 
+            MeasurementData dataToSend = _currentData;
+
             // Phase 5: Validation Check
             if (MeasuredResults.Any(r => !r.IsRecognized))
             {
-                if (!Properties.Settings.Default.SuppressFeatureWarning)
+                var action = _sessionConfirmationAction;
+
+                if (action == ConfirmationAction.None)
                 {
                     var dlg = new ConfirmationWindow();
-                    // Need to set Owner to ensure it's modal properly if possible, but Application.Current.MainWindow works too
                     dlg.Owner = Application.Current.MainWindow;
+                    dlg.ShowDialog();
 
-                    var result = dlg.ShowDialog();
+                    action = dlg.UserChoice;
 
-                    if (dlg.IsDontAskAgainChecked)
+                    if (dlg.IsDontAskAgainChecked && action != ConfirmationAction.Cancel)
                     {
-                        Properties.Settings.Default.SuppressFeatureWarning = true;
-                        Properties.Settings.Default.Save();
-                    }
-
-                    if (result != true)
-                    {
-                        return; // User cancelled
+                        _sessionConfirmationAction = action;
                     }
                 }
+
+                if (action == ConfirmationAction.Cancel || action == ConfirmationAction.None)
+                {
+                    return; // User cancelled
+                }
+
+                if (action == ConfirmationAction.SendRecognized)
+                {
+                    // Filter data
+                    var recognizedKeys = MeasuredResults.Where(r => r.IsRecognized).Select(r => r.Characteristic).ToHashSet();
+                    var filteredResults = _currentData.Results.Where(kv => recognizedKeys.Contains(kv.Key)).ToDictionary(kv => kv.Key, kv => kv.Value);
+
+                    dataToSend = new MeasurementData
+                    {
+                        PartName = _currentData.PartName,
+                        BatchNumber = _currentData.BatchNumber,
+                        MeasureDate = _currentData.MeasureDate,
+                        Results = filteredResults
+                    };
+                }
+                // If action is SendAll, use original _currentData
             }
 
             IsPendingAction = false;
-            Log.Information("User manually approved data for Batch {Batch}", _currentData.BatchNumber);
-            await GenerateOutputCsv(_currentData);
+            Log.Information("User manually approved data for Batch {Batch}", dataToSend.BatchNumber);
+            await GenerateOutputCsv(dataToSend);
         }
 
         private async Task GenerateOutputCsv(MeasurementData data)
