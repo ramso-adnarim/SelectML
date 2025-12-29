@@ -7,6 +7,11 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <UseWPF>true</UseWPF>
     <UseWindowsForms>true</UseWindowsForms>
+    <Authors>Mitutoyo Sul Americana Ltda.</Authors>
+    <Company>Mitutoyo Sul Americana Ltda.</Company>
+    <Product>SelectML</Product>
+    <Description>Monitoramento e integração de arquivos</Description>
+    <ApplicationIcon>Resources\SelectML-logo-short-light.ico</ApplicationIcon>
   </PropertyGroup>
 
   <ItemGroup>
