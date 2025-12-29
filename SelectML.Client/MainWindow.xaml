@@ -237,6 +237,9 @@
                                  Foreground="{DynamicResource TextBrush}"
                                  CaretBrush="{DynamicResource TextBrush}"
                                  Height="30" FontSize="14" Margin="0,2,0,0" Padding="5"/>
+                         <!-- Feedback Estação Detectada -->
+                         <TextBlock Text="{Binding DetectedStationName, StringFormat='Estação Detectada: {0}'}"
+                                    FontSize="10" Foreground="{DynamicResource TextBrush}" Opacity="0.7" Margin="0,2,0,0"/>
                     </StackPanel>
 
                     <StackPanel Grid.Column="2">
@@ -259,8 +262,7 @@
                           GridLinesVisibility="Horizontal"
                           BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1"
                           Background="{DynamicResource CardBackgroundBrush}"
-                          RowBackground="{DynamicResource AppBackgroundBrush}"
-                          AlternatingRowBackground="{DynamicResource CardBackgroundBrush}">
+                          AlternationCount="2">
                     <DataGrid.Resources>
                         <Style TargetType="DataGridColumnHeader">
                             <Setter Property="Background" Value="{DynamicResource CardBackgroundBrush}"/>
@@ -272,6 +274,20 @@
                             <Setter Property="Foreground" Value="{DynamicResource TextBrush}"/>
                             <Setter Property="Background" Value="Transparent"/>
                             <Setter Property="BorderThickness" Value="0"/>
+                        </Style>
+                        <!-- RowStyle para indicar itens não reconhecidos -->
+                        <Style TargetType="DataGridRow">
+                            <Setter Property="Background" Value="{DynamicResource AppBackgroundBrush}"/>
+                            <Setter Property="Foreground" Value="{DynamicResource TextBrush}"/>
+                            <Style.Triggers>
+                                <Trigger Property="ItemsControl.AlternationIndex" Value="1">
+                                    <Setter Property="Background" Value="{DynamicResource CardBackgroundBrush}"/>
+                                </Trigger>
+                                <DataTrigger Binding="{Binding IsRecognized}" Value="False">
+                                    <Setter Property="Background" Value="{DynamicResource WarningBackgroundBrush}"/>
+                                    <Setter Property="ToolTip" Value="Característica não encontrada no banco"/>
+                                </DataTrigger>
+                            </Style.Triggers>
                         </Style>
                     </DataGrid.Resources>
                     <DataGrid.Columns>

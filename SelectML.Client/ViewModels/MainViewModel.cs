@@ -14,6 +14,9 @@ using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using Serilog;
+using SelectML.Client; // Needed for ResultItem
+using SelectML.Client.Views; // For ConfirmationWindow
+using System.Collections.Generic;
 
 namespace SelectML.Client.ViewModels
 {
@@ -61,7 +64,11 @@ namespace SelectML.Client.ViewModels
         private IMachineParser _selectedParser;
         private string _partName;
         private string _batchNumber;
+        private string _detectedStationName;
         private MeasurementData _currentData; // Store current data for processing
+
+        // Runtime state for session-based suppression
+        private ConfirmationAction _sessionConfirmationAction = ConfirmationAction.None;
 
         public MainViewModel()
         {
@@ -289,6 +296,16 @@ namespace SelectML.Client.ViewModels
                 _batchNumber = value;
                 OnPropertyChanged();
                 CommandManager.InvalidateRequerySuggested();
+            }
+        }
+
+        public string DetectedStationName
+        {
+            get => _detectedStationName;
+            set
+            {
+                _detectedStationName = value;
+                OnPropertyChanged();
             }
         }
 
@@ -570,15 +587,55 @@ namespace SelectML.Client.ViewModels
 
                         PartName = data.PartName;
                         BatchNumber = data.BatchNumber;
+
+                        // Phase 5: Early Detection and Validation
+                        DetectedStationName = await _databaseService.GetStationNameAsync(data.BatchNumber);
+                        var expectedFeatures = await _databaseService.GetFeaturesForRunAsync(data.BatchNumber);
+
                         MeasuredResults.Clear();
+                        bool hasUnrecognized = false;
                         foreach (var item in data.Results)
                         {
-                            MeasuredResults.Add(new ResultItem { Characteristic = item.Key, Value = item.Value });
+                            bool isRecognized = true;
+                            if (expectedFeatures != null && expectedFeatures.Any())
+                            {
+                                isRecognized = expectedFeatures.Contains(item.Key);
+                            }
+                            if (!isRecognized) hasUnrecognized = true;
+
+                            MeasuredResults.Add(new ResultItem
+                            {
+                                Characteristic = item.Key,
+                                Value = item.Value,
+                                IsRecognized = isRecognized
+                            });
                         }
 
                         if (IsAutoMode)
                         {
-                            await GenerateOutputCsv(data);
+                            if (hasUnrecognized)
+                            {
+                                if (_sessionConfirmationAction == ConfirmationAction.SendAll)
+                                {
+                                    await GenerateOutputCsv(data);
+                                }
+                                else if (_sessionConfirmationAction == ConfirmationAction.SendRecognized)
+                                {
+                                    var filtered = GetFilteredData(data);
+                                    await GenerateOutputCsv(filtered);
+                                }
+                                else
+                                {
+                                    // Fallback to manual if no rule established
+                                    IsPendingAction = true;
+                                    StatusMessage = "Validação necessária. Verifique e envie.";
+                                    RequestRestoreWindow?.Invoke();
+                                }
+                            }
+                            else
+                            {
+                                await GenerateOutputCsv(data);
+                            }
                         }
                         else
                         {
@@ -609,9 +666,57 @@ namespace SelectML.Client.ViewModels
         private async void ExecuteSend(object obj)
         {
             if (_currentData == null) return;
+
+            MeasurementData dataToSend = _currentData;
+
+            // Phase 5: Validation Check
+            if (MeasuredResults.Any(r => !r.IsRecognized))
+            {
+                var action = _sessionConfirmationAction;
+
+                if (action == ConfirmationAction.None)
+                {
+                    var dlg = new ConfirmationWindow();
+                    dlg.Owner = Application.Current.MainWindow;
+                    dlg.ShowDialog();
+
+                    action = dlg.UserChoice;
+
+                    if (dlg.IsDontAskAgainChecked && action != ConfirmationAction.Cancel)
+                    {
+                        _sessionConfirmationAction = action;
+                    }
+                }
+
+                if (action == ConfirmationAction.Cancel || action == ConfirmationAction.None)
+                {
+                    return; // User cancelled
+                }
+
+                if (action == ConfirmationAction.SendRecognized)
+                {
+                    dataToSend = GetFilteredData(_currentData);
+                }
+                // If action is SendAll, use original _currentData
+            }
+
             IsPendingAction = false;
-            Log.Information("User manually approved data for Batch {Batch}", _currentData.BatchNumber);
-            await GenerateOutputCsv(_currentData);
+            Log.Information("User manually approved data for Batch {Batch}", dataToSend.BatchNumber);
+            await GenerateOutputCsv(dataToSend);
+        }
+
+        private MeasurementData GetFilteredData(MeasurementData source)
+        {
+            var recognizedKeys = MeasuredResults.Where(r => r.IsRecognized).Select(r => r.Characteristic).ToHashSet();
+            var filteredResults = source.Results.Where(kv => recognizedKeys.Contains(kv.Key)).ToDictionary(kv => kv.Key, kv => kv.Value);
+
+            return new MeasurementData
+            {
+                PartName = source.PartName,
+                BatchNumber = source.BatchNumber,
+                MeasureDate = source.MeasureDate,
+                Results = filteredResults
+            };
         }
 
         private async Task GenerateOutputCsv(MeasurementData data)
@@ -622,7 +727,12 @@ namespace SelectML.Client.ViewModels
 
                 string outputDir = Path.Combine(WatchDirectory, "Output");
 
-                string stationName = await _databaseService.GetStationNameAsync(data.BatchNumber);
+                // Reuse the detected station name if available, otherwise query again (or use cached property)
+                string stationName = DetectedStationName;
+                if (string.IsNullOrEmpty(stationName))
+                {
+                    stationName = await _databaseService.GetStationNameAsync(data.BatchNumber);
+                }
 
                 string targetSubDir = !string.IsNullOrWhiteSpace(stationName) ? stationName : "Unidentified";
                 string targetPath = Path.Combine(outputDir, targetSubDir);
@@ -678,6 +788,7 @@ namespace SelectML.Client.ViewModels
             _currentData = null;
             PartName = string.Empty;
             BatchNumber = string.Empty;
+            DetectedStationName = string.Empty;
             MeasuredResults.Clear();
             // IsPendingAction is already false
         }
@@ -724,11 +835,5 @@ namespace SelectML.Client.ViewModels
         {
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
         }
-    }
-
-    public class ResultItem
-    {
-        public string Characteristic { get; set; }
-        public double Value { get; set; }
     }
 }

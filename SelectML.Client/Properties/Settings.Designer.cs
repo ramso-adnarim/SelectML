@@ -94,5 +94,17 @@ namespace SelectML.Client.Properties {
                 this["IsDarkMode"] = value;
             }
         }
+
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("False")]
+        public bool SuppressFeatureWarning {
+            get {
+                return ((bool)(this["SuppressFeatureWarning"]));
+            }
+            set {
+                this["SuppressFeatureWarning"] = value;
+            }
+        }
     }
 }

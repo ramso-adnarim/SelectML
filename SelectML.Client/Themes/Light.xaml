@@ -5,4 +5,5 @@
     <SolidColorBrush x:Key="TextBrush" Color="#333333"/>
     <SolidColorBrush x:Key="BorderBrush" Color="#DDDDDD"/>
     <SolidColorBrush x:Key="InputBackgroundBrush" Color="#FAFAFA"/>
+    <SolidColorBrush x:Key="WarningBackgroundBrush" Color="#FFCCCC"/>
 </ResourceDictionary>
