@@ -31,11 +31,15 @@ dotnet publish SelectML.Client/SelectML.Client.csproj -c Release --self-containe
 
 Utilize o comando `vpk pack` para gerar o instalador (`Setup.exe`) e os arquivos de atualização (`nupkg`, `RELEASES`).
 
+**Nota Importante:** Certifique-se de que o arquivo de ícone `SelectML-logo-short-light.ico` existe na pasta `SelectML.Client/Resources/` antes de executar o comando.
+
 Substitua `1.0.0` pela versão desejada (Semantic Versioning).
 
 ```bash
-vpk pack --packId SelectML --packVersion 1.0.0 --packDir ./publish --mainExe SelectML.Client.exe
+vpk pack --packId SelectML --packVersion 1.0.0 --packDir ./publish --mainExe SelectML.Client.exe --icon "SelectML.Client\Resources\SelectML-logo-short-light.ico"
 ```
+
+*O parâmetro `--icon` garante que o `Setup.exe` e a entrada no "Adicionar/Remover Programas" utilizem o ícone correto da marca.*
 
 Isso gerará uma pasta `Releases` contendo:
 *   `SelectML-1.0.0-win-x64-Setup.exe`: Instalador para usuários novos.
@@ -47,6 +51,25 @@ Isso gerará uma pasta `Releases` contendo:
 Para disponibilizar a atualização:
 1.  Faça o upload do conteúdo da pasta `Releases` para o seu servidor web ou bucket S3 (configurado em `AppConfig.UpdateUrl`).
 2.  Certifique-se de que o arquivo `RELEASES` seja substituído ou atualizado corretamente no servidor.
+
+### 4. Distribuindo com GitHub Releases
+
+O Velopack suporta nativamente atualizações via GitHub Releases. Para utilizar este canal:
+
+1.  **Configure o AppConfig**:
+    Defina a URL de update (`UpdateUrl`) para a URL raiz do repositório ou página de releases, mas o Velopack geralmente espera apenas baixar os assets. Se usar a integração nativa de fontes do Velopack (`SimpleWebSource`), a URL deve apontar para onde os arquivos `RELEASES` e `.nupkg` estão hospedados diretamente. Para GitHub, recomenda-se usar a classe `GithubSource` (se implementada no código) ou simplesmente hospedar os artefatos em uma "Release" e usar o link direto dos assets, porém o método mais simples e agnóstico é tratar a Release como um file server.
+
+    *Recomendação Simplificada:* Crie uma Release e anexe os arquivos.
+
+2.  **Passo a Passo no GitHub**:
+    *   Vá até a aba "Releases" do repositório.
+    *   Clique em "Draft a new release".
+    *   **Tag version**: Crie uma tag igual à versão do pacote (ex: `1.0.0`).
+    *   **Title**: "Versão 1.0.0".
+    *   **Assets**: Arraste e solte todos os arquivos gerados na pasta `Releases` (`.nupkg`, `.exe` e, crucialmente, o arquivo `RELEASES`).
+    *   Clique em "Publish release".
+
+    *Nota: Para que o auto-update funcione, a URL configurada na aplicação deve conseguir baixar o arquivo `RELEASES` raw.*
 
 ## Estrutura de Pastas Esperada no Servidor
 
