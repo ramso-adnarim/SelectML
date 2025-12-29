@@ -25,7 +25,10 @@ namespace SelectML.Client.Services
 
             try
             {
-                var mgr = new UpdateManager(new SimpleWebSource(_updateUrl));
+                // Use GithubSource if the URL implies a GitHub repo, or simply default to it as requested
+                // For flexibility, we could check if it contains "github.com", but the request is explicit.
+                var source = new GithubSource(_updateUrl, null, false);
+                var mgr = new UpdateManager(source);
 
                 // Check for updates
                 var updateInfo = await mgr.CheckForUpdatesAsync();
@@ -52,7 +55,8 @@ namespace SelectML.Client.Services
         {
              try
              {
-                 var mgr = new UpdateManager(new SimpleWebSource(_updateUrl));
+                 var source = new GithubSource(_updateUrl, null, false);
+                 var mgr = new UpdateManager(source);
 
                  Log.Information("Downloading update...");
                  await mgr.DownloadUpdatesAsync(updateInfo);
