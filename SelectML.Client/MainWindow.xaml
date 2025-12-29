@@ -320,6 +320,71 @@
             <StatusBarItem>
                 <TextBlock Text="{Binding StatusMessage}" FontWeight="SemiBold" Foreground="{DynamicResource TextBrush}"/>
             </StatusBarItem>
+
+            <StatusBarItem HorizontalAlignment="Right">
+                <StackPanel Orientation="Horizontal">
+                     <!-- Version Text -->
+                     <TextBlock Text="{Binding CurrentVersion}" Margin="0,0,10,0" VerticalAlignment="Center" Foreground="Gray" FontSize="10"/>
+
+                     <!-- Update Icon -->
+                     <Button Command="{Binding OpenUpdateWindowCommand}" Background="Transparent" BorderThickness="0" Cursor="Hand">
+                         <Button.Style>
+                             <Style TargetType="Button">
+                                 <!-- Default State (No Update) -->
+                                 <Setter Property="ToolTip" Value="{Binding CurrentVersion, StringFormat='Versão Atual: {0}'}"/>
+                                 <Setter Property="Template">
+                                     <Setter.Value>
+                                         <ControlTemplate TargetType="Button">
+                                              <!-- Simple Circle Check -->
+                                              <Viewbox Width="16" Height="16">
+                                                  <Path Data="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z" Fill="Gray"/>
+                                              </Viewbox>
+                                         </ControlTemplate>
+                                     </Setter.Value>
+                                 </Setter>
+
+                                 <!-- Update Available State -->
+                                 <Style.Triggers>
+                                     <DataTrigger Binding="{Binding IsUpdateAvailable}" Value="True">
+                                         <Setter Property="ToolTip" Value="{Binding UpdateMessage}"/>
+                                         <Setter Property="Template">
+                                             <Setter.Value>
+                                                 <ControlTemplate TargetType="Button">
+                                                     <Grid>
+                                                         <!-- Pulsing Animation -->
+                                                          <Grid.Triggers>
+                                                              <EventTrigger RoutedEvent="Loaded">
+                                                                  <BeginStoryboard>
+                                                                      <Storyboard RepeatBehavior="Forever" AutoReverse="True">
+                                                                          <DoubleAnimation Storyboard.TargetName="ScaleTrans"
+                                                                                           Storyboard.TargetProperty="ScaleX"
+                                                                                           From="1.0" To="1.2" Duration="0:0:0.5"/>
+                                                                          <DoubleAnimation Storyboard.TargetName="ScaleTrans"
+                                                                                           Storyboard.TargetProperty="ScaleY"
+                                                                                           From="1.0" To="1.2" Duration="0:0:0.5"/>
+                                                                      </Storyboard>
+                                                                  </BeginStoryboard>
+                                                              </EventTrigger>
+                                                          </Grid.Triggers>
+
+                                                          <!-- Up Arrow Icon -->
+                                                          <Viewbox Width="16" Height="16" RenderTransformOrigin="0.5,0.5">
+                                                              <Viewbox.RenderTransform>
+                                                                  <ScaleTransform x:Name="ScaleTrans"/>
+                                                              </Viewbox.RenderTransform>
+                                                              <Path Data="M7,20h4c0,1.1-0.9,2-2,2S7,21.1,7,20z M12,2c-5.52,0-10,4.48-10,10c0,5.25,4.08,9.54,9.23,9.96 C11.08,21.61,10.6,21.16,10.22,20.62C6.09,19.98,3,16.4,3,12C3,7.03,7.03,3,12,3s9,4.03,9,9c0,0.48-0.04,0.95-0.12,1.41 c0.87,0.3,1.67,0.76,2.37,1.35C23.82,13.82,24,12.92,24,12C24,6.48,18.62,2,12,2z M12,16l4-4h-2.5V7h-3v5H8L12,16z" Fill="#FFD700"/>
+                                                          </Viewbox>
+                                                     </Grid>
+                                                 </ControlTemplate>
+                                             </Setter.Value>
+                                         </Setter>
+                                     </DataTrigger>
+                                 </Style.Triggers>
+                             </Style>
+                         </Button.Style>
+                     </Button>
+                </StackPanel>
+            </StatusBarItem>
         </StatusBar>
     </Grid>
 </Window>

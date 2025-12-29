@@ -4,6 +4,7 @@ using System.Data;
 using System.Windows;
 using Serilog;
 using System.Windows.Media.Imaging;
+using Velopack;
 
 namespace SelectML.Client
 {
@@ -14,6 +15,9 @@ namespace SelectML.Client
     {
         protected override void OnStartup(StartupEventArgs e)
         {
+            // Initialize Velopack
+            VelopackApp.Build().Run();
+
             // Configure Serilog
             Log.Logger = new LoggerConfiguration()
                 .WriteTo.Console()
