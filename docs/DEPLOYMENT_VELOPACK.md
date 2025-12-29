@@ -25,6 +25,14 @@ Compile e publique a aplicação em modo `Release` para gerar os binários. Cert
 dotnet publish SelectML.Client/SelectML.Client.csproj -c Release --self-contained -r win-x64 -o ./publish
 ```
 
+**Passo Adicional: Copiar Plugins Locais**
+Como os plugins estão em diretório de desenvolvimento, copie-os manualmente para a pasta de publicação antes de empacotar:
+
+```powershell
+# Exemplo em PowerShell
+Copy-Item "SelectML.Client/bin/Debug/net8.0-windows/Plugins" -Destination "./publish/Plugins" -Recurse -Force
+```
+
 *Nota: O Velopack funciona melhor com aplicações self-contained ou framework-dependent, mas a consistência do ambiente self-contained é preferível.*
 
 ### 2. Criar o Pacote (Release)
@@ -33,17 +41,17 @@ Utilize o comando `vpk pack` para gerar o instalador (`Setup.exe`) e os arquivos
 
 **Nota Importante:** Certifique-se de que o arquivo de ícone `SelectML-logo-short-light.ico` existe na pasta `SelectML.Client/Resources/` antes de executar o comando.
 
-Substitua `1.0.0` pela versão desejada (Semantic Versioning).
+Substitua `1.0.1` pela versão desejada (Semantic Versioning).
 
 ```bash
-vpk pack --packId SelectML --packVersion 1.0.0 --packDir ./publish --mainExe SelectML.Client.exe --icon "SelectML.Client\Resources\SelectML-logo-short-light.ico"
+vpk pack --packId SelectML --packVersion 1.0.1 --packDir ./publish --mainExe SelectML.Client.exe --icon "SelectML.Client\Resources\SelectML-logo-short-light.ico"
 ```
 
 *O parâmetro `--icon` garante que o `Setup.exe` e a entrada no "Adicionar/Remover Programas" utilizem o ícone correto da marca.*
 
 Isso gerará uma pasta `Releases` contendo:
-*   `SelectML-1.0.0-win-x64-Setup.exe`: Instalador para usuários novos.
-*   `SelectML-1.0.0-win-x64-full.nupkg`: Pacote de atualização.
+*   `SelectML-1.0.1-win-x64-Setup.exe`: Instalador para usuários novos.
+*   `SelectML-1.0.1-win-x64-full.nupkg`: Pacote de atualização.
 *   `RELEASES`: Arquivo de manifesto para atualizações.
 
 ### 3. Publicar Atualização
@@ -64,8 +72,8 @@ O Velopack suporta nativamente atualizações via GitHub Releases. Para utilizar
 2.  **Passo a Passo no GitHub**:
     *   Vá até a aba "Releases" do repositório.
     *   Clique em "Draft a new release".
-    *   **Tag version**: Crie uma tag igual à versão do pacote (ex: `1.0.0`).
-    *   **Title**: "Versão 1.0.0".
+    *   **Tag version**: Crie uma tag igual à versão do pacote (ex: `1.0.1`).
+    *   **Title**: "Versão 1.0.1".
     *   **Assets**: Arraste e solte todos os arquivos gerados na pasta `Releases` (`.nupkg`, `.exe` e, crucialmente, o arquivo `RELEASES`).
     *   Clique em "Publish release".
 
@@ -76,16 +84,16 @@ O Velopack suporta nativamente atualizações via GitHub Releases. Para utilizar
 ```
 /updates/
     ├── RELEASES
-    ├── SelectML-1.0.0-win-x64-full.nupkg
-    ├── SelectML-1.0.0-win-x64-Setup.exe
     ├── SelectML-1.0.1-win-x64-full.nupkg
-    └── SelectML-1.0.1-win-x64-delta.nupkg (opcional, se gerado)
+    ├── SelectML-1.0.1-win-x64-Setup.exe
+    ├── SelectML-1.0.2-win-x64-full.nupkg
+    └── SelectML-1.0.2-win-x64-delta.nupkg (opcional, se gerado)
 ```
 
 ## Notas Importantes
 
 *   **Configuração de URL**: A URL onde os arquivos serão hospedados deve corresponder à propriedade `UpdateUrl` definida em `AppConfig` (ou `appsettings.json`).
-*   **Versionamento**: Sempre incremente a versão (ex: 1.0.0 -> 1.0.1) ao gerar um novo pacote. O Velopack usa isso para detectar novidades.
+*   **Versionamento**: Sempre incremente a versão (ex: 1.0.1 -> 1.0.2) ao gerar um novo pacote. O Velopack usa isso para detectar novidades.
 *   **Delta Updates**: O Velopack pode gerar atualizações delta (menores) automaticamente se a versão anterior estiver presente na pasta de saída.
 
 ## Testando Atualizações Localmente

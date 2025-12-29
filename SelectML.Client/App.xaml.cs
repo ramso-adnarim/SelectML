@@ -16,7 +16,9 @@ namespace SelectML.Client
         protected override void OnStartup(StartupEventArgs e)
         {
             // Initialize Velopack
-            VelopackApp.Build().Run();
+            VelopackApp.Build()
+                .WithAutoRunOnLogon()
+                .Run();
 
             // Configure Serilog
             Log.Logger = new LoggerConfiguration()
