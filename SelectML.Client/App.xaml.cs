@@ -17,7 +17,6 @@ namespace SelectML.Client
         {
             // Initialize Velopack
             VelopackApp.Build()
-                .WithAutoRunOnLogon()
                 .Run();
 
             // Configure Serilog
