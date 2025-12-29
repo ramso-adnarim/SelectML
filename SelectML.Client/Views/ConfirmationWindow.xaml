@@ -1,7 +1,7 @@
 <Window x:Class="SelectML.Client.Views.ConfirmationWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="Confirmação" Height="220" Width="450"
+        Title="Confirmação" Height="150" Width="450"
         WindowStartupLocation="CenterOwner" ResizeMode="NoResize" WindowStyle="ToolWindow">
     <Grid Margin="15">
         <Grid.RowDefinitions>
@@ -10,14 +10,15 @@
             <RowDefinition Height="Auto" />
         </Grid.RowDefinitions>
 
-        <TextBlock Grid.Row="0" Text="Existem características não reconhecidas no banco de dados. Como deseja prosseguir?"
+        <TextBlock Grid.Row="0" Text="Existem características não reconhecidas na corrida. 
+                   Como deseja prosseguir?"
                    TextWrapping="Wrap" VerticalAlignment="Center" FontSize="14"/>
 
-        <CheckBox x:Name="DontAskCheckBox" Grid.Row="1" Content="Não perguntar novamente (para a opção escolhida)" Margin="0,15,0,15" />
+        <CheckBox x:Name="DontAskCheckBox" Grid.Row="1" Content="Não perguntar novamente" Margin="0,15,0,15" />
 
         <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Right">
-            <Button Content="Enviar Tudo" Width="90" Click="SendAll_Click" Margin="0,0,10,0" FontWeight="Bold"/>
-            <Button Content="Apenas Reconhecidas" Width="140" Click="SendRecognized_Click" Margin="0,0,10,0"/>
+            <Button Content="Enviar" Width="70" Click="SendAll_Click" Margin="0,0,10,0"/>
+            <Button Content="Apenas reconhecidas" Width="140" Click="SendRecognized_Click" Margin="0,0,10,0" FontWeight="Bold"/>
             <Button Content="Cancelar" Width="70" Click="Cancel_Click" IsCancel="True"/>
         </StackPanel>
     </Grid>

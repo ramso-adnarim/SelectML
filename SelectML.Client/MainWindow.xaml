@@ -310,7 +310,7 @@
                       IsChecked="{Binding IsAutoMode}"
                       VerticalAlignment="Center" Margin="0,0,15,0" FontWeight="SemiBold" Foreground="{DynamicResource TextBrush}"/>
             <Button Command="{Binding CancelCommand}" Content="Cancelar"
-                    Width="80" Height="25" Margin="0,0,10,0" Background="#FF142792" Foreground="White" FontWeight="Bold"/>
+                    Width="80" Height="25" Margin="0,0,10,0" Background="#FFB70303" Foreground="White" FontWeight="Bold"/>
             <Button Command="{Binding SendCommand}" Content="Enviar"
                     Width="80" Height="25" Background="#5CB85C" Foreground="White" FontWeight="Bold"/>
         </StackPanel>

@@ -677,7 +677,7 @@ namespace SelectML.Client.ViewModels
                 if (action == ConfirmationAction.None)
                 {
                     var dlg = new ConfirmationWindow();
-                    dlg.Owner = Application.Current.MainWindow;
+                    dlg.Owner = System.Windows.Application.Current.MainWindow;
                     dlg.ShowDialog();
 
                     action = dlg.UserChoice;
