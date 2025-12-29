@@ -16,6 +16,9 @@ namespace SelectML.Client.Services
         public string DbUser { get; set; } = "sa";
         public string DbPassword { get; set; } = "Me@sur1ink$alone";
         public string DbName { get; set; } = "SelectML";
+
+        // Governance
+        public int DataRetentionDays { get; set; } = 30;
     }
 
     public class ConfigService
