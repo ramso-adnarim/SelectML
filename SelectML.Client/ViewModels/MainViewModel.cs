@@ -24,6 +24,7 @@ namespace SelectML.Client.ViewModels
     {
         private readonly PluginLoader _pluginLoader;
         private readonly ConfigService _configService;
+        private readonly FileLifecycleService _fileLifecycleService;
         private IDatabaseService _databaseService;
         private FileSystemWatcher _watcher;
 
@@ -74,6 +75,7 @@ namespace SelectML.Client.ViewModels
         {
             _pluginLoader = new PluginLoader();
             _configService = new ConfigService();
+            _fileLifecycleService = new FileLifecycleService();
             AvailableParsers = new ObservableCollection<IMachineParser>();
             MeasuredResults = new ObservableCollection<ResultItem>();
             AvailableDatabases = new ObservableCollection<string>();
@@ -104,6 +106,23 @@ namespace SelectML.Client.ViewModels
 
             // Initialize Theme
             IsDarkMode = Properties.Settings.Default.IsDarkMode;
+
+            // Trigger Cleanup on Startup
+            PerformCleanup();
+        }
+
+        private void PerformCleanup()
+        {
+            try
+            {
+                var config = _configService.Load();
+                // Fire and forget
+                _ = _fileLifecycleService.PerformCleanupAsync(config.WatchDirectory, config.DataRetentionDays);
+            }
+            catch (Exception ex)
+            {
+                Log.Error(ex, "Failed to initiate cleanup task");
+            }
         }
 
         // --- Propriedades de UI ---
@@ -581,6 +600,18 @@ namespace SelectML.Client.ViewModels
 
                 if (data.IsValid)
                 {
+                    // Phase 6: Archive Immediately
+                    try
+                    {
+                        _fileLifecycleService.ArchiveInputFile(e.FullPath, WatchDirectory);
+                    }
+                    catch (Exception ex)
+                    {
+                        UpdateStatus($"Erro de backup: {ex.Message}");
+                        Log.Error(ex, "Backup failed, stopping processing for {File}", e.Name);
+                        return;
+                    }
+
                     await System.Windows.Application.Current.Dispatcher.InvokeAsync(async () =>
                     {
                         _currentData = data;
