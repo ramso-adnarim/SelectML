@@ -17,6 +17,7 @@ using Serilog;
 using SelectML.Client; // Needed for ResultItem
 using SelectML.Client.Views; // For ConfirmationWindow
 using System.Collections.Generic;
+using Velopack;
 
 namespace SelectML.Client.ViewModels
 {
@@ -25,6 +26,7 @@ namespace SelectML.Client.ViewModels
         private readonly PluginLoader _pluginLoader;
         private readonly ConfigService _configService;
         private readonly FileLifecycleService _fileLifecycleService;
+        private readonly VelopackService _velopackService;
         private IDatabaseService _databaseService;
         private FileSystemWatcher _watcher;
 
@@ -37,6 +39,11 @@ namespace SelectML.Client.ViewModels
         private bool _isAutoMode;
         private ImageSource _trayIconSource;
         private bool _isDarkMode;
+
+        // Update State
+        private bool _isUpdateAvailable;
+        private string _newVersionString;
+        private UpdateInfo _pendingUpdate;
 
         // Icons
         private ImageSource _iconGreen;
@@ -80,6 +87,10 @@ namespace SelectML.Client.ViewModels
             MeasuredResults = new ObservableCollection<ResultItem>();
             AvailableDatabases = new ObservableCollection<string>();
 
+            // Initialize Config Service first to get URL
+            var initialConfig = _configService.Load();
+            _velopackService = new VelopackService(initialConfig.UpdateUrl);
+
             // Pre-load Icons
             _iconGrey = LoadIcon("Resources/icon_grey.ico");
             _iconGreen = LoadIcon("Resources/icon_green.ico");
@@ -101,6 +112,11 @@ namespace SelectML.Client.ViewModels
             MinimizeToTrayCommand = new RelayCommand(o => RequestMinimizeWindow?.Invoke());
             RestoreFromTrayCommand = new RelayCommand(o => RequestRestoreWindow?.Invoke());
 
+            // Update Commands
+            OpenUpdateWindowCommand = new RelayCommand(ExecuteOpenUpdateWindow);
+            ConfirmUpdateCommand = new RelayCommand(ExecuteConfirmUpdate);
+            CancelUpdateCommand = new RelayCommand(ExecuteCancelUpdate);
+
             LoadParsers();
             LoadConfiguration();
 
@@ -109,6 +125,9 @@ namespace SelectML.Client.ViewModels
 
             // Trigger Cleanup on Startup
             PerformCleanup();
+
+            // Trigger Update Check
+            Task.Run(CheckForUpdates);
         }
 
         private void PerformCleanup()
@@ -328,6 +347,38 @@ namespace SelectML.Client.ViewModels
             }
         }
 
+        public bool IsUpdateAvailable
+        {
+            get => _isUpdateAvailable;
+            set
+            {
+                _isUpdateAvailable = value;
+                OnPropertyChanged();
+            }
+        }
+
+        public string NewVersionString
+        {
+            get => _newVersionString;
+            set
+            {
+                _newVersionString = value;
+                OnPropertyChanged();
+            }
+        }
+
+        public string CurrentVersion
+        {
+            get
+            {
+                try {
+                    return System.Reflection.Assembly.GetEntryAssembly()?.GetName().Version?.ToString() ?? "1.0.0";
+                } catch { return "1.0.0"; }
+            }
+        }
+
+        public string UpdateMessage => $"Versão {NewVersionString} pronta para instalar.";
+
         // --- Comandos ---
         public RelayCommand SelectDirectoryCommand { get; }
         public RelayCommand SaveConfigCommand { get; }
@@ -338,11 +389,76 @@ namespace SelectML.Client.ViewModels
         public RelayCommand MinimizeToTrayCommand { get; }
         public RelayCommand RestoreFromTrayCommand { get; }
 
+        // Update Commands
+        public RelayCommand OpenUpdateWindowCommand { get; }
+        public RelayCommand ConfirmUpdateCommand { get; }
+        public RelayCommand CancelUpdateCommand { get; }
+
         // --- Métodos de Configuração e Watcher ---
 
         private void ExecuteToggleTheme(object obj)
         {
             IsDarkMode = !IsDarkMode;
+        }
+
+        private async Task CheckForUpdates()
+        {
+             try
+             {
+                 var updateInfo = await _velopackService.CheckForUpdatesAsync();
+                 if (updateInfo != null)
+                 {
+                     System.Windows.Application.Current.Dispatcher.Invoke(() =>
+                     {
+                         _pendingUpdate = updateInfo;
+                         NewVersionString = updateInfo.TargetFullRelease.Version.ToString();
+                         IsUpdateAvailable = true;
+                     });
+                 }
+             }
+             catch (Exception ex)
+             {
+                 Log.Error(ex, "Error checking for updates in background");
+             }
+        }
+
+        private void ExecuteOpenUpdateWindow(object obj)
+        {
+            if (!IsUpdateAvailable) return;
+
+            var window = new UpdateWindow();
+            window.DataContext = this;
+            window.Owner = System.Windows.Application.Current.MainWindow;
+            window.ShowDialog();
+        }
+
+        private async void ExecuteConfirmUpdate(object obj)
+        {
+            if (_pendingUpdate != null)
+            {
+                // Close the dialog if it's open (it should be, since this command is from the dialog)
+                if (obj is Window win) win.Close();
+                // Or handle via attached property or just assume user clicked it.
+                // Best practice: passing window as CommandParameter
+
+                try
+                {
+                   StatusMessage = "Baixando e instalando atualização...";
+                   await _velopackService.DownloadAndInstallAsync(_pendingUpdate);
+                }
+                catch (Exception ex)
+                {
+                    System.Windows.MessageBox.Show($"Erro ao atualizar: {ex.Message}");
+                }
+            }
+        }
+
+        private void ExecuteCancelUpdate(object obj)
+        {
+            if (obj is Window win)
+            {
+                win.Close();
+            }
         }
 
         private void LoadParsers()

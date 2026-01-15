@@ -19,6 +19,9 @@ namespace SelectML.Client.Services
 
         // Governance
         public int DataRetentionDays { get; set; } = 30;
+
+        // Updates
+        public string UpdateUrl { get; set; } = "https://github.com/mitutoyo-brasil-bsg/SelectML/";
     }
 
     public class ConfigService
