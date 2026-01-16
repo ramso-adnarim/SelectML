@@ -63,9 +63,8 @@
 
         <!-- Menu Bar -->
         <Menu Grid.Row="0" Background="Transparent" VerticalAlignment="Center" IsMainMenu="True">
-            <MenuItem Header="Conexão" Foreground="{DynamicResource TextBrush}">
-                <MenuItem Header="Configurar Conexão..." Command="{Binding OpenSerialConfigCommand}"/>
-            </MenuItem>
+            <MenuItem Header="Conexão serial" Foreground="{DynamicResource TextBrush}" Command="{Binding OpenSerialConfigCommand}"/>
+                <!-- <MenuItem Header="Configurar Conexão..." Command="{Binding OpenSerialConfigCommand}"/>-->
         </Menu>
 
         <!-- Theme Toggle Button -->
