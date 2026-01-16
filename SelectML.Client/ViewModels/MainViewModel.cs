@@ -836,8 +836,7 @@ namespace SelectML.Client.ViewModels
             }
         }
 
-            }
-        }
+
 
         private async Task LoadFeaturesForPart()
         {
