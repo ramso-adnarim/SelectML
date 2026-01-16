@@ -1,5 +1,7 @@
 using SelectML.Client.MVVM;
 using SelectML.Client.Services;
+using SelectML.Client.Services.Serial;
+using SelectML.Client.Services.Serial.Models;
 using SelectML.Core;
 using System;
 using System.Collections.ObjectModel;
@@ -78,6 +80,12 @@ namespace SelectML.Client.ViewModels
         // Runtime state for session-based suppression
         private ConfirmationAction _sessionConfirmationAction = ConfirmationAction.None;
 
+        // Serial Buffer
+        private Queue<SerialMeasurement> _serialBuffer = new Queue<SerialMeasurement>();
+        // _isProcessingFile is effectively tracked by IsPendingAction, but we'll add explicit tracking if needed or use IsPendingAction.
+        // Prompt requested _isProcessingFile flag.
+        private bool _isProcessingFile;
+
         public MainViewModel()
         {
             _pluginLoader = new PluginLoader();
@@ -128,6 +136,9 @@ namespace SelectML.Client.ViewModels
 
             // Trigger Update Check
             Task.Run(CheckForUpdates);
+            
+            // Subscribe to Serial Events
+            SerialPortService.Instance.MeasurementReceived += OnSerialMeasurementReceived;
         }
 
         private void PerformCleanup()
@@ -322,6 +333,9 @@ namespace SelectML.Client.ViewModels
             {
                 _partName = value;
                 OnPropertyChanged();
+                // Trigger SQL lookup here on lost focus or explicit command?
+                // Prompt: "Ao perder o foco ou digitar, o sistema dispara a query SQL"
+                // For now, keeping as is, will implement Phase 2 logic later or add minimal hook.
                 CommandManager.InvalidateRequerySuggested();
             }
         }
@@ -730,6 +744,7 @@ namespace SelectML.Client.ViewModels
 
                     await System.Windows.Application.Current.Dispatcher.InvokeAsync(async () =>
                     {
+                        _isProcessingFile = true; // Protect against Serial Data loss during processing
                         _currentData = data;
 
                         PartName = data.PartName;
@@ -787,6 +802,7 @@ namespace SelectML.Client.ViewModels
                         else
                         {
                             IsPendingAction = true;
+                            _isProcessingFile = true; // Mark as File Mode (Locks out Serial)
                             StatusMessage = "Dados carregados. Verifique e clique em Enviar.";
                             RequestRestoreWindow?.Invoke();
                         }
@@ -937,8 +953,65 @@ namespace SelectML.Client.ViewModels
             BatchNumber = string.Empty;
             DetectedStationName = string.Empty;
             MeasuredResults.Clear();
-            // IsPendingAction is already false
+            _isProcessingFile = false; // Release File Mode lock
+            // IsPendingAction should be false here usually, unless we re-activate it for Buffered data
+            
+            ProcessSerialBuffer();
         }
+
+        private void ProcessSerialBuffer()
+        {
+            if (_serialBuffer.Count > 0)
+            {
+                while (_serialBuffer.Count > 0)
+                {
+                    var item = _serialBuffer.Dequeue();
+                    MeasuredResults.Add(new ResultItem 
+                    { 
+                        Characteristic = item.FeatureName, 
+                        Value = item.Value, 
+                        IsRecognized = !item.IsGeneric 
+                    });
+                }
+                
+                // Lock UI for the new serial data
+                IsPendingAction = true;
+                StatusMessage = "Dados seriais recuperados do buffer.";
+                RequestRestoreWindow?.Invoke();
+            }
+        }
+
+        private void OnSerialMeasurementReceived(object sender, SerialMeasurement e)
+        {
+            System.Windows.Application.Current.Dispatcher.Invoke(() =>
+            {
+                if (_isProcessingFile)
+                {
+                    // Scenario A: Collision. Queue it.
+                    _serialBuffer.Enqueue(e);
+                    StatusMessage = $"Dado serial em buffer ({_serialBuffer.Count})...";
+                }
+                else
+                {
+                    // Scenario B: Append direct
+                    MeasuredResults.Add(new ResultItem 
+                    { 
+                        Characteristic = e.FeatureName, 
+                        Value = e.Value, 
+                        IsRecognized = !e.IsGeneric 
+                    });
+                    
+                    // Ensure we lock out the File Watcher
+                    if (!IsPendingAction)
+                    {
+                        IsPendingAction = true;
+                        StatusMessage = "Recebendo dados seriais...";
+                        RequestRestoreWindow?.Invoke();
+                    }
+                }
+            });
+        }
+
 
         private async Task<bool> WaitForFileAccess(string filePath, int timeoutSeconds = 5)
         {
