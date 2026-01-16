@@ -352,7 +352,36 @@ namespace SelectML.Client.ViewModels
                 _batchNumber = value;
                 OnPropertyChanged();
                 CommandManager.InvalidateRequerySuggested();
+                
+                // Trigger Station Lookup if not file mode
+                if (!_isProcessingFile && !string.IsNullOrWhiteSpace(value))
+                {
+                    _ = DetectStationAndFeatures();
+                }
             }
+        }
+
+        private async Task DetectStationAndFeatures()
+        {
+             try
+             {
+                 var station = await _databaseService.GetStationNameAsync(BatchNumber);
+                 if (!string.IsNullOrEmpty(station))
+                 {
+                     DetectedStationName = station;
+                 }
+                 else
+                 {
+                     DetectedStationName = "Não Identificada";
+                 }
+                 
+                 // Also load features if possible (redundant with PartName trigger but safer)
+                 await LoadFeaturesForPart();
+             }
+             catch (Exception ex)
+             {
+                 Log.Error(ex, "Error detecting station from manual input");
+             }
         }
 
         public string DetectedStationName
@@ -882,9 +911,27 @@ namespace SelectML.Client.ViewModels
 
         private async void ExecuteSend(object obj)
         {
-            if (_currentData == null) return;
-
+            // If processing file, use _currentData, else construct from manual inputs
             MeasurementData dataToSend = _currentData;
+
+            if (dataToSend == null)
+            {
+                // MANUAL MODE (Serial)
+                if (string.IsNullOrWhiteSpace(PartName) || string.IsNullOrWhiteSpace(BatchNumber)) return;
+
+                dataToSend = new MeasurementData
+                {
+                    PartName = PartName,
+                    BatchNumber = BatchNumber,
+                    MeasureDate = DateTime.Now,
+                    Results = MeasuredResults.ToDictionary(k => k.Characteristic, v => v.Value)
+                };
+            }
+            else
+            {
+                 // Ensure UI overrides are respected if edited (future proofing)
+                 // But for now, _currentData is the source of truth for files
+            }
 
             // Phase 5: Validation Check
             if (MeasuredResults.Any(r => !r.IsRecognized))
@@ -1007,6 +1054,8 @@ namespace SelectML.Client.ViewModels
             BatchNumber = string.Empty;
             DetectedStationName = string.Empty;
             MeasuredResults.Clear();
+            KnownFeatures.Clear(); // Fix: Clear stale features
+            _currentData = null;   // Fix: Reset current data context
             _isProcessingFile = false; // Release File Mode lock
             // IsPendingAction should be false here usually, unless we re-activate it for Buffered data
             
@@ -1049,13 +1098,20 @@ namespace SelectML.Client.ViewModels
                 else
                 {
                     // Scenario B: Append direct
-                    MeasuredResults.Add(new ResultItem 
+                    var newItem = new ResultItem 
                     { 
                         Characteristic = e.FeatureName, 
                         Value = e.Value, 
                         IsRecognized = !e.IsGeneric,
                         IsEditable = e.IsGeneric
-                    });
+                    };
+                    
+                    if (newItem.IsEditable)
+                    {
+                        newItem.PropertyChanged += ResultItem_PropertyChanged;
+                    }
+
+                    MeasuredResults.Add(newItem);
                     
                     // Ensure we lock out the File Watcher
                     if (!IsPendingAction)
@@ -1066,6 +1122,24 @@ namespace SelectML.Client.ViewModels
                     }
                 }
             });
+        }
+
+        private void ResultItem_PropertyChanged(object? sender, PropertyChangedEventArgs e)
+        {
+            if (e.PropertyName == nameof(ResultItem.Characteristic))
+            {
+                if (sender is ResultItem item)
+                {
+                    // Simple validation: If it's not empty, we assume it's valid (or check against KnownFeatures)
+                    // Since the ComboBox is populated by KnownFeatures, selecting one makes it valid.
+                    // If user types custom text, we might want to allow it or check. 
+                    // Requirement: "Validation logica... troca cor par vermelho se mantem... deve ser feita sempre"
+                    // If user selects a valid feature, IsRecognized should become true.
+                    
+                    bool isValid = !string.IsNullOrWhiteSpace(item.Characteristic) && KnownFeatures.Contains(item.Characteristic);
+                    item.IsRecognized = isValid;
+                }
+            }
         }
 
 
