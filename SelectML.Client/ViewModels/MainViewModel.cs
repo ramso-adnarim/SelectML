@@ -1136,7 +1136,11 @@ namespace SelectML.Client.ViewModels
                     // Requirement: "Validation logica... troca cor par vermelho se mantem... deve ser feita sempre"
                     // If user selects a valid feature, IsRecognized should become true.
                     
-                    bool isValid = !string.IsNullOrWhiteSpace(item.Characteristic) && KnownFeatures.Contains(item.Characteristic);
+                    // Validate ignoring case and whitespace
+                    var input = item.Characteristic?.Trim();
+                    bool isValid = !string.IsNullOrWhiteSpace(input) && 
+                                   KnownFeatures.Any(f => f.Equals(input, StringComparison.OrdinalIgnoreCase));
+                    
                     item.IsRecognized = isValid;
                 }
             }

@@ -27,7 +27,7 @@
             <sel:FeatureColumnTemplateSelector.EditableTemplate>
                 <DataTemplate>
                     <ComboBox ItemsSource="{Binding DataContext.KnownFeatures, RelativeSource={RelativeSource AncestorType=Window}}" 
-                              SelectedItem="{Binding Characteristic}" 
+                              Text="{Binding Characteristic, UpdateSourceTrigger=PropertyChanged}" 
                               IsEditable="True"
                               IsEnabled="{Binding DataContext.IsPendingAction, RelativeSource={RelativeSource AncestorType=Window}}"
                               Margin="2"/>
