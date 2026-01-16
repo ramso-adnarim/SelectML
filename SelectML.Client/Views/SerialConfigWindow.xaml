@@ -1,0 +1,59 @@
+<Window x:Class="SelectML.Client.Views.SerialConfigWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Conexão Serial" Height="300" Width="400"
+        WindowStartupLocation="CenterOwner" ResizeMode="NoResize"
+        Background="{DynamicResource AppBackgroundBrush}" Foreground="{DynamicResource TextBrush}">
+    
+    <Grid Margin="15">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <TextBlock Text="Configuração de Hardware" FontSize="16" FontWeight="Bold" Margin="0,0,0,15"/>
+
+        <StackPanel Grid.Row="1">
+            <!-- Port Selection -->
+            <TextBlock Text="Porta COM:" FontWeight="SemiBold" Margin="0,0,0,5"/>
+            <ComboBox ItemsSource="{Binding AvailablePorts}" 
+                      SelectedItem="{Binding SelectedPort}" 
+                      IsEnabled="{Binding IsDisconnected}"
+                      Height="30" Margin="0,0,0,15"/>
+
+            <!-- Strategy Selection -->
+            <TextBlock Text="Dispositivo (Estratégia):" FontWeight="SemiBold" Margin="0,0,0,5"/>
+            <ComboBox ItemsSource="{Binding AvailableStrategies}" 
+                      DisplayMemberPath="Name"
+                      SelectedItem="{Binding SelectedStrategy}" 
+                      IsEnabled="{Binding IsDisconnected}"
+                      Height="30" Margin="0,0,0,15"/>
+
+            <!-- Custom Config Button -->
+            <StackPanel Orientation="Horizontal" Visibility="{Binding IsCustomStrategySelected, Converter={StaticResource BooleanToVisibilityConverter}}">
+                <TextBlock Text="Opções Avançadas:" VerticalAlignment="Center" Margin="0,0,10,0"/>
+                <Button Content="Editar JSON" Command="{Binding OpenJsonConfigCommand}" 
+                        Padding="10,5" Background="{DynamicResource CardBackgroundBrush}" Foreground="{DynamicResource TextBrush}" BorderThickness="1"/>
+            </StackPanel>
+            
+            <!-- Connection Status -->
+            <TextBlock Text="{Binding ConnectionStatus}" 
+                       Foreground="{Binding ConnectionStatusBrush}" 
+                       HorizontalAlignment="Center" Margin="0,20,0,0" FontWeight="Bold"/>
+        </StackPanel>
+
+        <!-- Buttons -->
+        <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,15,0,0">
+            <Button Content="Desconectar" Command="{Binding DisconnectCommand}" 
+                    Visibility="{Binding IsConnected, Converter={StaticResource BooleanToVisibilityConverter}}"
+                    Padding="15,5" Margin="0,0,10,0" Background="#FFB70303" Foreground="White"/>
+            
+            <Button Content="Conectar" Command="{Binding ConnectCommand}" 
+                     Visibility="{Binding IsDisconnected, Converter={StaticResource BooleanToVisibilityConverter}}"
+                    Padding="15,5" Margin="0,0,10,0" Background="#5CB85C" Foreground="White" FontWeight="Bold"/>
+            
+            <Button Content="Fechar" IsCancel="True" Click="Close_Click" Padding="15,5"/>
+        </StackPanel>
+    </Grid>
+</Window>

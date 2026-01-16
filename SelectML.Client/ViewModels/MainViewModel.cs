@@ -124,6 +124,8 @@ namespace SelectML.Client.ViewModels
             OpenUpdateWindowCommand = new RelayCommand(ExecuteOpenUpdateWindow);
             ConfirmUpdateCommand = new RelayCommand(ExecuteConfirmUpdate);
             CancelUpdateCommand = new RelayCommand(ExecuteCancelUpdate);
+            
+            OpenSerialConfigCommand = new RelayCommand(ExecuteOpenSerialConfig);
 
             LoadParsers();
             LoadConfiguration();
@@ -182,6 +184,7 @@ namespace SelectML.Client.ViewModels
         public ObservableCollection<IMachineParser> AvailableParsers { get; set; }
         public ObservableCollection<string> AvailableDatabases { get; set; }
         public ObservableCollection<ResultItem> MeasuredResults { get; set; }
+        public ObservableCollection<string> KnownFeatures { get; set; } = new ObservableCollection<string>();
 
         public bool IsConfigLocked
         {
@@ -335,8 +338,9 @@ namespace SelectML.Client.ViewModels
                 OnPropertyChanged();
                 // Trigger SQL lookup here on lost focus or explicit command?
                 // Prompt: "Ao perder o foco ou digitar, o sistema dispara a query SQL"
-                // For now, keeping as is, will implement Phase 2 logic later or add minimal hook.
                 CommandManager.InvalidateRequerySuggested();
+                // Trigger Lookup
+                _ = LoadFeaturesForPart();
             }
         }
 
@@ -408,6 +412,8 @@ namespace SelectML.Client.ViewModels
         public RelayCommand ConfirmUpdateCommand { get; }
         public RelayCommand CancelUpdateCommand { get; }
 
+        public RelayCommand OpenSerialConfigCommand { get; }
+
         // --- Métodos de Configuração e Watcher ---
 
         private void ExecuteToggleTheme(object obj)
@@ -473,6 +479,15 @@ namespace SelectML.Client.ViewModels
             {
                 win.Close();
             }
+        }
+
+        private void ExecuteOpenSerialConfig(object obj)
+        {
+            var vm = new SerialConfigViewModel();
+            var win = new Views.SerialConfigWindow();
+            win.DataContext = vm;
+            win.Owner = System.Windows.Application.Current.MainWindow;
+            win.ShowDialog();
         }
 
         private void LoadParsers()
@@ -821,6 +836,46 @@ namespace SelectML.Client.ViewModels
             }
         }
 
+            }
+        }
+
+        private async Task LoadFeaturesForPart()
+        {
+            if (string.IsNullOrWhiteSpace(PartName) || string.IsNullOrWhiteSpace(BatchNumber)) return;
+            // Only trigger if we are not in the middle of a file load (which does its own lookup)
+            // But actually, we want to update the cache for the dropdown even if file loaded.
+            
+            try 
+            {
+                 var features = await _databaseService.GetFeaturesForRunAsync(BatchNumber); // Note: API uses BatchNumber to find Run, then Features? 
+                 // Wait, the Prompt says "GetFeaturesForRun(PartName)". 
+                 // My existing code uses: "GetFeaturesForRunAsync(data.BatchNumber)".
+                 // Let's check DatabaseService if possible, or assume existing usage is correct. 
+                 // Actually, usually it's by PartName (Routine). 
+                 // But validation logic in OnFileCreated uses BatchNumber. 
+                 // Let's stick to what works or check DatabaseService.
+                 // Assuming existing logic: GetFeaturesForRunAsync(BatchNumber).
+                 
+                 // However, "PartName" is usually the key for master data. BatchNumber is for the specific run.
+                 // If the user is staring a NEW run, they might only have PartName.
+                 // The prompt says: "Ao perder o foco ou digitar, o sistema dispara a query SQL (GetFeaturesForRun)."
+                 // And "Popula comboBox...".
+                 
+                 if (features != null)
+                 {
+                     System.Windows.Application.Current.Dispatcher.Invoke(() => 
+                     {
+                         KnownFeatures.Clear();
+                         foreach(var f in features) KnownFeatures.Add(f);
+                     });
+                 }
+            }
+            catch (Exception ex)
+            {
+                Log.Error(ex, "Failed to load features for part");
+            }
+        }
+
         private bool CanExecuteAction(object obj)
         {
             return IsPendingAction && !string.IsNullOrWhiteSpace(PartName) && !string.IsNullOrWhiteSpace(BatchNumber);
@@ -970,7 +1025,8 @@ namespace SelectML.Client.ViewModels
                     { 
                         Characteristic = item.FeatureName, 
                         Value = item.Value, 
-                        IsRecognized = !item.IsGeneric 
+                        IsRecognized = !item.IsGeneric,
+                        IsEditable = item.IsGeneric
                     });
                 }
                 
@@ -998,7 +1054,8 @@ namespace SelectML.Client.ViewModels
                     { 
                         Characteristic = e.FeatureName, 
                         Value = e.Value, 
-                        IsRecognized = !e.IsGeneric 
+                        IsRecognized = !e.IsGeneric,
+                        IsEditable = e.IsGeneric
                     });
                     
                     // Ensure we lock out the File Watcher

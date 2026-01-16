@@ -5,6 +5,7 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:vm="clr-namespace:SelectML.Client.ViewModels"
         xmlns:conv="clr-namespace:SelectML.Client.Converters"
+        xmlns:sel="clr-namespace:SelectML.Client.Selectors"
         xmlns:tb="http://www.hardcodet.net/taskbar"
         mc:Ignorable="d"
         Title="SelectML - Monitoramento de Medição" Height="600" Width="700"
@@ -16,6 +17,23 @@
         <conv:InverseBooleanConverter x:Key="InverseBooleanConverter"/>
         <conv:BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter"/>
         <conv:WidthAdjustmentConverter x:Key="WidthAdjustmentConverter"/>
+
+        <sel:FeatureColumnTemplateSelector x:Key="FeatureColumnTemplateSelector">
+            <sel:FeatureColumnTemplateSelector.ReadOnlyTemplate>
+                <DataTemplate>
+                    <TextBlock Text="{Binding Characteristic}" VerticalAlignment="Center" Margin="5,0"/>
+                </DataTemplate>
+            </sel:FeatureColumnTemplateSelector.ReadOnlyTemplate>
+            <sel:FeatureColumnTemplateSelector.EditableTemplate>
+                <DataTemplate>
+                    <ComboBox ItemsSource="{Binding DataContext.KnownFeatures, RelativeSource={RelativeSource AncestorType=Window}}" 
+                              SelectedItem="{Binding Characteristic}" 
+                              IsEditable="True"
+                              IsEnabled="{Binding DataContext.IsPendingAction, RelativeSource={RelativeSource AncestorType=Window}}"
+                              Margin="2"/>
+                </DataTemplate>
+            </sel:FeatureColumnTemplateSelector.EditableTemplate>
+        </sel:FeatureColumnTemplateSelector>
     </Window.Resources>
 
     <Grid Margin="15,5,15,15">
@@ -43,10 +61,17 @@
                         ToolTipText="{Binding StatusMessage}"
                         DoubleClickCommand="{Binding RestoreFromTrayCommand}" />
 
+        <!-- Menu Bar -->
+        <Menu Grid.Row="0" Background="Transparent" VerticalAlignment="Center" IsMainMenu="True">
+            <MenuItem Header="Conexão" Foreground="{DynamicResource TextBrush}">
+                <MenuItem Header="Configurar Conexão..." Command="{Binding OpenSerialConfigCommand}"/>
+            </MenuItem>
+        </Menu>
+
         <!-- Theme Toggle Button -->
-        <Button Grid.Row="0" Command="{Binding ToggleThemeCommand}" HorizontalAlignment="Right" VerticalAlignment="Top" Margin="0,0,0,0" Grid.ColumnSpan="2"
-                Width="10" Height="10" Background="Transparent" BorderThickness="0" ToolTip="Alternar modo (claro/escuro)">
-             <TextBlock FontSize="8" VerticalAlignment="Center" HorizontalAlignment="Center">
+        <Button Grid.Row="0" Command="{Binding ToggleThemeCommand}" HorizontalAlignment="Right" VerticalAlignment="Top" Margin="0,5,0,0" Grid.ColumnSpan="2"
+                Width="15" Height="15" Background="Transparent" BorderThickness="0" ToolTip="Alternar modo (claro/escuro)">
+             <TextBlock FontSize="10" VerticalAlignment="Center" HorizontalAlignment="Center">
                  <TextBlock.Style>
                      <Style TargetType="TextBlock">
                          <Setter Property="Text" Value="☾"/>
@@ -291,7 +316,7 @@
                         </Style>
                     </DataGrid.Resources>
                     <DataGrid.Columns>
-                        <DataGridTextColumn Header=" Característica" Binding="{Binding Characteristic}" Width="*"/>
+                        <DataGridTemplateColumn Header=" Característica" Width="*" CellTemplateSelector="{StaticResource FeatureColumnTemplateSelector}"/>
                         <DataGridTextColumn Header=" Valor" Binding="{Binding Value}" Width="*" FontWeight="Bold">
                              <DataGridTextColumn.ElementStyle>
                                  <Style TargetType="TextBlock">

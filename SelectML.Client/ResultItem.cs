@@ -5,5 +5,6 @@ namespace SelectML.Client
         public string Characteristic { get; set; }
         public double Value { get; set; }
         public bool IsRecognized { get; set; } = true;
+        public bool IsEditable { get; set; } = false;
     }
 }
