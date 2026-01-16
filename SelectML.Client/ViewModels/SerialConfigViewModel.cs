@@ -2,6 +2,7 @@ using SelectML.Client.MVVM;
 using SelectML.Client.Services.Serial;
 using SelectML.Client.Services.Serial.Strategies;
 using System;
+using System.ComponentModel;
 using System.Collections.ObjectModel;
 using System.Diagnostics;
 using System.IO;
@@ -14,7 +15,7 @@ namespace SelectML.Client.ViewModels
         private string _selectedPort;
         private ISerialDeviceStrategy _selectedStrategy;
         private string _connectionStatus = "Desconectado";
-        private Brush _connectionStatusBrush = Brushes.Gray;
+        private System.Windows.Media.Brush _connectionStatusBrush = System.Windows.Media.Brushes.Gray;
 
         public ObservableCollection<string> AvailablePorts { get; set; } = new ObservableCollection<string>();
         public ObservableCollection<ISerialDeviceStrategy> AvailableStrategies { get; set; } = new ObservableCollection<ISerialDeviceStrategy>();
@@ -87,7 +88,7 @@ namespace SelectML.Client.ViewModels
             set { _connectionStatus = value; OnPropertyChanged(); }
         }
 
-        public Brush ConnectionStatusBrush
+        public System.Windows.Media.Brush ConnectionStatusBrush
         {
             get => _connectionStatusBrush;
             set { _connectionStatusBrush = value; OnPropertyChanged(); }
@@ -148,12 +149,12 @@ namespace SelectML.Client.ViewModels
             if (IsConnected)
             {
                 ConnectionStatus = "CONECTADO";
-                ConnectionStatusBrush = Brushes.Green;
+                ConnectionStatusBrush = System.Windows.Media.Brushes.Green;
             }
             else
             {
                 ConnectionStatus = "DESCONECTADO";
-                ConnectionStatusBrush = Brushes.Gray;
+                ConnectionStatusBrush = System.Windows.Media.Brushes.Gray;
             }
         }
 
