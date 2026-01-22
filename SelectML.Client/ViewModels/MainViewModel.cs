@@ -1013,6 +1013,7 @@ namespace SelectML.Client.ViewModels
                 }
             }
         }
+        private async Task LoadFeaturesForPart()
         {
             if (string.IsNullOrWhiteSpace(PartName) || string.IsNullOrWhiteSpace(BatchNumber)) return;
             // Only trigger if we are not in the middle of a file load (which does its own lookup)
