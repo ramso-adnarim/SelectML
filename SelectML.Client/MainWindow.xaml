@@ -147,11 +147,12 @@
                                   SelectedItem="{Binding SelectedParser}"
                                   IsEnabled="{Binding IsConfigEnabled}"
                                   DisplayMemberPath="MachineName"
+                                  Style="{StaticResource {x:Type ComboBox}}"
                                   SelectedIndex="-1"/>
                     </StackPanel>
                     <Button Grid.Column="1" Command="{Binding ClearParserCommand}"
-                            Content="✖" Width="35" Height="35" Margin="10,18,0,0"
-                            Style="{StaticResource GhostButton}" Foreground="{DynamicResource Brush.Status.Error}"
+                            Content="✖" Width="30" Height="30" Margin="10,18,0,0"
+                            Style="{StaticResource IconButton}" Foreground="{DynamicResource Brush.Status.Error}"
                             IsEnabled="{Binding IsConfigEnabled}"
                             VerticalAlignment="Bottom"/>
                 </Grid>
@@ -172,9 +173,10 @@
                                 <ColumnDefinition Width="*"/>
                                 <ColumnDefinition Width="Auto"/>
                             </Grid.ColumnDefinitions>
-                            <TextBox Text="{Binding WatchDirectory}" IsReadOnly="True" IsEnabled="{Binding IsConfigEnabled}"/>
+                            <TextBox Text="{Binding WatchDirectory}" IsReadOnly="True" IsEnabled="{Binding IsConfigEnabled}" Style="{StaticResource {x:Type TextBox}}"/>
                             <Button Grid.Column="1" Command="{Binding SelectDirectoryCommand}" Content="..." 
-                                    Style="{StaticResource GhostButton}" Width="40" Margin="5,0,0,0"
+                                    Style="{StaticResource IconButton}" Width="30" Height="30" Margin="5,0,0,0"
+                                    Foreground="{DynamicResource Brush.Text.Primary}"
                                     IsEnabled="{Binding IsConfigEnabled}"/>
                         </Grid>
                     </StackPanel>
@@ -184,10 +186,10 @@
                         <TextBlock Text="Banco de Dados" Style="{StaticResource LabelText}"/>
                         <Border BorderBrush="{DynamicResource Brush.Border.Base}" BorderThickness="1" CornerRadius="6" Padding="10">
                             <StackPanel>
-                                <TextBlock Text="Servidor" FontSize="11" Foreground="{DynamicResource Brush.Text.Secondary}"/>
-                                <TextBox Text="{Binding DbServer, UpdateSourceTrigger=PropertyChanged}" IsEnabled="{Binding IsConfigEnabled}" Margin="0,2,0,8"/>
+                            <TextBlock Text="Servidor" FontSize="11" Foreground="{DynamicResource Brush.Text.Secondary}"/>
+                                <TextBox Text="{Binding DbServer, UpdateSourceTrigger=PropertyChanged}" IsEnabled="{Binding IsConfigEnabled}" Margin="0,2,0,8" Style="{StaticResource {x:Type TextBox}}"/>
                                 
-                                <CheckBox Content="Autenticação Windows" IsChecked="{Binding DbUseWindowsAuth}" IsEnabled="{Binding IsConfigEnabled}" Margin="0,0,0,8"/>
+                                <CheckBox Content="Autenticação Windows" IsChecked="{Binding DbUseWindowsAuth}" IsEnabled="{Binding IsConfigEnabled}" Margin="0,0,0,8" Foreground="{DynamicResource Brush.Text.Primary}"/>
                                 
                                 <Grid Margin="0,0,0,8">
                                     <Grid.ColumnDefinitions>
@@ -197,11 +199,11 @@
                                     </Grid.ColumnDefinitions>
                                     <StackPanel>
                                         <TextBlock Text="Login" FontSize="11" Foreground="{DynamicResource Brush.Text.Secondary}"/>
-                                        <TextBox Text="{Binding DbUser, UpdateSourceTrigger=PropertyChanged}" IsEnabled="{Binding IsSqlCredentialsEnabled}"/>
+                                        <TextBox Text="{Binding DbUser, UpdateSourceTrigger=PropertyChanged}" IsEnabled="{Binding IsSqlCredentialsEnabled}" Style="{StaticResource {x:Type TextBox}}"/>
                                     </StackPanel>
                                     <StackPanel Grid.Column="2">
                                         <TextBlock Text="Senha" FontSize="11" Foreground="{DynamicResource Brush.Text.Secondary}"/>
-                                        <PasswordBox x:Name="DbPasswordBox" IsEnabled="{Binding IsSqlCredentialsEnabled}" PasswordChanged="DbPasswordBox_PasswordChanged"/>
+                                        <PasswordBox x:Name="DbPasswordBox" IsEnabled="{Binding IsSqlCredentialsEnabled}" Style="{StaticResource {x:Type PasswordBox}}"/>
                                     </StackPanel>
                                 </Grid>
                                 
@@ -211,9 +213,9 @@
                                         <ColumnDefinition Width="*"/>
                                         <ColumnDefinition Width="Auto"/>
                                     </Grid.ColumnDefinitions>
-                                    <ComboBox ItemsSource="{Binding AvailableDatabases}" Text="{Binding DbName}" IsEditable="True" IsEnabled="{Binding IsConfigEnabled}"/>
+                                    <ComboBox ItemsSource="{Binding AvailableDatabases}" Text="{Binding DbName}" IsEditable="True" IsEnabled="{Binding IsConfigEnabled}" Style="{StaticResource {x:Type ComboBox}}"/>
                                     <Button Grid.Column="1" Command="{Binding LoadDatabasesCommand}" Content="↻" Style="{StaticResource IconButton}" 
-                                            Width="30" Margin="5,0,0,0" ToolTip="Atualizar lista"/>
+                                            Width="30" Margin="5,0,0,0" ToolTip="Atualizar lista" Foreground="{DynamicResource Brush.Text.Primary}"/>
                                 </Grid>
                             </StackPanel>
                         </Border>
@@ -250,7 +252,7 @@
                         <TextBlock Text="Lote / Corrida" Style="{StaticResource LabelText}"/>
                         <TextBox Text="{Binding BatchNumber, UpdateSourceTrigger=PropertyChanged}"
                                  IsReadOnly="{Binding IsPendingAction, Converter={StaticResource InverseBooleanConverter}}"
-                                 FontSize="16" FontWeight="SemiBold" Height="40"/>
+                                 FontSize="16" FontWeight="SemiBold" Height="40" Style="{StaticResource {x:Type TextBox}}"/>
                         <TextBlock Text="{Binding DetectedStationName, StringFormat='Estação: {0}'}" 
                                    FontSize="11" Foreground="{DynamicResource Brush.Text.Secondary}" Margin="0,4,0,0"/>
                     </StackPanel>
