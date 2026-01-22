@@ -39,7 +39,7 @@
             <StackPanel Orientation="Horizontal" Visibility="{Binding IsCustomStrategySelected, Converter={StaticResource BooleanToVisibilityConverter}}">
                 <Button Content="Editar JSON" 
                         Command="{Binding OpenJsonConfigCommand}" 
-                        Padding="10,5" 
+                        Padding="6,2" 
                         Background="{DynamicResource CardBackgroundBrush}" 
                         Foreground="{DynamicResource TextBrush}" 
                         IsEnabled="{Binding IsDisconnected}"
@@ -56,13 +56,13 @@
         <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,0,0,0">
             <Button Content="Desconectar" Command="{Binding DisconnectCommand}" 
                     Visibility="{Binding IsConnected, Converter={StaticResource BooleanToVisibilityConverter}}"
-                    Padding="15,5" Margin="0,0,10,0" Background="#FFB70303" Foreground="White"/>
+                    Padding="6,2" Margin="0,0,10,0" Background="#FFB70303" Foreground="White"/>
             
             <Button Content="Conectar" Command="{Binding ConnectCommand}" 
                      Visibility="{Binding IsDisconnected, Converter={StaticResource BooleanToVisibilityConverter}}"
-                    Padding="15,5" Margin="0,0,10,0" Background="#5CB85C" Foreground="White" FontWeight="Bold"/>
+                    Padding="10,2" Margin="0,0,10,0" Background="#5CB85C" Foreground="White" FontWeight="Bold"/>
             
-            <Button Content="Fechar" IsCancel="True" Click="Close_Click" Padding="15,5"/>
+            <Button Content="Fechar" IsCancel="True" Click="Close_Click" Padding="8,2"/>
         </StackPanel>
     </Grid>
 </Window>
