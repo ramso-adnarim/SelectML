@@ -126,12 +126,12 @@
 
                 <!-- Seleção de Máquina (Plugin) -->
                 <StackPanel Grid.Row="0" Margin="0,0,0,10">
-                    <TextBlock Text="Equipamento (Algoritmo):" FontWeight="SemiBold" Foreground="{DynamicResource TextBrush}"/>
+                    <TextBlock Text="Equipamento:" FontWeight="SemiBold" Foreground="{DynamicResource TextBrush}"/>
                     <ComboBox ItemsSource="{Binding AvailableParsers}" 
                               SelectedItem="{Binding SelectedParser}"
                               IsEnabled="{Binding IsConfigEnabled}"
                               DisplayMemberPath="MachineName"
-                              Height="25" Margin="0,5,0,0"
+                              Height="24" Margin="0,5,0,0"
                               SelectedIndex="0"/>
                 </StackPanel>
 
@@ -144,8 +144,11 @@
                             <ColumnDefinition Width="Auto"/>
                         </Grid.ColumnDefinitions>
                         <TextBox Text="{Binding WatchDirectory}" IsReadOnly="True" 
-                                 IsEnabled="{Binding IsConfigEnabled}"
-                                 VerticalContentAlignment="Center" Height="25"/>
+                            Background="{DynamicResource InputBackgroundBrush}"
+                            Foreground="{DynamicResource TextBrush}"
+                            CaretBrush="{DynamicResource TextBrush}"
+                            IsEnabled="{Binding IsConfigEnabled}"
+                            VerticalContentAlignment="Center" Height="25"/>
                         <Button Grid.Column="1" Command="{Binding SelectDirectoryCommand}" 
                                 IsEnabled="{Binding IsConfigEnabled}"
                                 Content="..." Width="40" Margin="5,0,0,0"/>
@@ -156,7 +159,8 @@
                     <Border BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1" Padding="10" Background="{DynamicResource InputBackgroundBrush}">
                         <StackPanel>
                             <!-- Servidor -->
-                            <TextBlock Text="Servidor:" FontSize="11" Foreground="{DynamicResource TextBrush}"/>
+                            <TextBlock Text="Servidor:" FontSize="11" 
+                                       Foreground="{DynamicResource TextBrush}"/>
                             <TextBox Text="{Binding DbServer, UpdateSourceTrigger=PropertyChanged}"
                                      IsEnabled="{Binding IsConfigEnabled}"
                                      Background="{DynamicResource InputBackgroundBrush}"
@@ -166,6 +170,7 @@
 
                             <!-- Autenticação Windows -->
                             <CheckBox Content="Autenticação Windows"
+                                      Foreground="{DynamicResource TextBrush}"
                                       IsChecked="{Binding DbUseWindowsAuth}"
                                       IsEnabled="{Binding IsConfigEnabled}"
                                       Margin="0,5,0,5"/>
@@ -185,7 +190,7 @@
                                              Background="{DynamicResource InputBackgroundBrush}"
                                              Foreground="{DynamicResource TextBrush}"
                                              CaretBrush="{DynamicResource TextBrush}"
-                                             Height="25" Margin="0,2,0,0"/>
+                                             Height="20" Margin="0,2,0,0"/>
                                 </StackPanel>
 
                                 <!-- Senha -->
@@ -197,13 +202,16 @@
                                                  Foreground="{DynamicResource TextBrush}"
                                                  CaretBrush="{DynamicResource TextBrush}"
                                                  PasswordChar="*"
-                                                 Height="25" Margin="0,2,0,0"
+                                                 Height="20" Margin="0,2,0,0"
                                                  PasswordChanged="DbPasswordBox_PasswordChanged"/>
                                 </StackPanel>
                             </Grid>
 
                             <!-- Base de Dados (Initial Catalog) -->
-                            <TextBlock Text="Base de dados:" FontSize="11" Foreground="{DynamicResource TextBrush}" Margin="0,5,0,0"/>
+                            <TextBlock Text="Base de dados:" 
+                                       FontSize="11"                                        
+                                       Foreground="{DynamicResource TextBrush}"
+                                       Margin="0,5,0,0"/>
                             <Grid Margin="0,2,0,5">
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="*"/>
@@ -212,6 +220,7 @@
 
                                 <ComboBox ItemsSource="{Binding AvailableDatabases}"
                                           Text="{Binding DbName}"
+                                          Background="{DynamicResource InputBackgroundBrush}"
                                           IsEditable="True"
                                           IsEnabled="{Binding IsConfigEnabled}"
                                           Height="25"/>
