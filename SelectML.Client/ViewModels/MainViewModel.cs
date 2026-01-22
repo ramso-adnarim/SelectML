@@ -858,6 +858,7 @@ namespace SelectML.Client.ViewModels
 
                          // Phase 5: Early Detection and Validation
                          DetectedStationName = await _databaseService.GetStationNameAsync(data.BatchNumber);
+                         var expectedFeatures = await _databaseService.GetFeaturesForRunAsync(data.BatchNumber);
                          // Populate KnownFeatures for Validation
                           System.Windows.Application.Current.Dispatcher.Invoke(() =>
                           {
@@ -1305,27 +1306,7 @@ namespace SelectML.Client.ViewModels
             });
         }
 
-        private void ResultItem_PropertyChanged(object? sender, PropertyChangedEventArgs e)
-        {
-            if (e.PropertyName == nameof(ResultItem.Characteristic))
-            {
-                if (sender is ResultItem item)
-                {
-                    // Simple validation: If it's not empty, we assume it's valid (or check against KnownFeatures)
-                    // Since the ComboBox is populated by KnownFeatures, selecting one makes it valid.
-                    // If user types custom text, we might want to allow it or check. 
-                    // Requirement: "Validation logica... troca cor par vermelho se mantem... deve ser feita sempre"
-                    // If user selects a valid feature, IsRecognized should become true.
-                    
-                    // Validate ignoring case and whitespace
-                    var input = item.Characteristic?.Trim();
-                    bool isValid = !string.IsNullOrWhiteSpace(input) && 
-                                   KnownFeatures.Any(f => f.Equals(input, StringComparison.OrdinalIgnoreCase));
-                    
-                    item.IsRecognized = isValid;
-                }
-            }
-        }
+
 
 
         private async Task<bool> WaitForFileAccess(string filePath, int timeoutSeconds = 5)
