@@ -117,15 +117,60 @@
         </Setter>
     </Style>
 
+    <!-- Danger Button (Cancel - Red) -->
+    <Style x:Key="DangerButton" TargetType="Button">
+        <Setter Property="Background" Value="Transparent"/>
+        <Setter Property="Foreground" Value="{DynamicResource Brush.Status.Error}"/>
+        <Setter Property="BorderBrush" Value="{DynamicResource Brush.Status.Error}"/>
+        <Setter Property="BorderThickness" Value="1"/>
+        <Setter Property="Padding" Value="15,6"/>
+        <Setter Property="FontSize" Value="13"/>
+        <Setter Property="FontWeight" Value="SemiBold"/>
+        <Setter Property="Cursor" Value="Hand"/>
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="Button">
+                    <Border x:Name="border" 
+                            Background="{TemplateBinding Background}" 
+                            BorderThickness="{TemplateBinding BorderThickness}" 
+                            BorderBrush="{TemplateBinding BorderBrush}" 
+                            CornerRadius="6" 
+                            SnapsToDevicePixels="true">
+                        <ContentPresenter x:Name="contentPresenter" 
+                                          Focusable="False" 
+                                          HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}" 
+                                          Margin="{TemplateBinding Padding}" 
+                                          RecognizesAccessKey="True" 
+                                          SnapsToDevicePixels="{TemplateBinding SnapsToDevicePixels}" 
+                                          VerticalAlignment="{TemplateBinding VerticalContentAlignment}"/>
+                    </Border>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsMouseOver" Value="true">
+                            <Setter Property="Background" TargetName="border" Value="{DynamicResource Brush.Status.Error}"/>
+                            <Setter Property="TextElement.Foreground" TargetName="contentPresenter" Value="White"/> 
+                        </Trigger>
+                        <Trigger Property="IsPressed" Value="true">
+                            <Setter Property="Opacity" TargetName="border" Value="0.8"/>
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
     <!-- Basic Icon Button (Transparent) -->
     <Style x:Key="IconButton" TargetType="Button">
         <Setter Property="Background" Value="Transparent"/>
-        <Setter Property="BorderThickness" Value="0"/>
+        <Setter Property="BorderThickness" Value="1"/>
+        <Setter Property="BorderBrush" Value="{DynamicResource Brush.Border.Base}"/>
         <Setter Property="Cursor" Value="Hand"/>
         <Setter Property="Template">
              <Setter.Value>
                  <ControlTemplate TargetType="Button">
-                     <Border Background="{TemplateBinding Background}" CornerRadius="4">
+                     <Border Background="{TemplateBinding Background}" 
+                             BorderBrush="{TemplateBinding BorderBrush}"
+                             BorderThickness="{TemplateBinding BorderThickness}"
+                             CornerRadius="4">
                          <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
                      </Border>
                      <ControlTemplate.Triggers>
@@ -262,7 +307,7 @@
                                  <ControlTemplate TargetType="ToggleButton">
                                      <Border x:Name="templateRoot" Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}" CornerRadius="6">
                                          <Border x:Name="splitBorder" BorderBrush="Transparent" BorderThickness="1" HorizontalAlignment="Right" Margin="0" SnapsToDevicePixels="true" Width="{DynamicResource {x:Static SystemParameters.VerticalScrollBarWidthKey}}">
-                                             <Path x:Name="arrow" Data="F1 M 0,0 L 2.667,2.66665 L 5.3334,0 L 5.3334,-1.78168 L 2.6667,0.88501 L0,-1.78168 L0,0 Z" Fill="{DynamicResource Brush.Text.Secondary}" HorizontalAlignment="Center" Margin="0" VerticalAlignment="Center"/>
+                                             <Path x:Name="arrow" Data="F1 M 0,0 L 2.667,2.66665 L 5.3334,0 L 5.3334,-1.78168 L 2.6667,0.88501 L0,-1.78168 L0,0 Z" Fill="{DynamicResource Brush.Text.Primary}" HorizontalAlignment="Center" Margin="0" VerticalAlignment="Center"/>
                                          </Border>
                                      </Border>
                                      <ControlTemplate.Triggers>
@@ -277,7 +322,23 @@
                              </ToggleButton.Template>
                          </ToggleButton>
                          
-                         <ContentPresenter x:Name="contentPresenter" ContentTemplate="{TemplateBinding SelectionBoxItemTemplate}" Content="{TemplateBinding SelectionBoxItem}" ContentStringFormat="{TemplateBinding SelectionBoxItemStringFormat}" HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}" IsHitTestVisible="false" Margin="{TemplateBinding Padding}" SnapsToDevicePixels="{TemplateBinding SnapsToDevicePixels}" VerticalAlignment="{TemplateBinding VerticalContentAlignment}"/>
+                         <ContentPresenter x:Name="contentPresenter" 
+                                           ContentTemplate="{TemplateBinding SelectionBoxItemTemplate}" 
+                                           Content="{TemplateBinding SelectionBoxItem}" 
+                                           ContentStringFormat="{TemplateBinding SelectionBoxItemStringFormat}" 
+                                           HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}" 
+                                           IsHitTestVisible="false" 
+                                           Margin="{TemplateBinding Padding}" 
+                                           SnapsToDevicePixels="{TemplateBinding SnapsToDevicePixels}" 
+                                           VerticalAlignment="{TemplateBinding VerticalContentAlignment}"/>
+                         
+                         <TextBox x:Name="PART_EditableTextBox" 
+                                  HorizontalContentAlignment="{TemplateBinding HorizontalContentAlignment}" 
+                                  IsReadOnly="{Binding IsReadOnly, RelativeSource={RelativeSource TemplatedParent}}" 
+                                  Margin="{TemplateBinding Padding}" 
+                                  Style="{StaticResource {x:Type TextBox}}" 
+                                  VerticalContentAlignment="{TemplateBinding VerticalContentAlignment}"
+                                  Visibility="Collapsed"/>
                      </Grid>
                      <ControlTemplate.Triggers>
                          <Trigger Property="HasItems" Value="false">
@@ -290,9 +351,14 @@
                          <Trigger Property="IsGrouping" Value="true">
                              <Setter Property="ScrollViewer.CanContentScroll" Value="false"/>
                          </Trigger>
-                        <Trigger Property="IsKeyboardFocusWithin" Value="true">
-                            <Setter Property="BorderBrush" Value="{DynamicResource Brush.Border.Focus}"/>
-                        </Trigger>
+                         <Trigger Property="IsKeyboardFocusWithin" Value="true">
+                             <Setter Property="BorderBrush" Value="{DynamicResource Brush.Border.Focus}"/>
+                         </Trigger>
+                         <Trigger Property="IsEditable" Value="true">
+                             <Setter Property="IsTabStop" Value="false"/>
+                             <Setter Property="Visibility" TargetName="contentPresenter" Value="Collapsed"/>
+                             <Setter Property="Visibility" TargetName="PART_EditableTextBox" Value="Visible"/>
+                         </Trigger>
                      </ControlTemplate.Triggers>
                  </ControlTemplate>
              </Setter.Value>

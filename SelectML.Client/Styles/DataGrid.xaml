@@ -33,7 +33,7 @@
         <Setter Property="VerticalContentAlignment" Value="Center"/>
         <Setter Property="BorderThickness" Value="0,0,0,1"/>
         <Setter Property="BorderBrush" Value="{DynamicResource Brush.Border.Base}"/>
-        <Setter Property="Height" Value="40"/>
+        <Setter Property="Height" Value="35"/>
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="DataGridColumnHeader">

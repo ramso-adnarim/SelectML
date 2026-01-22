@@ -871,13 +871,19 @@ namespace SelectML.Client.ViewModels
                              }
                              if (!isRecognized) hasUnrecognized = true;
 
-                             MeasuredResults.Add(new ResultItem
+                                MeasuredResults.Add(new ResultItem
+                                {
+                                    Characteristic = item.Key,
+                                    Value = item.Value,
+                                    IsRecognized = isRecognized
+                                });
+                             }
+                             
+                             // Hook up validation events for manual editing
+                             foreach(var res in MeasuredResults)
                              {
-                                 Characteristic = item.Key,
-                                 Value = item.Value,
-                                 IsRecognized = isRecognized
-                             });
-                         }
+                                 res.PropertyChanged += ResultItem_PropertyChanged;
+                             }
                          
                          // Central Validation Trigger
                          TriggerValidation();
@@ -990,17 +996,19 @@ namespace SelectML.Client.ViewModels
                  // Let's stick to what works or check DatabaseService.
                  // Assuming existing logic: GetFeaturesForRunAsync(BatchNumber).
                  
-                 // However, "PartName" is usually the key for master data. BatchNumber is for the specific run.
-                 // If the user is staring a NEW run, they might only have PartName.
-                 // The prompt says: "Ao perder o foco ou digitar, o sistema dispara a query SQL (GetFeaturesForRun)."
-                 // And "Popula comboBox...".
-                 
                  if (features != null)
                  {
                      System.Windows.Application.Current.Dispatcher.Invoke(() => 
                      {
                          KnownFeatures.Clear();
                          foreach(var f in features) KnownFeatures.Add(f);
+                         
+                         // Re-validate current items against new known features
+                         foreach(var item in MeasuredResults)
+                         {
+                              // Trigger property changed logic to re-evaluate
+                              ResultItem_PropertyChanged(item, new PropertyChangedEventArgs(nameof(ResultItem.Characteristic)));
+                         }
                      });
                  }
             }

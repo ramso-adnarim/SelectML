@@ -335,7 +335,7 @@
                       FontWeight="SemiBold"/>
             
             <Button Command="{Binding CancelCommand}" Content="CANCELAR" 
-                    Style="{StaticResource GhostButton}" Margin="0,0,10,0"/>
+                    Style="{StaticResource DangerButton}" Margin="0,0,10,0"/>
             
             <Button Command="{Binding SendCommand}" Content="ENVIAR" 
                     Style="{StaticResource PrimaryButton}"/>
