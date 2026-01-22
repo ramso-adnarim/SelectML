@@ -128,6 +128,7 @@ namespace SelectML.Client.ViewModels
             CancelUpdateCommand = new RelayCommand(ExecuteCancelUpdate);
             
             OpenSerialConfigCommand = new RelayCommand(ExecuteOpenSerialConfig);
+            ClearParserCommand = new RelayCommand(obj => SelectedParser = null, CanChangeConfig);
 
             LoadParsers();
             LoadConfiguration();
@@ -476,6 +477,7 @@ namespace SelectML.Client.ViewModels
         public RelayCommand CancelUpdateCommand { get; }
 
         public RelayCommand OpenSerialConfigCommand { get; }
+        public RelayCommand ClearParserCommand { get; }
 
         // --- Métodos de Configuração e Watcher ---
 
@@ -590,7 +592,10 @@ namespace SelectML.Client.ViewModels
             }
 
             if (SelectedParser == null && AvailableParsers.Count > 0)
-                SelectedParser = AvailableParsers[0];
+            {
+                // Do not force selection. Allow Serial Only mode.
+                // SelectedParser = AvailableParsers[0];
+            }
 
             // Initialize Database Service
             _databaseService = new DatabaseService(config.ConnectionString);
