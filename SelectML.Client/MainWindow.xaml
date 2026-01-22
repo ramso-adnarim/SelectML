@@ -8,10 +8,12 @@
         xmlns:sel="clr-namespace:SelectML.Client.Selectors"
         xmlns:tb="http://www.hardcodet.net/taskbar"
         mc:Ignorable="d"
-        Title="SelectML - Monitoramento de Medição" Height="600" Width="700"
-        Background="{DynamicResource AppBackgroundBrush}" Foreground="{DynamicResource TextBrush}" Icon="/SelectML-logo-short-light.png">
+        Title="SelectML - Monitoramento de Medição" Height="650" Width="800"
+        Background="{DynamicResource Brush.Background.Base}" 
+        Foreground="{DynamicResource Brush.Text.Primary}" 
+        Icon="/SelectML-logo-short-light.png"
+        FontFamily="Segoe UI, Inter, Sans-Serif">
 
-    <!-- Recurso para o Conversor de Cores -->
     <Window.Resources>
         <conv:BooleanToBrushConverter x:Key="BooleanToBrushConverter"/>
         <conv:InverseBooleanConverter x:Key="InverseBooleanConverter"/>
@@ -30,30 +32,30 @@
                               Text="{Binding Characteristic, UpdateSourceTrigger=PropertyChanged}" 
                               IsEditable="True"
                               IsEnabled="{Binding DataContext.IsPendingAction, RelativeSource={RelativeSource AncestorType=Window}}"
-                              Margin="2"/>
+                              Margin="0"/>
                 </DataTemplate>
             </sel:FeatureColumnTemplateSelector.EditableTemplate>
         </sel:FeatureColumnTemplateSelector>
+
+        <!-- Helper Style for Labels -->
+        <Style x:Key="LabelText" TargetType="TextBlock">
+            <Setter Property="Foreground" Value="{DynamicResource Brush.Text.Secondary}"/>
+            <Setter Property="FontSize" Value="12"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="Margin" Value="0,0,0,4"/>
+        </Style>
     </Window.Resources>
 
-    <Grid Margin="15,5,15,15">
+    <Grid Margin="20">
         <Grid.ColumnDefinitions>
-            <ColumnDefinition Width="87*"/>
-            <ColumnDefinition Width="248*"/>
+            <ColumnDefinition Width="*"/>
         </Grid.ColumnDefinitions>
         <Grid.RowDefinitions>
-            <RowDefinition Height="Auto"/>
-            <!-- Toggle Theme Button -->
-            <RowDefinition Height="Auto"/>
-            <!-- Configuração Expansível -->
-            <RowDefinition Height="Auto"/>
-            <!-- Separador -->
-            <RowDefinition Height="*"/>
-            <!-- Entradas/Resultados -->
-            <RowDefinition Height="Auto"/>
-            <!-- Ações Human-in-the-Loop -->
-            <RowDefinition Height="Auto"/>
-            <!-- Rodapé -->
+            <RowDefinition Height="Auto"/> <!-- Header / Menu -->
+            <RowDefinition Height="Auto"/> <!-- Config -->
+            <RowDefinition Height="*"/>    <!-- Data Area -->
+            <RowDefinition Height="Auto"/> <!-- Actions -->
+            <RowDefinition Height="Auto"/> <!-- Footer -->
         </Grid.RowDefinitions>
 
         <tb:TaskbarIcon x:Name="MyNotifyIcon"
@@ -61,48 +63,55 @@
                         ToolTipText="{Binding StatusMessage}"
                         DoubleClickCommand="{Binding RestoreFromTrayCommand}" />
 
-        <!-- Menu Bar -->
-        <Menu Grid.Row="0" Background="Transparent" VerticalAlignment="Center" IsMainMenu="True">
-            <MenuItem Header="Conexão serial" Foreground="{DynamicResource TextBrush}" Command="{Binding OpenSerialConfigCommand}"/>
-                <!-- <MenuItem Header="Configurar Conexão..." Command="{Binding OpenSerialConfigCommand}"/>-->
-        </Menu>
+        <!-- 1. Header Area -->
+        <Grid Grid.Row="0" Margin="0,0,0,15">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="Auto"/>
+            </Grid.ColumnDefinitions>
+            <!-- Menu -->
+            <Menu Background="Transparent" VerticalAlignment="Center" IsMainMenu="True">
+                <MenuItem Header="Conexão Serial" Command="{Binding OpenSerialConfigCommand}" 
+                          Foreground="{DynamicResource Brush.Text.Primary}" FontWeight="SemiBold"/>
+            </Menu>
 
-        <!-- Theme Toggle Button -->
-        <Button Grid.Row="0" Command="{Binding ToggleThemeCommand}" HorizontalAlignment="Right" VerticalAlignment="Top" Margin="0,5,0,0" Grid.ColumnSpan="2"
-                Width="15" Height="15" Background="Transparent" BorderThickness="0" ToolTip="Alternar modo (claro/escuro)">
-             <TextBlock FontSize="10" VerticalAlignment="Center" HorizontalAlignment="Center">
-                 <TextBlock.Style>
-                     <Style TargetType="TextBlock">
-                         <Setter Property="Text" Value="☾"/>
-                         <Setter Property="Foreground" Value="{DynamicResource TextBrush}"/>
-                         <Style.Triggers>
-                             <DataTrigger Binding="{Binding IsDarkMode}" Value="True">
-                                 <Setter Property="Text" Value="☀"/>
-                                 <Setter Property="Foreground" Value="White"/>
-                             </DataTrigger>
-                         </Style.Triggers>
-                     </Style>
-                 </TextBlock.Style>
-             </TextBlock>
-        </Button>
+            <!-- Theme Toggle -->
+            <Button Grid.Column="1" Command="{Binding ToggleThemeCommand}" 
+                    Style="{StaticResource IconButton}"
+                    ToolTip="Alternar tema (Claro/Escuro)" Width="30" Height="30">
+                <TextBlock FontSize="14">
+                    <TextBlock.Style>
+                        <Style TargetType="TextBlock">
+                            <Setter Property="Text" Value="☾"/>
+                            <Setter Property="Foreground" Value="{DynamicResource Brush.Text.Primary}"/>
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding IsDarkMode}" Value="True">
+                                    <Setter Property="Text" Value="☀"/>
+                                    <Setter Property="Foreground" Value="{DynamicResource Brush.Status.Warning}"/>
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </TextBlock.Style>
+                </TextBlock>
+            </Button>
+        </Grid>
 
-        <!-- 1. Área de Configuração Expansível -->
-        <Expander Grid.Row="1"
-                  IsExpanded="{Binding IsExpanded}"
-                  BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1" Background="{DynamicResource CardBackgroundBrush}" Padding="5" Grid.ColumnSpan="2">
+        <!-- 2. Configurações (Expander) -->
+        <Expander Grid.Row="1" IsExpanded="{Binding IsExpanded}" Margin="0,0,0,20">
             <Expander.Header>
-                <Grid Width="{Binding RelativeSource={RelativeSource Mode=FindAncestor, AncestorType={x:Type Expander}}, Path=ActualWidth, Converter={StaticResource WidthAdjustmentConverter}, FallbackValue=650}">
+                <Grid Width="{Binding RelativeSource={RelativeSource Mode=FindAncestor, AncestorType={x:Type Expander}}, Path=ActualWidth, Converter={StaticResource WidthAdjustmentConverter}, FallbackValue=750}">
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="*"/>
                         <ColumnDefinition Width="Auto"/>
                     </Grid.ColumnDefinitions>
-                    <TextBlock Text="Configuração" FontWeight="SemiBold" VerticalAlignment="Center" Foreground="{DynamicResource TextBrush}"/>
+                    <TextBlock Text="Configuração" FontWeight="Bold" FontSize="14" VerticalAlignment="Center" Foreground="{DynamicResource Brush.Text.Primary}"/>
 
                     <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center" Margin="0,0,30,0"
                                 Visibility="{Binding IsMonitoring, Converter={StaticResource BooleanToVisibilityConverter}}">
-                        <Ellipse Width="10" Height="10" Fill="Green" x:Name="OnlineIndicator"/>
-                        <TextBlock Text="Online" Foreground="Green" Margin="5,0,0,0" VerticalAlignment="Center" FontWeight="Bold"/>
-
+                        <Ellipse Width="8" Height="8" Fill="{DynamicResource Brush.Status.Success}" x:Name="OnlineIndicator"/>
+                        <TextBlock Text="Online" Foreground="{DynamicResource Brush.Status.Success}" Margin="8,0,0,0" VerticalAlignment="Center" FontWeight="Bold"/>
+                        
+                        <!-- Pulse Animation -->
                         <StackPanel.Triggers>
                             <EventTrigger RoutedEvent="Loaded">
                                 <BeginStoryboard>
@@ -117,193 +126,147 @@
                     </StackPanel>
                 </Grid>
             </Expander.Header>
-            <Grid Margin="0,5,0,0">
+            
+            <!-- Expander Content -->
+            <Grid Margin="5">
                 <Grid.RowDefinitions>
                     <RowDefinition Height="Auto"/>
                     <RowDefinition Height="Auto"/>
                     <RowDefinition Height="Auto"/>
                 </Grid.RowDefinitions>
 
-                <!-- Seleção de Máquina (Plugin) -->
-                <StackPanel Grid.Row="0" Margin="0,0,0,10">
-                    <TextBlock Text="Equipamento:" FontWeight="SemiBold" Foreground="{DynamicResource TextBrush}"/>
-                    <Grid Margin="0,5,0,0">
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="*"/>
-                            <ColumnDefinition Width="Auto"/>
-                        </Grid.ColumnDefinitions>
+                <!-- Equipamento -->
+                <Grid Grid.Row="0" Margin="0,0,0,15">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+                    <StackPanel>
+                        <TextBlock Text="Equipamento" Style="{StaticResource LabelText}"/>
                         <ComboBox ItemsSource="{Binding AvailableParsers}" 
                                   SelectedItem="{Binding SelectedParser}"
                                   IsEnabled="{Binding IsConfigEnabled}"
                                   DisplayMemberPath="MachineName"
-                                  Height="24"
                                   SelectedIndex="-1"/>
-                        <Button Grid.Column="1" Content="✖" 
-                                Command="{Binding ClearParserCommand}"
-                                ToolTip="Desselecionar (Modo Apenas Serial)"
-                                Width="24" Height="24" Margin="5,0,0,0"
-                                IsEnabled="{Binding IsConfigEnabled}"
-                                Foreground="Red" FontWeight="Bold"/>
-                    </Grid>
-                </StackPanel>
-
-                <!-- Seleção de Pasta -->
-                <StackPanel Grid.Row="1" Margin="0,0,0,15">
-                    <TextBlock Text="Diretório de monitoramento:" FontWeight="SemiBold" Foreground="{DynamicResource TextBrush}"/>
-                    <Grid Margin="0,5,0,0">
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="*"/>
-                            <ColumnDefinition Width="Auto"/>
-                        </Grid.ColumnDefinitions>
-                        <TextBox Text="{Binding WatchDirectory}" IsReadOnly="True" 
-                            Background="{DynamicResource InputBackgroundBrush}"
-                            Foreground="{DynamicResource TextBrush}"
-                            CaretBrush="{DynamicResource TextBrush}"
+                    </StackPanel>
+                    <Button Grid.Column="1" Command="{Binding ClearParserCommand}"
+                            Content="✖" Width="35" Height="35" Margin="10,18,0,0"
+                            Style="{StaticResource GhostButton}" Foreground="{DynamicResource Brush.Status.Error}"
                             IsEnabled="{Binding IsConfigEnabled}"
-                            VerticalContentAlignment="Center" Height="25"/>
-                        <Button Grid.Column="1" Command="{Binding SelectDirectoryCommand}" 
-                                IsEnabled="{Binding IsConfigEnabled}"
-                                Content="..." Width="40" Margin="5,0,0,0"/>
-                    </Grid>
+                            VerticalAlignment="Bottom"/>
+                </Grid>
 
-                    <!-- Configuração SQL Database -->
-                    <TextBlock Text="Banco de dados:" FontWeight="SemiBold" Foreground="{DynamicResource TextBrush}" Margin="0,10,0,5"/>
-                    <Border BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1" Padding="10" Background="{DynamicResource InputBackgroundBrush}">
-                        <StackPanel>
-                            <!-- Servidor -->
-                            <TextBlock Text="Servidor:" FontSize="11" 
-                                       Foreground="{DynamicResource TextBrush}"/>
-                            <TextBox Text="{Binding DbServer, UpdateSourceTrigger=PropertyChanged}"
-                                     IsEnabled="{Binding IsConfigEnabled}"
-                                     Background="{DynamicResource InputBackgroundBrush}"
-                                     Foreground="{DynamicResource TextBrush}"
-                                     CaretBrush="{DynamicResource TextBrush}"
-                                     Height="20" Margin="0,2,0,5"/>
-
-                            <!-- Autenticação Windows -->
-                            <CheckBox Content="Autenticação Windows"
-                                      Foreground="{DynamicResource TextBrush}"
-                                      IsChecked="{Binding DbUseWindowsAuth}"
-                                      IsEnabled="{Binding IsConfigEnabled}"
-                                      Margin="0,5,0,5"/>
-
-                            <Grid>
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="*"/>
-                                    <ColumnDefinition Width="10"/>
-                                    <ColumnDefinition Width="*"/>
-                                </Grid.ColumnDefinitions>
-
-                                <!-- Login -->
-                                <StackPanel Grid.Column="0">
-                                    <TextBlock Text="Login:" FontSize="11" Foreground="{DynamicResource TextBrush}"/>
-                                    <TextBox Text="{Binding DbUser, UpdateSourceTrigger=PropertyChanged}"
-                                             IsEnabled="{Binding IsSqlCredentialsEnabled}"
-                                             Background="{DynamicResource InputBackgroundBrush}"
-                                             Foreground="{DynamicResource TextBrush}"
-                                             CaretBrush="{DynamicResource TextBrush}"
-                                             Height="20" Margin="0,2,0,0"/>
-                                </StackPanel>
-
-                                <!-- Senha -->
-                                <StackPanel Grid.Column="2">
-                                    <TextBlock Text="Senha:" FontSize="11" Foreground="{DynamicResource TextBrush}"/>
-                                    <PasswordBox x:Name="DbPasswordBox"
-                                                 IsEnabled="{Binding IsSqlCredentialsEnabled}"
-                                                 Background="{DynamicResource InputBackgroundBrush}"
-                                                 Foreground="{DynamicResource TextBrush}"
-                                                 CaretBrush="{DynamicResource TextBrush}"
-                                                 PasswordChar="*"
-                                                 Height="20" Margin="0,2,0,0"
-                                                 PasswordChanged="DbPasswordBox_PasswordChanged"/>
-                                </StackPanel>
-                            </Grid>
-
-                            <!-- Base de Dados (Initial Catalog) -->
-                            <TextBlock Text="Base de dados:" 
-                                       FontSize="11"                                        
-                                       Foreground="{DynamicResource TextBrush}"
-                                       Margin="0,5,0,0"/>
-                            <Grid Margin="0,2,0,5">
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="*"/>
-                                    <ColumnDefinition Width="30"/>
-                                </Grid.ColumnDefinitions>
-
-                                <ComboBox ItemsSource="{Binding AvailableDatabases}"
-                                          Text="{Binding DbName}"
-                                          Background="{DynamicResource InputBackgroundBrush}"
-                                          IsEditable="True"
-                                          IsEnabled="{Binding IsConfigEnabled}"
-                                          Height="25"/>
-
-                                <Button Grid.Column="1" Command="{Binding LoadDatabasesCommand}"
-                                        Content="↻"
-                                        ToolTip="Listar base de dados"
-                                        IsEnabled="{Binding IsConfigEnabled}"
-                                        Margin="5,0,0,0" FontWeight="Bold"/>
-                            </Grid>
-                        </StackPanel>
-                    </Border>
-                </StackPanel>
-
-                <!-- Botão Salvar/Editar -->
-                <Button Grid.Row="2" 
-                        Command="{Binding SaveConfigCommand}"
-                        Content="{Binding ConfigButtonText}"
-                        Height="30" Width="110" HorizontalAlignment="Left"
-                        Background="{Binding IsConfigLocked, Converter={StaticResource BooleanToBrushConverter}}" 
-                        FontWeight="Bold"
-                        Foreground="White"/>
-            </Grid>
-        </Expander>
-
-        <!-- 2. Área de Dados (Entradas Manuais e Resultados) -->
-        <Grid Grid.Row="3" Margin="0,15,0,0" Grid.ColumnSpan="2">
-            <Grid.RowDefinitions>
-                <RowDefinition Height="Auto"/>
-                <RowDefinition Height="*"/>
-            </Grid.RowDefinitions>
-
-            <!-- Entradas Manuais (Visualização) -->
-            <StackPanel Grid.Row="0" Margin="0,0,0,15">
-                <Grid>
+                <!-- Folder & DB -->
+                <Grid Grid.Row="1" Margin="0,0,0,15">
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="*"/>
                         <ColumnDefinition Width="20"/>
                         <ColumnDefinition Width="*"/>
                     </Grid.ColumnDefinitions>
-
+                    
+                    <!-- Left: Folder -->
                     <StackPanel Grid.Column="0">
-                        <TextBlock Text="Nome da corrida/lote:" Foreground="{DynamicResource TextBrush}" FontSize="11" FontWeight="Bold"/>
+                        <TextBlock Text="Diretório de Monitoramento" Style="{StaticResource LabelText}"/>
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+                            <TextBox Text="{Binding WatchDirectory}" IsReadOnly="True" IsEnabled="{Binding IsConfigEnabled}"/>
+                            <Button Grid.Column="1" Command="{Binding SelectDirectoryCommand}" Content="..." 
+                                    Style="{StaticResource GhostButton}" Width="40" Margin="5,0,0,0"
+                                    IsEnabled="{Binding IsConfigEnabled}"/>
+                        </Grid>
+                    </StackPanel>
+                    
+                    <!-- Right: DB Config -->
+                    <StackPanel Grid.Column="2">
+                        <TextBlock Text="Banco de Dados" Style="{StaticResource LabelText}"/>
+                        <Border BorderBrush="{DynamicResource Brush.Border.Base}" BorderThickness="1" CornerRadius="6" Padding="10">
+                            <StackPanel>
+                                <TextBlock Text="Servidor" FontSize="11" Foreground="{DynamicResource Brush.Text.Secondary}"/>
+                                <TextBox Text="{Binding DbServer, UpdateSourceTrigger=PropertyChanged}" IsEnabled="{Binding IsConfigEnabled}" Margin="0,2,0,8"/>
+                                
+                                <CheckBox Content="Autenticação Windows" IsChecked="{Binding DbUseWindowsAuth}" IsEnabled="{Binding IsConfigEnabled}" Margin="0,0,0,8"/>
+                                
+                                <Grid Margin="0,0,0,8">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="10"/>
+                                        <ColumnDefinition Width="*"/>
+                                    </Grid.ColumnDefinitions>
+                                    <StackPanel>
+                                        <TextBlock Text="Login" FontSize="11" Foreground="{DynamicResource Brush.Text.Secondary}"/>
+                                        <TextBox Text="{Binding DbUser, UpdateSourceTrigger=PropertyChanged}" IsEnabled="{Binding IsSqlCredentialsEnabled}"/>
+                                    </StackPanel>
+                                    <StackPanel Grid.Column="2">
+                                        <TextBlock Text="Senha" FontSize="11" Foreground="{DynamicResource Brush.Text.Secondary}"/>
+                                        <PasswordBox x:Name="DbPasswordBox" IsEnabled="{Binding IsSqlCredentialsEnabled}" PasswordChanged="DbPasswordBox_PasswordChanged"/>
+                                    </StackPanel>
+                                </Grid>
+                                
+                                <TextBlock Text="Base de Dados" FontSize="11" Foreground="{DynamicResource Brush.Text.Secondary}"/>
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                    </Grid.ColumnDefinitions>
+                                    <ComboBox ItemsSource="{Binding AvailableDatabases}" Text="{Binding DbName}" IsEditable="True" IsEnabled="{Binding IsConfigEnabled}"/>
+                                    <Button Grid.Column="1" Command="{Binding LoadDatabasesCommand}" Content="↻" Style="{StaticResource IconButton}" 
+                                            Width="30" Margin="5,0,0,0" ToolTip="Atualizar lista"/>
+                                </Grid>
+                            </StackPanel>
+                        </Border>
+                    </StackPanel>
+                </Grid>
+
+                <!-- Save Button -->
+                <Button Grid.Row="2" Command="{Binding SaveConfigCommand}" Content="{Binding ConfigButtonText}"
+                        HorizontalAlignment="Left" Width="150" Style="{StaticResource PrimaryButton}"/>
+            </Grid>
+        </Expander>
+
+        <!-- 3. Main Data Card -->
+        <Border Grid.Row="2" Background="{DynamicResource Brush.Surface.Card}" CornerRadius="6" Padding="15">
+            <Border.Effect>
+                <DropShadowEffect BlurRadius="10" Direction="270" ShadowDepth="2" Opacity="0.1"/>
+            </Border.Effect>
+            
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/> <!-- Inputs -->
+                    <RowDefinition Height="*"/>    <!-- Grid -->
+                </Grid.RowDefinitions>
+
+                <!-- Inputs Row -->
+                <Grid Grid.Row="0" Margin="0,0,0,20">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="20"/>
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
+                    
+                    <StackPanel Grid.Column="0">
+                        <TextBlock Text="Lote / Corrida" Style="{StaticResource LabelText}"/>
                         <TextBox Text="{Binding BatchNumber, UpdateSourceTrigger=PropertyChanged}"
                                  IsReadOnly="{Binding IsPendingAction, Converter={StaticResource InverseBooleanConverter}}"
-                                 Background="{DynamicResource InputBackgroundBrush}"
-                                 Foreground="{DynamicResource TextBrush}"
-                                 CaretBrush="{DynamicResource TextBrush}"
-                                 Height="30" FontSize="14" Margin="0,2,0,0" Padding="5"/>
-                         <!-- Feedback Estação Detectada -->
-                         <TextBlock Text="{Binding DetectedStationName, StringFormat='Estação Detectada: {0}'}"
-                                    FontSize="10" Foreground="{DynamicResource TextBrush}" Opacity="0.7" Margin="0,2,0,0"/>
+                                 FontSize="16" FontWeight="SemiBold" Height="40"/>
+                        <TextBlock Text="{Binding DetectedStationName, StringFormat='Estação: {0}'}" 
+                                   FontSize="11" Foreground="{DynamicResource Brush.Text.Secondary}" Margin="0,4,0,0"/>
                     </StackPanel>
 
                     <StackPanel Grid.Column="2">
-                        <TextBlock Text="Nome da rotina:" Foreground="{DynamicResource TextBrush}" FontSize="11" FontWeight="Bold"/>
+                        <TextBlock Text="Nome da Peça (Routine)" Style="{StaticResource LabelText}"/>
                         <TextBox Text="{Binding PartName, UpdateSourceTrigger=PropertyChanged}"
                                  IsReadOnly="{Binding IsPendingAction, Converter={StaticResource InverseBooleanConverter}}"
-                                 Background="{DynamicResource InputBackgroundBrush}"
-                                 Foreground="{DynamicResource TextBrush}"
-                                 CaretBrush="{DynamicResource TextBrush}"
-                                 Height="30" FontSize="14" Margin="0,2,0,0" Padding="5">
+                                 FontSize="16" FontWeight="SemiBold" Height="40">
                              <TextBox.Style>
-                                 <Style TargetType="TextBox">
-                                     <Setter Property="BorderBrush" Value="{DynamicResource BorderBrush}"/>
-                                     <Setter Property="BorderThickness" Value="1"/>
+                                 <Style TargetType="TextBox" BasedOn="{StaticResource {x:Type TextBox}}">
                                      <Style.Triggers>
                                          <DataTrigger Binding="{Binding IsPartNameValid}" Value="False">
-                                             <Setter Property="BorderBrush" Value="Red"/>
+                                             <Setter Property="BorderBrush" Value="{DynamicResource Brush.Status.Error}"/>
                                              <Setter Property="BorderThickness" Value="2"/>
-                                             <Setter Property="ToolTip" Value="Nome da peça difere do padrão cadastrado para este lote."/>
+                                             <Setter Property="ToolTip" Value="Nome difere do padrão."/>
                                          </DataTrigger>
                                      </Style.Triggers>
                                  </Style>
@@ -311,109 +274,90 @@
                         </TextBox>
                     </StackPanel>
                 </Grid>
-            </StackPanel>
 
-            <!-- Tabela de Resultados -->
-            <DockPanel Grid.Row="1">
-                <TextBlock DockPanel.Dock="Top" Text="Resultados:" FontWeight="Bold" Margin="0,0,0,5" Foreground="{DynamicResource TextBrush}"/>
-                <DataGrid ItemsSource="{Binding MeasuredResults}" AutoGenerateColumns="False" 
-                          CanUserAddRows="False" IsReadOnly="True" HeadersVisibility="Column"
-                          GridLinesVisibility="Horizontal"
-                          BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1"
-                          Background="{DynamicResource CardBackgroundBrush}"
-                          AlternationCount="2">
-                    <DataGrid.Resources>
-                        <Style TargetType="DataGridColumnHeader">
-                            <Setter Property="Background" Value="{DynamicResource CardBackgroundBrush}"/>
-                            <Setter Property="Foreground" Value="{DynamicResource TextBrush}"/>
-                            <Setter Property="BorderBrush" Value="{DynamicResource BorderBrush}"/>
-                            <Setter Property="BorderThickness" Value="0,0,1,1"/>
-                        </Style>
-                        <Style TargetType="DataGridCell">
-                            <Setter Property="Foreground" Value="{DynamicResource TextBrush}"/>
-                            <Setter Property="Background" Value="Transparent"/>
-                            <Setter Property="BorderThickness" Value="0"/>
-                        </Style>
-                        <!-- RowStyle para indicar itens não reconhecidos -->
-                        <Style TargetType="DataGridRow">
-                            <Setter Property="Background" Value="{DynamicResource AppBackgroundBrush}"/>
-                            <Setter Property="Foreground" Value="{DynamicResource TextBrush}"/>
-                            <!-- Pass MainViewModel to Row Tag for ContextMenu access -->
-                            <Setter Property="Tag" Value="{Binding DataContext, RelativeSource={RelativeSource AncestorType=DataGrid}}"/>
-                            <Setter Property="ContextMenu">
-                                <Setter.Value>
-                                    <ContextMenu>
-                                        <MenuItem Header="Excluir Valor" 
-                                                  Command="{Binding PlacementTarget.Tag.RemoveRowCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}" 
-                                                  CommandParameter="{Binding}" />
-                                    </ContextMenu>
-                                </Setter.Value>
-                            </Setter>
-                            <Style.Triggers>
-                                <Trigger Property="ItemsControl.AlternationIndex" Value="1">
-                                    <Setter Property="Background" Value="{DynamicResource CardBackgroundBrush}"/>
-                                </Trigger>
-                                <DataTrigger Binding="{Binding IsRecognized}" Value="False">
-                                    <Setter Property="Background" Value="{DynamicResource WarningBackgroundBrush}"/>
-                                    <Setter Property="ToolTip" Value="Característica não encontrada no banco"/>
-                                </DataTrigger>
-                            </Style.Triggers>
-                        </Style>
-                    </DataGrid.Resources>
-                    <DataGrid.Columns>
-                        <DataGridTemplateColumn Header=" Característica" Width="*" CellTemplateSelector="{StaticResource FeatureColumnTemplateSelector}"/>
-                        <DataGridTextColumn Header=" Valor" Binding="{Binding Value}" Width="*" FontWeight="Bold">
-                             <DataGridTextColumn.ElementStyle>
-                                 <Style TargetType="TextBlock">
-                                     <Setter Property="Foreground" Value="#007ACC"/>
-                                 </Style>
-                             </DataGridTextColumn.ElementStyle>
-                        </DataGridTextColumn>
-                    </DataGrid.Columns>
-                </DataGrid>
-            </DockPanel>
-        </Grid>
+                <!-- DataGrid -->
+                <DockPanel Grid.Row="1">
+                    <TextBlock DockPanel.Dock="Top" Text="Resultados da Medição" 
+                               FontWeight="Bold" FontSize="14" Margin="0,0,0,10" Foreground="{DynamicResource Brush.Text.Primary}"/>
+                    
+                    <DataGrid ItemsSource="{Binding MeasuredResults}" 
+                              Style="{StaticResource ModernDataGrid}">
+                        <DataGrid.Columns>
+                            <DataGridTemplateColumn Header="Característica" Width="*" CellTemplateSelector="{StaticResource FeatureColumnTemplateSelector}"/>
+                            <DataGridTextColumn Header="Valor Medido" Binding="{Binding Value}" Width="*">
+                                <DataGridTextColumn.ElementStyle>
+                                    <Style TargetType="TextBlock">
+                                        <Setter Property="Foreground" Value="{DynamicResource Brush.Action.Primary}"/>
+                                        <Setter Property="FontWeight" Value="Bold"/>
+                                        <Setter Property="VerticalAlignment" Value="Center"/>
+                                    </Style>
+                                </DataGridTextColumn.ElementStyle>
+                            </DataGridTextColumn>
+                        </DataGrid.Columns>
+                        
+                        <!-- Context Menu for Rows -->
+                         <DataGrid.RowStyle>
+                            <Style TargetType="DataGridRow" BasedOn="{StaticResource ModernDataGridRow}">
+                                <Setter Property="Tag" Value="{Binding DataContext, RelativeSource={RelativeSource AncestorType=DataGrid}}"/>
+                                <Setter Property="ContextMenu">
+                                    <Setter.Value>
+                                        <ContextMenu>
+                                            <MenuItem Header="Excluir Linha" 
+                                                      Command="{Binding PlacementTarget.Tag.RemoveRowCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}" 
+                                                      CommandParameter="{Binding}" />
+                                        </ContextMenu>
+                                    </Setter.Value>
+                                </Setter>
+                            </Style>
+                         </DataGrid.RowStyle>
+                    </DataGrid>
+                </DockPanel>
+            </Grid>
+        </Border>
 
-        <!-- 3. Ações Human-in-the-Loop -->
-        <StackPanel Grid.Row="4" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,10,0,0" Grid.ColumnSpan="2">
-            <CheckBox Content="Automático"
-                      IsChecked="{Binding IsAutoMode}"
-                      VerticalAlignment="Center" Margin="0,0,15,0" FontWeight="SemiBold" Foreground="{DynamicResource TextBrush}"/>
-            <Button Command="{Binding CancelCommand}" Content="Cancelar"
-                    Width="80" Height="25" Margin="0,0,10,0" Background="#FFB70303" Foreground="White" FontWeight="Bold"/>
-            <Button Command="{Binding SendCommand}" Content="Enviar"
-                    Width="80" Height="25" Background="#5CB85C" Foreground="White" FontWeight="Bold"/>
+        <!-- 4. Actions -->
+        <StackPanel Grid.Row="3" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,15,0,0">
+            <CheckBox Content="Modo Automático" IsChecked="{Binding IsAutoMode}" 
+                      VerticalAlignment="Center" Margin="0,0,20,0" FontWeight="SemiBold"/>
+            
+            <Button Command="{Binding CancelCommand}" Content="Cancelar" 
+                    Style="{StaticResource GhostButton}" Margin="0,0,10,0"/>
+            
+            <Button Command="{Binding SendCommand}" Content="ENVIAR DADOS" 
+                    Style="{StaticResource PrimaryButton}"/>
         </StackPanel>
 
-        <!-- 4. Rodapé -->
-        <StatusBar Grid.Row="5" Margin="0,10,0,0" Background="{DynamicResource CardBackgroundBrush}" Height="30" Grid.ColumnSpan="2">
-            <StatusBarItem>
-                <TextBlock Text="{Binding StatusMessage}" FontWeight="SemiBold" Foreground="{DynamicResource TextBrush}"/>
-            </StatusBarItem>
+        <!-- 5. Status Bar -->
+        <Border Grid.Row="4" Margin="0,15,-20,-20" Padding="20,5"
+                Background="{DynamicResource Brush.Surface.Card}" 
+                BorderBrush="{DynamicResource Brush.Border.Base}" BorderThickness="0,1,0,0">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
 
-            <StatusBarItem HorizontalAlignment="Right">
-                <StackPanel Orientation="Horizontal">
-                     <!-- Version Text -->
-                     <TextBlock Text="{Binding CurrentVersion}" Margin="0,0,10,0" VerticalAlignment="Center" Foreground="Gray" FontSize="10"/>
+                <TextBlock Text="{Binding StatusMessage}" VerticalAlignment="Center" 
+                           Foreground="{DynamicResource Brush.Text.Secondary}" FontWeight="Medium"/>
 
-                     <!-- Update Icon -->
+                <StackPanel Grid.Column="1" Orientation="Horizontal">
+                    <TextBlock Text="{Binding CurrentVersion}" VerticalAlignment="Center" 
+                               Foreground="{DynamicResource Brush.Text.Inactive}" FontSize="11" Margin="0,0,10,0"/>
+
+                    <!-- Update Notification Button -->
                      <Button Command="{Binding OpenUpdateWindowCommand}" Background="Transparent" BorderThickness="0" Cursor="Hand">
                          <Button.Style>
                              <Style TargetType="Button">
-                                 <!-- Default State (No Update) -->
-                                 <Setter Property="ToolTip" Value="{Binding CurrentVersion, StringFormat='Versão Atual: {0}'}"/>
+                                 <Setter Property="ToolTip" Value="{Binding CurrentVersion, StringFormat='Versão: {0}'}"/>
                                  <Setter Property="Template">
                                      <Setter.Value>
                                          <ControlTemplate TargetType="Button">
-                                              <!-- Simple Circle Check -->
                                               <Viewbox Width="16" Height="16">
-                                                  <Path Data="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z" Fill="Gray"/>
+                                                  <Path Data="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z" Fill="{DynamicResource Brush.Status.Success}"/>
                                               </Viewbox>
                                          </ControlTemplate>
                                      </Setter.Value>
                                  </Setter>
-
-                                 <!-- Update Available State -->
                                  <Style.Triggers>
                                      <DataTrigger Binding="{Binding IsUpdateAvailable}" Value="True">
                                          <Setter Property="ToolTip" Value="{Binding UpdateMessage}"/>
@@ -421,29 +365,9 @@
                                              <Setter.Value>
                                                  <ControlTemplate TargetType="Button">
                                                      <Grid>
-                                                         <!-- Pulsing Animation -->
-                                                          <Grid.Triggers>
-                                                              <EventTrigger RoutedEvent="Loaded">
-                                                                  <BeginStoryboard>
-                                                                      <Storyboard RepeatBehavior="Forever" AutoReverse="True">
-                                                                          <DoubleAnimation Storyboard.TargetName="ScaleTrans"
-                                                                                           Storyboard.TargetProperty="ScaleX"
-                                                                                           From="1.0" To="1.2" Duration="0:0:0.5"/>
-                                                                          <DoubleAnimation Storyboard.TargetName="ScaleTrans"
-                                                                                           Storyboard.TargetProperty="ScaleY"
-                                                                                           From="1.0" To="1.2" Duration="0:0:0.5"/>
-                                                                      </Storyboard>
-                                                                  </BeginStoryboard>
-                                                              </EventTrigger>
-                                                          </Grid.Triggers>
-
-                                                          <!-- Up Arrow Icon -->
-                                                          <Viewbox Width="16" Height="16" RenderTransformOrigin="0.5,0.5">
-                                                              <Viewbox.RenderTransform>
-                                                                  <ScaleTransform x:Name="ScaleTrans"/>
-                                                              </Viewbox.RenderTransform>
-                                                              <Path Data="M7,20h4c0,1.1-0.9,2-2,2S7,21.1,7,20z M12,2c-5.52,0-10,4.48-10,10c0,5.25,4.08,9.54,9.23,9.96 C11.08,21.61,10.6,21.16,10.22,20.62C6.09,19.98,3,16.4,3,12C3,7.03,7.03,3,12,3s9,4.03,9,9c0,0.48-0.04,0.95-0.12,1.41 c0.87,0.3,1.67,0.76,2.37,1.35C23.82,13.82,24,12.92,24,12C24,6.48,18.62,2,12,2z M12,16l4-4h-2.5V7h-3v5H8L12,16z" Fill="#FFD700"/>
-                                                          </Viewbox>
+                                                         <Viewbox Width="16" Height="16">
+                                                              <Path Data="M7,20h4c0,1.1-0.9,2-2,2S7,21.1,7,20z M12,2c-5.52,0-10,4.48-10,10c0,5.25,4.08,9.54,9.23,9.96 C11.08,21.61,10.6,21.16,10.22,20.62C6.09,19.98,3,16.4,3,12C3,7.03,7.03,3,12,3s9,4.03,9,9c0,0.48-0.04,0.95-0.12,1.41 c0.87,0.3,1.67,0.76,2.37,1.35C23.82,13.82,24,12.92,24,12C24,6.48,18.62,2,12,2z M12,16l4-4h-2.5V7h-3v5H8L12,16z" Fill="{DynamicResource Brush.Status.Warning}"/>
+                                                         </Viewbox>
                                                      </Grid>
                                                  </ControlTemplate>
                                              </Setter.Value>
@@ -454,7 +378,9 @@
                          </Button.Style>
                      </Button>
                 </StackPanel>
-            </StatusBarItem>
-        </StatusBar>
+            </Grid>
+        </Border>
     </Grid>
+    
+
 </Window>
