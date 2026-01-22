@@ -282,7 +282,21 @@
                                  Background="{DynamicResource InputBackgroundBrush}"
                                  Foreground="{DynamicResource TextBrush}"
                                  CaretBrush="{DynamicResource TextBrush}"
-                                 Height="30" FontSize="14" Margin="0,2,0,0" Padding="5"/>
+                                 Height="30" FontSize="14" Margin="0,2,0,0" Padding="5">
+                             <TextBox.Style>
+                                 <Style TargetType="TextBox">
+                                     <Setter Property="BorderBrush" Value="{DynamicResource BorderBrush}"/>
+                                     <Setter Property="BorderThickness" Value="1"/>
+                                     <Style.Triggers>
+                                         <DataTrigger Binding="{Binding IsPartNameValid}" Value="False">
+                                             <Setter Property="BorderBrush" Value="Red"/>
+                                             <Setter Property="BorderThickness" Value="2"/>
+                                             <Setter Property="ToolTip" Value="Nome da peça difere do padrão cadastrado para este lote."/>
+                                         </DataTrigger>
+                                     </Style.Triggers>
+                                 </Style>
+                             </TextBox.Style>
+                        </TextBox>
                     </StackPanel>
                 </Grid>
             </StackPanel>
@@ -312,6 +326,13 @@
                         <Style TargetType="DataGridRow">
                             <Setter Property="Background" Value="{DynamicResource AppBackgroundBrush}"/>
                             <Setter Property="Foreground" Value="{DynamicResource TextBrush}"/>
+                            <Setter Property="ContextMenu">
+                                <Setter.Value>
+                                    <ContextMenu>
+                                        <MenuItem Header="Excluir Valor" Command="{Binding DataContext.RemoveRowCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}" CommandParameter="{Binding}" />
+                                    </ContextMenu>
+                                </Setter.Value>
+                            </Setter>
                             <Style.Triggers>
                                 <Trigger Property="ItemsControl.AlternationIndex" Value="1">
                                     <Setter Property="Background" Value="{DynamicResource CardBackgroundBrush}"/>

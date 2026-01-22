@@ -22,6 +22,10 @@ namespace SelectML.Client.Services
 
         // Updates
         public string UpdateUrl { get; set; } = "https://github.com/mitutoyo-brasil-bsg/SelectML/";
+
+        // Serial Persistence
+        public string LastSerialPort { get; set; }
+        public string LastSerialStrategy { get; set; }
     }
 
     public class ConfigService

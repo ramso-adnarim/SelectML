@@ -48,6 +48,29 @@ namespace SelectML.Client.Services
             }
         }
 
+        public async Task<string?> GetRoutineNameAsync(string batchNumber)
+        {
+            if (string.IsNullOrWhiteSpace(_connectionString)) return null;
+
+            // Prompt: RoutineName from DB
+            string query = @"SELECT TOP 1 RoutineName FROM dbo.ActiveRun WHERE RunName = @BatchNumber";
+
+            try
+            {
+                using (var connection = new SqlConnection(_connectionString))
+                {
+                    await connection.OpenAsync();
+                    using (var command = new SqlCommand(query, connection))
+                    {
+                        command.Parameters.AddWithValue("@BatchNumber", batchNumber);
+                        var result = await command.ExecuteScalarAsync();
+                        return result as string;
+                    }
+                }
+            }
+            catch { return null; }
+        }
+
         public async Task<List<string>> GetFeaturesForRunAsync(string batchNumber)
         {
             var features = new List<string>();

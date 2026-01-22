@@ -82,6 +82,7 @@ namespace SelectML.Client.ViewModels
 
         // Serial Buffer
         private Queue<SerialMeasurement> _serialBuffer = new Queue<SerialMeasurement>();
+        private Queue<string> _fileBuffer = new Queue<string>();
         // _isProcessingFile is effectively tracked by IsPendingAction, but we'll add explicit tracking if needed or use IsPendingAction.
         // Prompt requested _isProcessingFile flag.
         private bool _isProcessingFile;
@@ -115,6 +116,7 @@ namespace SelectML.Client.ViewModels
             // Comandos de Ação
             SendCommand = new RelayCommand(ExecuteSend, CanExecuteAction);
             CancelCommand = new RelayCommand(ExecuteCancel, CanExecuteAction);
+            RemoveRowCommand = new RelayCommand(ExecuteRemoveRow);
 
             // Window Commands
             MinimizeToTrayCommand = new RelayCommand(o => RequestMinimizeWindow?.Invoke());
@@ -141,6 +143,19 @@ namespace SelectML.Client.ViewModels
             
             // Subscribe to Serial Events
             SerialPortService.Instance.MeasurementReceived += OnSerialMeasurementReceived;
+
+            // Hook into collection changes to validation
+            // Ideally we should hook into item PropertyChanged but we already do that in OnSerialMeasurementReceived roughly
+            // We'll iterate in TriggerValidation.
+        }
+
+        // Validation Properties
+        private bool _isPartNameValid = true;
+        private string _expectedPartName;
+        public bool IsPartNameValid
+        {
+            get => _isPartNameValid;
+            set { _isPartNameValid = value; OnPropertyChanged(); }
         }
 
         private void PerformCleanup()
@@ -341,6 +356,7 @@ namespace SelectML.Client.ViewModels
                 CommandManager.InvalidateRequerySuggested();
                 // Trigger Lookup
                 _ = LoadFeaturesForPart();
+                TriggerValidation();
             }
         }
 
@@ -366,6 +382,8 @@ namespace SelectML.Client.ViewModels
              try
              {
                  var station = await _databaseService.GetStationNameAsync(BatchNumber);
+                 var routine = await _databaseService.GetRoutineNameAsync(BatchNumber);
+
                  if (!string.IsNullOrEmpty(station))
                  {
                      DetectedStationName = station;
@@ -374,9 +392,24 @@ namespace SelectML.Client.ViewModels
                  {
                      DetectedStationName = "Não Identificada";
                  }
+
+                 if (!string.IsNullOrEmpty(routine))
+                 {
+                     _expectedPartName = routine;
+                     // Auto-fill if empty
+                     if (string.IsNullOrWhiteSpace(PartName))
+                     {
+                         PartName = routine;
+                     }
+                 }
+                 else
+                 {
+                     _expectedPartName = null;
+                 }
                  
                  // Also load features if possible (redundant with PartName trigger but safer)
                  await LoadFeaturesForPart();
+                 TriggerValidation();
              }
              catch (Exception ex)
              {
@@ -433,6 +466,7 @@ namespace SelectML.Client.ViewModels
         public RelayCommand ToggleThemeCommand { get; }
         public RelayCommand SendCommand { get; }
         public RelayCommand CancelCommand { get; }
+        public RelayCommand RemoveRowCommand { get; }
         public RelayCommand MinimizeToTrayCommand { get; }
         public RelayCommand RestoreFromTrayCommand { get; }
 
@@ -581,16 +615,19 @@ namespace SelectML.Client.ViewModels
                     return;
                 }
 
+                /* 
+                // Allow null parser for Serial Only mode
                 if (SelectedParser == null)
                 {
                     System.Windows.MessageBox.Show("Selecione um plugin de máquina.", "Erro", MessageBoxButton.OK, MessageBoxImage.Error);
                     Log.Warning("No parser selected");
                     return;
                 }
+                */
 
                 var config = _configService.Load(); // Reload to keep existing keys
                 config.WatchDirectory = WatchDirectory;
-                config.LastPluginName = SelectedParser.MachineName;
+                config.LastPluginName = SelectedParser?.MachineName ?? ""; // Allow null
 
                 // Save DB fields
                 config.DbServer = DbServer;
@@ -602,7 +639,7 @@ namespace SelectML.Client.ViewModels
 
                 _configService.Save(config);
                 Log.Information("Configuration saved");
-
+                
                 // Re-initialize database service
                 _databaseService = new DatabaseService(config.ConnectionString);
 
@@ -688,6 +725,13 @@ namespace SelectML.Client.ViewModels
         {
             try
             {
+                if (SelectedParser == null)
+                {
+                    StatusMessage = "Monitoramento de Arquivo: Desativado (Modo Serial)";
+                    Log.Information("File monitoring disabled (No parser selected)");
+                    return;
+                }
+
                 if (_watcher != null) StopWatcher();
 
                 _watcher = new FileSystemWatcher(WatchDirectory);
@@ -754,115 +798,172 @@ namespace SelectML.Client.ViewModels
 
         private async void OnFileCreated(object sender, FileSystemEventArgs e)
         {
-            if (IsPendingAction) return;
-
-            if (!SelectedParser.CanParse(e.FullPath)) return;
-
-            if (!await WaitForFileAccess(e.FullPath))
+            // Reverse Buffer Logic
+            if (IsPendingAction)
             {
-                UpdateStatus($"Erro: Arquivo {e.Name} bloqueado ou inacessível.");
-                Log.Warning("File locked or inaccessible: {File}", e.FullPath);
+                _fileBuffer.Enqueue(e.FullPath);
+                UpdateStatus($"Arquivo em espera ({_fileBuffer.Count}): {e.Name}");
+                Log.Information("File queued in buffer: {File}", e.Name);
                 return;
             }
 
-            try
-            {
-                UpdateStatus($"Lendo arquivo: {e.Name}...");
-                Log.Information("Processing file: {File}", e.Name);
+            await ProcessFile(e.FullPath, e.Name);
+        }
 
-                var data = SelectedParser.Parse(e.FullPath);
+        private async Task ProcessFile(string fullPath, string fileName)
+        {
+             if (!SelectedParser.CanParse(fullPath)) return;
 
-                if (data.IsValid)
-                {
-                    // Phase 6: Archive Immediately
-                    try
-                    {
-                        _fileLifecycleService.ArchiveInputFile(e.FullPath, WatchDirectory);
-                    }
-                    catch (Exception ex)
-                    {
-                        UpdateStatus($"Erro de backup: {ex.Message}");
-                        Log.Error(ex, "Backup failed, stopping processing for {File}", e.Name);
-                        return;
-                    }
+             if (!await WaitForFileAccess(fullPath))
+             {
+                 UpdateStatus($"Erro: Arquivo {fileName} bloqueado ou inacessível.");
+                 Log.Warning("File locked or inaccessible: {File}", fullPath);
+                 return;
+             }
 
-                    await System.Windows.Application.Current.Dispatcher.InvokeAsync(async () =>
-                    {
-                        _isProcessingFile = true; // Protect against Serial Data loss during processing
-                        _currentData = data;
+             try
+             {
+                 UpdateStatus($"Lendo arquivo: {fileName}...");
+                 Log.Information("Processing file: {File}", fileName);
 
-                        PartName = data.PartName;
-                        BatchNumber = data.BatchNumber;
+                 var data = SelectedParser.Parse(fullPath);
 
-                        // Phase 5: Early Detection and Validation
-                        DetectedStationName = await _databaseService.GetStationNameAsync(data.BatchNumber);
-                        var expectedFeatures = await _databaseService.GetFeaturesForRunAsync(data.BatchNumber);
+                 if (data.IsValid)
+                 {
+                     // Phase 6: Archive Immediately
+                     try
+                     {
+                         _fileLifecycleService.ArchiveInputFile(fullPath, WatchDirectory);
+                     }
+                     catch (Exception ex)
+                     {
+                         UpdateStatus($"Erro de backup: {ex.Message}");
+                         Log.Error(ex, "Backup failed, stopping processing for {File}", fileName);
+                         return;
+                     }
 
-                        MeasuredResults.Clear();
-                        bool hasUnrecognized = false;
-                        foreach (var item in data.Results)
-                        {
-                            bool isRecognized = true;
-                            if (expectedFeatures != null && expectedFeatures.Any())
-                            {
-                                isRecognized = expectedFeatures.Contains(item.Key);
-                            }
-                            if (!isRecognized) hasUnrecognized = true;
+                     await System.Windows.Application.Current.Dispatcher.InvokeAsync(async () =>
+                     {
+                         _isProcessingFile = true; // Protect against Serial Data loss during processing
+                         IsPendingAction = true; // Ensure locked
+                         _currentData = data;
 
-                            MeasuredResults.Add(new ResultItem
-                            {
-                                Characteristic = item.Key,
-                                Value = item.Value,
-                                IsRecognized = isRecognized
-                            });
-                        }
+                         PartName = data.PartName;
+                         BatchNumber = data.BatchNumber;
 
-                        if (IsAutoMode)
-                        {
-                            if (hasUnrecognized)
-                            {
-                                if (_sessionConfirmationAction == ConfirmationAction.SendAll)
-                                {
-                                    await GenerateOutputCsv(data);
-                                }
-                                else if (_sessionConfirmationAction == ConfirmationAction.SendRecognized)
-                                {
-                                    var filtered = GetFilteredData(data);
-                                    await GenerateOutputCsv(filtered);
-                                }
-                                else
-                                {
-                                    // Fallback to manual if no rule established
-                                    IsPendingAction = true;
-                                    StatusMessage = "Validação necessária. Verifique e envie.";
-                                    RequestRestoreWindow?.Invoke();
-                                }
-                            }
-                            else
-                            {
-                                await GenerateOutputCsv(data);
-                            }
-                        }
-                        else
-                        {
-                            IsPendingAction = true;
-                            _isProcessingFile = true; // Mark as File Mode (Locks out Serial)
-                            StatusMessage = "Dados carregados. Verifique e clique em Enviar.";
-                            RequestRestoreWindow?.Invoke();
-                        }
-                    });
-                }
-                else
-                {
-                    UpdateStatus($"Aviso: Arquivo {e.Name} não contem dados válidos.");
-                    Log.Warning("File {File} does not contain valid data", e.Name);
-                }
-            }
-            catch (Exception ex)
-            {
-                UpdateStatus($"Erro ao processar {e.Name}: {ex.Message}");
-                Log.Error(ex, "Error processing file: {File}", e.Name);
-            }
+                         // Phase 5: Early Detection and Validation
+                         DetectedStationName = await _databaseService.GetStationNameAsync(data.BatchNumber);
+                         var expectedFeatures = await _databaseService.GetFeaturesForRunAsync(data.BatchNumber);
+
+                         MeasuredResults.Clear();
+                         bool hasUnrecognized = false;
+                         foreach (var item in data.Results)
+                         {
+                             bool isRecognized = true;
+                             if (expectedFeatures != null && expectedFeatures.Any())
+                             {
+                                 isRecognized = expectedFeatures.Contains(item.Key);
+                             }
+                             if (!isRecognized) hasUnrecognized = true;
+
+                             MeasuredResults.Add(new ResultItem
+                             {
+                                 Characteristic = item.Key,
+                                 Value = item.Value,
+                                 IsRecognized = isRecognized
+                             });
+                         }
+                         
+                         // Central Validation Trigger
+                         TriggerValidation();
+
+                         if (IsAutoMode)
+                         {
+                             if (hasUnrecognized)
+                             {
+                                 if (_sessionConfirmationAction == ConfirmationAction.SendAll)
+                                 {
+                                     await GenerateOutputCsv(data);
+                                 }
+                                 else if (_sessionConfirmationAction == ConfirmationAction.SendRecognized)
+                                 {
+                                     var filtered = GetFilteredData(data);
+                                     await GenerateOutputCsv(filtered);
+                                 }
+                                 else
+                                 {
+                                     // Fallback to manual if no rule established
+                                     IsPendingAction = true;
+                                     StatusMessage = "Validação necessária. Verifique e envie.";
+                                     RequestRestoreWindow?.Invoke();
+                                 }
+                             }
+                             else
+                             {
+                                 await GenerateOutputCsv(data);
+                             }
+                         }
+                         else
+                         {
+                             IsPendingAction = true;
+                             _isProcessingFile = true; // Mark as File Mode (Locks out Serial)
+                             StatusMessage = "Dados carregados. Verifique e clique em Enviar.";
+                             RequestRestoreWindow?.Invoke();
+                         }
+                     });
+                 }
+                 else
+                 {
+                     UpdateStatus($"Aviso: Arquivo {fileName} não contem dados válidos.");
+                     Log.Warning("File {File} does not contain valid data", fileName);
+                 }
+             }
+             catch (Exception ex)
+             {
+                 UpdateStatus($"Erro ao processar {fileName}: {ex.Message}");
+                 Log.Error(ex, "Error processing file: {File}", fileName);
+             }
+        }
+        
+        // Placeholder for Validation
+        private void TriggerValidation() 
+        {
+             // 1. Validate Part Name
+             if (!string.IsNullOrEmpty(_expectedPartName) && !string.IsNullOrEmpty(PartName))
+             {
+                 // Exact match case-insensitive?
+                 IsPartNameValid = string.Equals(PartName.Trim(), _expectedPartName.Trim(), StringComparison.OrdinalIgnoreCase);
+             }
+             else
+             {
+                 IsPartNameValid = true; // No expectation or empty input (let required field validator handle empty)
+             }
+
+             // 2. Validate Rows
+             if (MeasuredResults != null)
+             {
+                 foreach (var item in MeasuredResults)
+                 {
+                     bool isValid = false;
+                     if (!string.IsNullOrWhiteSpace(item.Characteristic))
+                     {
+                         // If we have known features, it MUST be one of them? 
+                         // Or just 'Recognized' status.
+                         if (KnownFeatures != null && KnownFeatures.Any())
+                         {
+                             isValid = KnownFeatures.Any(f => f.Equals(item.Characteristic.Trim(), StringComparison.OrdinalIgnoreCase));
+                         }
+                         else
+                         {
+                             // If no features loaded, we can't validate, so maybe assume valid or invalid?
+                             // Usually valid if just manual entry mode without DB?
+                             // But requirement implies DB validation.
+                             isValid = true; 
+                         }
+                     }
+                     item.IsRecognized = isValid;
+                 }
+             }
         }
 
 
@@ -906,6 +1007,11 @@ namespace SelectML.Client.ViewModels
 
         private bool CanExecuteAction(object obj)
         {
+            // Early Cancel: Allow cancel if we have ANY data, even if fields are missing
+            if (obj is string commandName && commandName == "Cancel")
+            {
+                 return IsPendingAction || MeasuredResults.Count > 0;
+            }
             return IsPendingAction && !string.IsNullOrWhiteSpace(PartName) && !string.IsNullOrWhiteSpace(BatchNumber);
         }
 
@@ -1047,7 +1153,15 @@ namespace SelectML.Client.ViewModels
             ResetUI();
         }
 
-        private void ResetUI()
+        private void ExecuteRemoveRow(object obj)
+        {
+            if (obj is ResultItem item && MeasuredResults.Contains(item))
+            {
+                MeasuredResults.Remove(item);
+            }
+        }
+
+        private async void ResetUI()
         {
             _currentData = null;
             PartName = string.Empty;
@@ -1059,7 +1173,28 @@ namespace SelectML.Client.ViewModels
             _isProcessingFile = false; // Release File Mode lock
             // IsPendingAction should be false here usually, unless we re-activate it for Buffered data
             
-            ProcessSerialBuffer();
+            // Check Buffers
+            if (_serialBuffer.Count > 0)
+            {
+                 ProcessSerialBuffer();
+            }
+            else if (_fileBuffer.Count > 0)
+            {
+                 // Small delay to ensure clean state?
+                 await Task.Delay(100);
+                 ProcessFileBuffer();
+            }
+        }
+        
+        private async void ProcessFileBuffer()
+        {
+            if (_fileBuffer.Count > 0)
+            {
+                var file = _fileBuffer.Dequeue();
+                UpdateStatus($"Processando arquivo bufferizado ({_fileBuffer.Count} restantes)...");
+                // Need to call ProcessFile (async)
+                await ProcessFile(file, Path.GetFileName(file));
+            }
         }
 
         private void ProcessSerialBuffer()

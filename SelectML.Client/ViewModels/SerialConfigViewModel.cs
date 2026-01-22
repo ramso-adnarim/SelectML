@@ -16,6 +16,7 @@ namespace SelectML.Client.ViewModels
         private ISerialDeviceStrategy _selectedStrategy;
         private string _connectionStatus = "Desconectado";
         private System.Windows.Media.Brush _connectionStatusBrush = System.Windows.Media.Brushes.Gray;
+        private readonly ConfigService _configService;
 
         public ObservableCollection<string> AvailablePorts { get; set; } = new ObservableCollection<string>();
         public ObservableCollection<ISerialDeviceStrategy> AvailableStrategies { get; set; } = new ObservableCollection<ISerialDeviceStrategy>();
@@ -26,8 +27,22 @@ namespace SelectML.Client.ViewModels
 
         public SerialConfigViewModel()
         {
+            _configService = new ConfigService();
             LoadStrategies();
             LoadPorts();
+
+            // Load Persistence
+            var config = _configService.Load();
+            if (!string.IsNullOrEmpty(config.LastSerialPort) && AvailablePorts.Contains(config.LastSerialPort))
+            {
+                SelectedPort = config.LastSerialPort;
+            }
+
+            if (!string.IsNullOrEmpty(config.LastSerialStrategy))
+            {
+                 var strategy = System.Linq.Enumerable.FirstOrDefault(AvailableStrategies, s => s.GetType().Name == config.LastSerialStrategy);
+                 if (strategy != null) SelectedStrategy = strategy;
+            }
 
             ConnectCommand = new RelayCommand(ExecuteConnect, CanConnect);
             DisconnectCommand = new RelayCommand(ExecuteDisconnect, CanDisconnect);
@@ -100,6 +115,19 @@ namespace SelectML.Client.ViewModels
 
             try
             {
+                // Persistence
+                var config = _configService.Load();
+                config.LastSerialPort = SelectedPort;
+                config.LastSerialStrategy = SelectedStrategy.GetType().Name;
+                _configService.Save(config);
+
+                // Check for Hot-Reload if Custom
+                if (SelectedStrategy is CustomSerialStrategy custom)
+                {
+                    // Force reload from disk in case user just edited it
+                    custom.LoadConfig(); 
+                }
+
                 SerialPortService.Instance.Connect(SelectedPort, SelectedStrategy);
                 UpdateStatus();
             }
