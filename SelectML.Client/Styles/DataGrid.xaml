@@ -18,9 +18,9 @@
         <Setter Property="CanUserResizeRows" Value="False"/>
         <Setter Property="SelectionMode" Value="Single"/>
         <Setter Property="RowHeight" Value="35"/> <!-- More breathing room -->
-        <!-- Remove standard messy default selection colors by retemplating or overriding resources?
-             WPF DataGrid selection is notoriously hard to style without full template. 
-             We will try to use SystemColors overrides or CellStyle triggers. -->
+        <Setter Property="ColumnHeaderStyle" Value="{DynamicResource ModernDataGridColumnHeader}"/>
+        <Setter Property="RowStyle" Value="{DynamicResource ModernDataGridRow}"/>
+        <Setter Property="CellStyle" Value="{DynamicResource ModernDataGridCell}"/>
     </Style>
 
     <!-- COLUMN HEADER -->
