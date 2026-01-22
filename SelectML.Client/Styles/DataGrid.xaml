@@ -11,7 +11,7 @@
         <Setter Property="HorizontalGridLinesBrush" Value="{DynamicResource Brush.Border.Base}"/>
         <Setter Property="VerticalGridLinesBrush" Value="{DynamicResource Brush.Border.Base}"/>
         <Setter Property="HeadersVisibility" Value="Column"/>
-        <Setter Property="RowValidationRules" Value="{x:Null}"/> <!-- Turn off default ugly validation -->
+        <!--<Setter Property="RowValidationRules" Value="{x:Null}"/>  Turn off default ugly validation -->
         <Setter Property="AutoGenerateColumns" Value="False"/>
         <Setter Property="CanUserAddRows" Value="False"/>
         <Setter Property="CanUserDeleteRows" Value="False"/>
