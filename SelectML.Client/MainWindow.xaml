@@ -8,7 +8,7 @@
         xmlns:sel="clr-namespace:SelectML.Client.Selectors"
         xmlns:tb="http://www.hardcodet.net/taskbar"
         mc:Ignorable="d"
-        Title="SelectML - Monitoramento de Medição" Height="650" Width="800"
+        Title="SelectML - Monitoramento de Medição" Height="650" Width="500"
         Background="{DynamicResource Brush.Background.Base}" 
         Foreground="{DynamicResource Brush.Text.Primary}" 
         Icon="/SelectML-logo-short-light.png"
@@ -42,11 +42,11 @@
             <Setter Property="Foreground" Value="{DynamicResource Brush.Text.Secondary}"/>
             <Setter Property="FontSize" Value="12"/>
             <Setter Property="FontWeight" Value="SemiBold"/>
-            <Setter Property="Margin" Value="0,0,0,4"/>
+            <Setter Property="Margin" Value="0,0,0,0"/>
         </Style>
     </Window.Resources>
 
-    <Grid Margin="20">
+    <Grid Margin="10">
         <Grid.ColumnDefinitions>
             <ColumnDefinition Width="*"/>
         </Grid.ColumnDefinitions>
@@ -64,7 +64,7 @@
                         DoubleClickCommand="{Binding RestoreFromTrayCommand}" />
 
         <!-- 1. Header Area -->
-        <Grid Grid.Row="0" Margin="0,0,0,15">
+        <Grid Grid.Row="0" Margin="0,0,0,5">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="*"/>
                 <ColumnDefinition Width="Auto"/>
@@ -78,7 +78,7 @@
             <!-- Theme Toggle -->
             <Button Grid.Column="1" Command="{Binding ToggleThemeCommand}" 
                     Style="{StaticResource IconButton}"
-                    ToolTip="Alternar tema (Claro/Escuro)" Width="30" Height="30">
+                    ToolTip="Alternar tema (Claro/Escuro)" Width="20" Height="20" Cursor="Hand">
                 <TextBlock FontSize="14">
                     <TextBlock.Style>
                         <Style TargetType="TextBlock">
@@ -167,7 +167,7 @@
                     
                     <!-- Left: Folder -->
                     <StackPanel Grid.Column="0">
-                        <TextBlock Text="Diretório de Monitoramento" Style="{StaticResource LabelText}"/>
+                        <TextBlock Text="Diretório de monitoramento" Style="{StaticResource LabelText}"/>
                         <Grid>
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="*"/>
@@ -189,7 +189,11 @@
                             <TextBlock Text="Servidor" FontSize="11" Foreground="{DynamicResource Brush.Text.Secondary}"/>
                                 <TextBox Text="{Binding DbServer, UpdateSourceTrigger=PropertyChanged}" IsEnabled="{Binding IsConfigEnabled}" Margin="0,2,0,8" Style="{StaticResource {x:Type TextBox}}"/>
                                 
-                                <CheckBox Content="Autenticação Windows" IsChecked="{Binding DbUseWindowsAuth}" IsEnabled="{Binding IsConfigEnabled}" Margin="0,0,0,8" Foreground="{DynamicResource Brush.Text.Primary}"/>
+                                <CheckBox Content="Autenticação Windows" 
+                                          IsChecked="{Binding DbUseWindowsAuth}" 
+                                          IsEnabled="{Binding IsConfigEnabled}" 
+                                          Margin="0,0,0,8" 
+                                          Foreground="{DynamicResource Brush.Text.Primary}"/>
                                 
                                 <Grid Margin="0,0,0,8">
                                     <Grid.ColumnDefinitions>
@@ -213,7 +217,11 @@
                                         <ColumnDefinition Width="*"/>
                                         <ColumnDefinition Width="Auto"/>
                                     </Grid.ColumnDefinitions>
-                                    <ComboBox ItemsSource="{Binding AvailableDatabases}" Text="{Binding DbName}" IsEditable="True" IsEnabled="{Binding IsConfigEnabled}" Style="{StaticResource {x:Type ComboBox}}"/>
+                                    <ComboBox ItemsSource="{Binding AvailableDatabases}" 
+                                              Text="{Binding DbName}" 
+                                              IsEditable="True" 
+                                              IsEnabled="{Binding IsConfigEnabled}" 
+                                              Style="{StaticResource {x:Type ComboBox}}"/>
                                     <Button Grid.Column="1" Command="{Binding LoadDatabasesCommand}" Content="↻" Style="{StaticResource IconButton}" 
                                             Width="30" Margin="5,0,0,0" ToolTip="Atualizar lista" Foreground="{DynamicResource Brush.Text.Primary}"/>
                                 </Grid>
@@ -249,7 +257,7 @@
                     </Grid.ColumnDefinitions>
                     
                     <StackPanel Grid.Column="0">
-                        <TextBlock Text="Lote / Corrida" Style="{StaticResource LabelText}"/>
+                        <TextBlock Text="Nome da corrida/lote" Style="{StaticResource LabelText}"/>
                         <TextBox Text="{Binding BatchNumber, UpdateSourceTrigger=PropertyChanged}"
                                  IsReadOnly="{Binding IsPendingAction, Converter={StaticResource InverseBooleanConverter}}"
                                  FontSize="16" FontWeight="SemiBold" Height="40" Style="{StaticResource {x:Type TextBox}}"/>
@@ -258,7 +266,7 @@
                     </StackPanel>
 
                     <StackPanel Grid.Column="2">
-                        <TextBlock Text="Nome da Peça (Routine)" Style="{StaticResource LabelText}"/>
+                        <TextBlock Text="Nome da peça/rotina" Style="{StaticResource LabelText}"/>
                         <TextBox Text="{Binding PartName, UpdateSourceTrigger=PropertyChanged}"
                                  IsReadOnly="{Binding IsPendingAction, Converter={StaticResource InverseBooleanConverter}}"
                                  FontSize="16" FontWeight="SemiBold" Height="40">
@@ -279,14 +287,14 @@
 
                 <!-- DataGrid -->
                 <DockPanel Grid.Row="1">
-                    <TextBlock DockPanel.Dock="Top" Text="Resultados da Medição" 
+                    <TextBlock DockPanel.Dock="Top" Text="Resultados::" 
                                FontWeight="Bold" FontSize="14" Margin="0,0,0,10" Foreground="{DynamicResource Brush.Text.Primary}"/>
                     
                     <DataGrid ItemsSource="{Binding MeasuredResults}" 
                               Style="{StaticResource ModernDataGrid}">
                         <DataGrid.Columns>
                             <DataGridTemplateColumn Header="Característica" Width="*" CellTemplateSelector="{StaticResource FeatureColumnTemplateSelector}"/>
-                            <DataGridTextColumn Header="Valor Medido" Binding="{Binding Value}" Width="*">
+                            <DataGridTextColumn Header="Valor" Binding="{Binding Value}" Width="*">
                                 <DataGridTextColumn.ElementStyle>
                                     <Style TargetType="TextBlock">
                                         <Setter Property="Foreground" Value="{DynamicResource Brush.Action.Primary}"/>
@@ -318,19 +326,23 @@
         </Border>
 
         <!-- 4. Actions -->
-        <StackPanel Grid.Row="3" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,15,0,0">
-            <CheckBox Content="Modo Automático" IsChecked="{Binding IsAutoMode}" 
-                      VerticalAlignment="Center" Margin="0,0,20,0" FontWeight="SemiBold"/>
+        <StackPanel Grid.Row="3" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,15,0,0" Cursor="">
+            <CheckBox Content="Automático"
+                      Foreground="{DynamicResource Brush.Text.Secondary}"
+                      IsChecked="{Binding IsAutoMode}" 
+                      VerticalAlignment="Center" 
+                      Margin="0,0,20,0" 
+                      FontWeight="SemiBold"/>
             
-            <Button Command="{Binding CancelCommand}" Content="Cancelar" 
+            <Button Command="{Binding CancelCommand}" Content="CANCELAR" 
                     Style="{StaticResource GhostButton}" Margin="0,0,10,0"/>
             
-            <Button Command="{Binding SendCommand}" Content="ENVIAR DADOS" 
+            <Button Command="{Binding SendCommand}" Content="ENVIAR" 
                     Style="{StaticResource PrimaryButton}"/>
         </StackPanel>
 
         <!-- 5. Status Bar -->
-        <Border Grid.Row="4" Margin="0,15,-20,-20" Padding="20,5"
+        <Border Grid.Row="4" Margin="0,10,0,-2" Padding="10,5"
                 Background="{DynamicResource Brush.Surface.Card}" 
                 BorderBrush="{DynamicResource Brush.Border.Base}" BorderThickness="0,1,0,0">
             <Grid>
