@@ -1022,27 +1022,20 @@ namespace SelectML.Client.ViewModels
 
         private async void ExecuteSend(object obj)
         {
-            // If processing file, use _currentData, else construct from manual inputs
-            MeasurementData dataToSend = _currentData;
+            // Always construct data from UI (MeasuredResults) to ensure manual edits/removals are respected.
+            // If _currentData exists (File Mode), we preserve its metadata but override results.
+            
+            if (string.IsNullOrWhiteSpace(PartName) || string.IsNullOrWhiteSpace(BatchNumber)) return;
 
-            if (dataToSend == null)
+            MeasurementData dataToSend = new MeasurementData
             {
-                // MANUAL MODE (Serial)
-                if (string.IsNullOrWhiteSpace(PartName) || string.IsNullOrWhiteSpace(BatchNumber)) return;
+                PartName = PartName,
+                BatchNumber = BatchNumber,
+                // Inherit date from file if available, else Now
+                MeasureDate = _currentData?.MeasureDate ?? DateTime.Now,
+                Results = MeasuredResults.ToDictionary(k => k.Characteristic, v => v.Value)
+            };
 
-                dataToSend = new MeasurementData
-                {
-                    PartName = PartName,
-                    BatchNumber = BatchNumber,
-                    MeasureDate = DateTime.Now,
-                    Results = MeasuredResults.ToDictionary(k => k.Characteristic, v => v.Value)
-                };
-            }
-            else
-            {
-                 // Ensure UI overrides are respected if edited (future proofing)
-                 // But for now, _currentData is the source of truth for files
-            }
 
             // Phase 5: Validation Check
             if (MeasuredResults.Any(r => !r.IsRecognized))
@@ -1163,6 +1156,12 @@ namespace SelectML.Client.ViewModels
             if (obj is ResultItem item && MeasuredResults.Contains(item))
             {
                 MeasuredResults.Remove(item);
+
+                if (MeasuredResults.Count == 0)
+                {
+                    // Se não houver mais itens, cancelar a operação (Reset total)
+                    ExecuteCancel(null);
+                }
             }
         }
 
