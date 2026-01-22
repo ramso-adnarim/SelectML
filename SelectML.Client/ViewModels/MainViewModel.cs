@@ -858,40 +858,60 @@ namespace SelectML.Client.ViewModels
 
                          // Phase 5: Early Detection and Validation
                          DetectedStationName = await _databaseService.GetStationNameAsync(data.BatchNumber);
-                         var expectedFeatures = await _databaseService.GetFeaturesForRunAsync(data.BatchNumber);
+                         // Populate KnownFeatures for Validation
+                          System.Windows.Application.Current.Dispatcher.Invoke(() =>
+                          {
+                              KnownFeatures.Clear();
+                              if (expectedFeatures != null)
+                              {
+                                  foreach(var f in expectedFeatures) KnownFeatures.Add(f);
+                              }
+                          });
 
-                         MeasuredResults.Clear();
-                         bool hasUnrecognized = false;
-                         foreach (var item in data.Results)
-                         {
-                             bool isRecognized = true;
-                             if (expectedFeatures != null && expectedFeatures.Any())
-                             {
-                                 isRecognized = expectedFeatures.Contains(item.Key);
-                             }
-                             if (!isRecognized) hasUnrecognized = true;
-
-                                MeasuredResults.Add(new ResultItem
-                                {
-                                    Characteristic = item.Key,
-                                    Value = item.Value,
-                                    IsRecognized = isRecognized
-                                });
-                             }
+                          MeasuredResults.Clear();
+                          bool hasUnrecognized = false;
+                          foreach (var item in data.Results)
+                          {
+                              // Initial Check: If KnownFeatures has items, check existence. 
+                              // If KnownFeatures is empty (no features defined for this run in DB), decide policy.
+                              // STRICT policy: If DB returns empty rules, maybe everything is unrecognized? 
+                              // OR if DB returns "No Rules", maybe everything is valid?
+                              // Usually if there are NO Expected Features, the CSV might be creating new ones?
+                              // But prompt implies we validate against DB.
+                              // Let's assume: If expectedFeatures is EMPTY, we cannot validate, so IsRecognized = true?
+                              // User complaint: "received file with characteristic NOT IN DB... line should be red".
+                              // This implies Strict.
+                              
+                              bool isRecognized = true;
+                              if (expectedFeatures != null && expectedFeatures.Any())
+                              {
+                                  isRecognized = expectedFeatures.Contains(item.Key, StringComparer.OrdinalIgnoreCase);
+                              }
+                              // If expectedFeatures is null/empty, we default to True (valid) unless logic dictates otherwise.
                              
-                             // Hook up validation events for manual editing
-                             foreach(var res in MeasuredResults)
-                             {
-                                 res.PropertyChanged += ResultItem_PropertyChanged;
-                             }
-                         
-                         // Central Validation Trigger
-                         TriggerValidation();
+                              if (!isRecognized) hasUnrecognized = true;
 
-                         if (IsAutoMode)
-                         {
-                             if (hasUnrecognized)
-                             {
+                              var newItem = new ResultItem
+                              {
+                                  Characteristic = item.Key,
+                                  Value = item.Value,
+                                  IsRecognized = isRecognized // Set initial state
+                              };
+                              newItem.PropertyChanged += ResultItem_PropertyChanged;
+                              MeasuredResults.Add(newItem);
+                          }
+                          
+                          // Central Validation Trigger 
+                          // (Must NOT overwrite IsRecognized with False if KnownFeatures is empty, unless we want to)
+                          TriggerValidation(); 
+                          
+                          // Re-check hasUnrecognized after TriggerValidation (in case it changed)
+                          hasUnrecognized = MeasuredResults.Any(r => !r.IsRecognized);
+
+                          if (IsAutoMode)
+                          {
+                              if (hasUnrecognized)
+                              {
                                  if (_sessionConfirmationAction == ConfirmationAction.SendAll)
                                  {
                                      await GenerateOutputCsv(data);
@@ -942,12 +962,11 @@ namespace SelectML.Client.ViewModels
              // 1. Validate Part Name
              if (!string.IsNullOrEmpty(_expectedPartName) && !string.IsNullOrEmpty(PartName))
              {
-                 // Exact match case-insensitive?
                  IsPartNameValid = string.Equals(PartName.Trim(), _expectedPartName.Trim(), StringComparison.OrdinalIgnoreCase);
              }
              else
              {
-                 IsPartNameValid = true; // No expectation or empty input (let required field validator handle empty)
+                 IsPartNameValid = true; 
              }
 
              // 2. Validate Rows
@@ -955,31 +974,45 @@ namespace SelectML.Client.ViewModels
              {
                  foreach (var item in MeasuredResults)
                  {
-                     bool isValid = false;
-                     if (!string.IsNullOrWhiteSpace(item.Characteristic))
-                     {
-                         // If we have known features, it MUST be one of them? 
-                         // Or just 'Recognized' status.
-                         if (KnownFeatures != null && KnownFeatures.Any())
-                         {
-                             isValid = KnownFeatures.Any(f => f.Equals(item.Characteristic.Trim(), StringComparison.OrdinalIgnoreCase));
-                         }
-                         else
-                         {
-                             // If no features loaded, we can't validate, so maybe assume valid or invalid?
-                             // Usually valid if just manual entry mode without DB?
-                             // But requirement implies DB validation.
-                             isValid = true; 
-                         }
-                     }
-                     item.IsRecognized = isValid;
+                     ValidateItem(item);
                  }
              }
         }
+        
+        private void ValidateItem(ResultItem item)
+        {
+             if (item == null) return;
+             
+             // If we have known features, it MUST be one of them
+             if (KnownFeatures != null && KnownFeatures.Any())
+             {
+                 var input = item.Characteristic?.Trim();
+                 item.IsRecognized = !string.IsNullOrWhiteSpace(input) && 
+                                     KnownFeatures.Any(f => f.Equals(input, StringComparison.OrdinalIgnoreCase));
+             }
+             else
+             {
+                 // No features loaded/defined. 
+                 // If this was a manual entry with no DB connection, valid.
+                 // If this was a file load with empty DB features, it remains as initialized (Valid).
+                 // We only force FALSE if we HAVE a list and the item is NOT in it.
+                 // So we do nothing here, preserving the initialization from ProcessFile.
+                 // BUT, if user edits it? 
+                 // If KnownFeatures is empty, we assume valid for now (Flexible mode).
+                 item.IsRecognized = true;
+             }
+        }
 
-
-
-        private async Task LoadFeaturesForPart()
+        private void ResultItem_PropertyChanged(object? sender, PropertyChangedEventArgs e)
+        {
+            if (e.PropertyName == nameof(ResultItem.Characteristic))
+            {
+                if (sender is ResultItem item)
+                {
+                    ValidateItem(item);
+                }
+            }
+        }
         {
             if (string.IsNullOrWhiteSpace(PartName) || string.IsNullOrWhiteSpace(BatchNumber)) return;
             // Only trigger if we are not in the middle of a file load (which does its own lookup)
