@@ -338,10 +338,14 @@
                         <Style TargetType="DataGridRow">
                             <Setter Property="Background" Value="{DynamicResource AppBackgroundBrush}"/>
                             <Setter Property="Foreground" Value="{DynamicResource TextBrush}"/>
+                            <!-- Pass MainViewModel to Row Tag for ContextMenu access -->
+                            <Setter Property="Tag" Value="{Binding DataContext, RelativeSource={RelativeSource AncestorType=DataGrid}}"/>
                             <Setter Property="ContextMenu">
                                 <Setter.Value>
                                     <ContextMenu>
-                                        <MenuItem Header="Excluir Valor" Command="{Binding DataContext.RemoveRowCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}" CommandParameter="{Binding}" />
+                                        <MenuItem Header="Excluir Valor" 
+                                                  Command="{Binding PlacementTarget.Tag.RemoveRowCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}" 
+                                                  CommandParameter="{Binding}" />
                                     </ContextMenu>
                                 </Setter.Value>
                             </Setter>
