@@ -33,8 +33,9 @@
                               IsEditable="True"
                               IsEnabled="{Binding DataContext.IsPendingAction, RelativeSource={RelativeSource AncestorType=Window}}"
                               VerticalAlignment="Stretch"
-                              Height="Auto"
-                              Padding="4,0"
+                              Height="{Binding ActualHeight, RelativeSource={RelativeSource AncestorType=DataGridCell}}"
+                              VerticalContentAlignment="Center"
+                              Padding="5,0,0,0"
                               Style="{StaticResource {x:Type ComboBox}}"
                               Margin="0"/>
                 </DataTemplate>
@@ -78,12 +79,22 @@
                 <MenuItem Command="{Binding OpenSerialConfigCommand}" 
                           Foreground="{DynamicResource Brush.Text.Primary}" FontWeight="SemiBold">
                     <MenuItem.Header>
-                        <StackPanel Orientation="Horizontal">
                             <TextBlock Text="Conexão serial" VerticalAlignment="Center"/>
-                            <Ellipse Width="8" Height="8" Fill="{DynamicResource Brush.Status.Success}" 
-                                     Margin="6,0,0,0" VerticalAlignment="Center"
-                                     Visibility="{Binding IsSerialConnected, Converter={StaticResource BooleanToVisibilityConverter}}"/>
-                        </StackPanel>
+                            <StackPanel Orientation="Horizontal" Visibility="{Binding IsSerialConnected, Converter={StaticResource BooleanToVisibilityConverter}}">
+                                <Ellipse Width="8" Height="8" Fill="{DynamicResource Brush.Status.Success}" 
+                                         Margin="6,0,0,0" VerticalAlignment="Center" x:Name="SerialIndicator"/>
+                                <StackPanel.Triggers>
+                                    <EventTrigger RoutedEvent="Loaded">
+                                        <BeginStoryboard>
+                                            <Storyboard RepeatBehavior="Forever" AutoReverse="True">
+                                                <DoubleAnimation Storyboard.TargetName="SerialIndicator"
+                                                                 Storyboard.TargetProperty="Opacity"
+                                                                 From="1.0" To="0.4" Duration="0:0:1"/>
+                                            </Storyboard>
+                                        </BeginStoryboard>
+                                    </EventTrigger>
+                                </StackPanel.Triggers>
+                            </StackPanel>
                     </MenuItem.Header>
                 </MenuItem>
             </Menu>
@@ -361,6 +372,11 @@
                                         <Setter Property="Foreground" Value="{DynamicResource Brush.Action.Primary}"/>
                                         <Setter Property="FontWeight" Value="Bold"/>
                                         <Setter Property="VerticalAlignment" Value="Center"/>
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding RelativeSource={RelativeSource AncestorType=DataGridRow}, Path=IsSelected}" Value="True">
+                                                <Setter Property="Foreground" Value="{DynamicResource Brush.Status.Warning}"/>
+                                            </DataTrigger>
+                                        </Style.Triggers>
                                     </Style>
                                 </DataGridTextColumn.ElementStyle>
                             </DataGridTextColumn>

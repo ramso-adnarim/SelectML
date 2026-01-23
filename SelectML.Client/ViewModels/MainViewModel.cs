@@ -867,6 +867,7 @@ namespace SelectML.Client.ViewModels
 
                          // Phase 5: Early Detection and Validation
                          DetectedStationName = await _databaseService.GetStationNameAsync(data.BatchNumber);
+                         _expectedPartName = await _databaseService.GetRoutineNameAsync(data.BatchNumber);
                          var expectedFeatures = await _databaseService.GetFeaturesForRunAsync(data.BatchNumber);
                          // Populate KnownFeatures for Validation
                           System.Windows.Application.Current.Dispatcher.Invoke(() =>
