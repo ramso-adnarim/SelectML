@@ -49,14 +49,25 @@ namespace SelectML.Client
 
         public void SetTheme(bool isDark)
         {
-            // Update ResourceDictionary
-            var dict = new ResourceDictionary();
             string themeName = isDark ? "Dark" : "Light";
-            dict.Source = new Uri($"Themes/{themeName}.xaml", UriKind.Relative);
 
             // Clear old theme and add new one
             this.Resources.MergedDictionaries.Clear();
-            this.Resources.MergedDictionaries.Add(dict);
+            
+            // 1. Theme (Colors)
+            var themeDict = new ResourceDictionary();
+            themeDict.Source = new Uri($"pack://application:,,,/SelectML.Client;component/Themes/{themeName}.xaml");
+            this.Resources.MergedDictionaries.Add(themeDict);
+
+            // 2. Control Styles
+            var controlsDict = new ResourceDictionary();
+            controlsDict.Source = new Uri("pack://application:,,,/SelectML.Client;component/Styles/Controls.xaml");
+            this.Resources.MergedDictionaries.Add(controlsDict);
+
+            // 3. DataGrid Styles
+            var dataGridDict = new ResourceDictionary();
+            dataGridDict.Source = new Uri("pack://application:,,,/SelectML.Client;component/Styles/DataGrid.xaml");
+            this.Resources.MergedDictionaries.Add(dataGridDict);
 
             // Update Window Icon
             if (this.MainWindow != null)
