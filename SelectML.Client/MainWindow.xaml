@@ -64,22 +64,28 @@
                         DoubleClickCommand="{Binding RestoreFromTrayCommand}" />
 
         <!-- 1. Header Area -->
-        <Grid Grid.Row="0" Margin="0,0,0,5">
+        <Grid Grid.Row="0" Margin="0,0,0,10">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="*"/>
                 <ColumnDefinition Width="Auto"/>
             </Grid.ColumnDefinitions>
             <!-- Menu -->
             <Menu Background="Transparent" VerticalAlignment="Center" IsMainMenu="True">
-                <MenuItem Header="Conexão Serial" Command="{Binding OpenSerialConfigCommand}" 
+                <MenuItem Header="Conexão serial" Command="{Binding OpenSerialConfigCommand}" 
                           Foreground="{DynamicResource Brush.Text.Primary}" FontWeight="SemiBold"/>
             </Menu>
 
             <!-- Theme Toggle -->
-            <Button Grid.Column="1" Command="{Binding ToggleThemeCommand}" 
+            <Button Grid.Column="1" 
+                    Command="{Binding ToggleThemeCommand}" 
                     Style="{StaticResource IconButton}"
-                    ToolTip="Alternar tema (Claro/Escuro)" Width="20" Height="20" Cursor="Hand">
-                <TextBlock FontSize="14">
+                    ToolTip="Alternar tema (Claro/Escuro)" 
+                    Width="10" 
+                    Height="10" 
+                    Cursor="Hand" 
+                    BorderBrush="Transparent">
+                
+                <TextBlock FontSize="6">
                     <TextBlock.Style>
                         <Style TargetType="TextBlock">
                             <Setter Property="Text" Value="☾"/>
@@ -87,7 +93,7 @@
                             <Style.Triggers>
                                 <DataTrigger Binding="{Binding IsDarkMode}" Value="True">
                                     <Setter Property="Text" Value="☀"/>
-                                    <Setter Property="Foreground" Value="{DynamicResource Brush.Status.Warning}"/>
+                                    <Setter Property="Foreground" Value="{DynamicResource Brush.Text.Primary}"/>
                                 </DataTrigger>
                             </Style.Triggers>
                         </Style>
