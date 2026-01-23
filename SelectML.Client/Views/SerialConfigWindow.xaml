@@ -41,7 +41,7 @@
                         Command="{Binding OpenJsonConfigCommand}" 
                         Padding="10,5" 
                         IsEnabled="{Binding IsDisconnected}"
-                        Style="{StaticResource GhostButton}"/>
+                        Style="{DynamicResource GhostButton}"/>
             </StackPanel>
         </StackPanel>
 
@@ -49,13 +49,13 @@
         <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Right">
             <Button Content="Desconectar" Command="{Binding DisconnectCommand}" 
                     Visibility="{Binding IsConnected, Converter={StaticResource BooleanToVisibilityConverter}}"
-                    Margin="0,0,10,0" Style="{StaticResource DangerButton}"/>
+                    Margin="0,0,10,0" Style="{DynamicResource DangerButton}"/>
             
             <Button Content="Conectar" Command="{Binding ConnectCommand}" 
                      Visibility="{Binding IsDisconnected, Converter={StaticResource BooleanToVisibilityConverter}}"
-                    Margin="0,0,10,0" Style="{StaticResource PrimaryButton}"/>
+                    Margin="0,0,10,0" Style="{DynamicResource PrimaryButton}"/>
             
-            <Button Content="Fechar" IsCancel="True" Click="Close_Click" Style="{StaticResource GhostButton}"/>
+            <Button Content="Fechar" IsCancel="True" Click="Close_Click" Style="{DynamicResource GhostButton}"/>
         </StackPanel>
     </Grid>
 </Window>

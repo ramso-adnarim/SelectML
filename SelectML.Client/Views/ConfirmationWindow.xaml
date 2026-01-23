@@ -18,9 +18,9 @@
         <CheckBox x:Name="DontAskCheckBox" Grid.Row="1" Content="Não perguntar novamente" Margin="0,15,0,15" FontSize="12" Foreground="{DynamicResource TextBrush}"/>
 
         <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Right">
-            <Button Content="Enviar" Width="80" Click="SendAll_Click" Margin="0,0,10,0" Style="{StaticResource PrimaryButton}"/>
-            <Button Content="Confirmar (Reconhecidas)" Width="180" Click="SendRecognized_Click" Margin="0,0,10,0" Style="{StaticResource GhostButton}" FontWeight="Bold"/>
-            <Button Content="Cancelar" Width="80" Click="Cancel_Click" IsCancel="True" Style="{StaticResource DangerButton}"/>
+            <Button Content="Enviar" Width="80" Click="SendAll_Click" Margin="0,0,10,0" Style="{DynamicResource PrimaryButton}"/>
+            <Button Content="Confirmar (Reconhecidas)" Width="180" Click="SendRecognized_Click" Margin="0,0,10,0" Style="{DynamicResource GhostButton}" FontWeight="Bold"/>
+            <Button Content="Cancelar" Width="80" Click="Cancel_Click" IsCancel="True" Style="{DynamicResource DangerButton}"/>
         </StackPanel>
     </Grid>
 </Window>
