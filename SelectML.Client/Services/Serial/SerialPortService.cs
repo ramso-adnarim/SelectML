@@ -17,6 +17,7 @@ namespace SelectML.Client.Services.Serial
 
         public event EventHandler<SerialMeasurement>? MeasurementReceived;
         public event EventHandler<string>? ErrorReceived;
+        public event EventHandler<bool>? ConnectionStatusChanged;
 
         private SerialPortService() { }
 
@@ -46,6 +47,8 @@ namespace SelectML.Client.Services.Serial
                 _serialPort.DataReceived += OnDataReceived;
                 _serialPort.Open();
                 _serialPort.DiscardInBuffer(); // Clear old trash
+                
+                ConnectionStatusChanged?.Invoke(this, true);
             }
             catch (Exception ex)
             {
@@ -70,6 +73,7 @@ namespace SelectML.Client.Services.Serial
                 {
                     _serialPort = null;
                 }
+                ConnectionStatusChanged?.Invoke(this, false);
             }
             _buffer.Clear();
         }

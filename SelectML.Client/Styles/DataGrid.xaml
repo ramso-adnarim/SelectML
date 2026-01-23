@@ -66,9 +66,9 @@
         </Setter>
         <Style.Triggers>
             <Trigger Property="IsSelected" Value="True">
-                <!--<Setter Property="Foreground" Value="{DynamicResource Brush.Action.Primary}"/>-->
-                <Setter Property="BorderBrush" Value="{DynamicResource Brush.Action.Primary}"/>
+                <Setter Property="Foreground" Value="{DynamicResource Brush.Status.Warning}"/>
                 <Setter Property="FontWeight" Value="Bold"/>
+                <Setter Property="BorderThickness" Value="0"/>
             </Trigger>
         </Style.Triggers>
     </Style>

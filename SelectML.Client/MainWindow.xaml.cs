@@ -46,6 +46,31 @@ namespace SelectML.Client
             {
                DbPasswordBox.Password = vm.DbPassword;
             }
+
+            // Click outside to deselect
+            this.MouseDown += (s, e) =>
+            {
+                // Check if the click is outside the DataGrid
+                // We do a simple check: if the source is the Window or a container that isn't the DataGrid
+                // Logic: logic to clear selection if original source is not part of DataGrid
+                if (e.OriginalSource is DependencyObject obj && !IsDescendantOf(obj, ResultsDataGrid))
+                {
+                   ResultsDataGrid.SelectedItem = null;
+                   // Clear focus to ensure visual state updates if needed
+                   Keyboard.ClearFocus();
+                }
+            };
+        }
+        
+        private bool IsDescendantOf(DependencyObject node, DependencyObject ancestor)
+        {
+            if (ancestor == null) return false;
+            while (node != null)
+            {
+                if (node == ancestor) return true;
+                node = VisualTreeHelper.GetParent(node);
+            }
+            return false;
         }
 
         private void DbPasswordBox_PasswordChanged(object sender, RoutedEventArgs e)

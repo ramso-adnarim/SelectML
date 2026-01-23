@@ -144,6 +144,8 @@ namespace SelectML.Client.ViewModels
             
             // Subscribe to Serial Events
             SerialPortService.Instance.MeasurementReceived += OnSerialMeasurementReceived;
+            SerialPortService.Instance.ConnectionStatusChanged += (s, connected) => IsSerialConnected = connected;
+            IsSerialConnected = SerialPortService.Instance.IsConnected;
 
             // Hook into collection changes to validation
             // Ideally we should hook into item PropertyChanged but we already do that in OnSerialMeasurementReceived roughly
@@ -237,6 +239,13 @@ namespace SelectML.Client.ViewModels
         {
             get => _isAutoMode;
             set { _isAutoMode = value; OnPropertyChanged(); }
+        }
+
+        private bool _isSerialConnected;
+        public bool IsSerialConnected
+        {
+            get => _isSerialConnected;
+            set { _isSerialConnected = value; OnPropertyChanged(); }
         }
 
         public ImageSource TrayIconSource

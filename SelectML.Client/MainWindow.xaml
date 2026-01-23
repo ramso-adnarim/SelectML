@@ -32,6 +32,10 @@
                               Text="{Binding Characteristic, UpdateSourceTrigger=PropertyChanged}" 
                               IsEditable="True"
                               IsEnabled="{Binding DataContext.IsPendingAction, RelativeSource={RelativeSource AncestorType=Window}}"
+                              VerticalAlignment="Stretch"
+                              Height="Auto"
+                              Padding="4,0"
+                              Style="{StaticResource {x:Type ComboBox}}"
                               Margin="0"/>
                 </DataTemplate>
             </sel:FeatureColumnTemplateSelector.EditableTemplate>
@@ -71,8 +75,17 @@
             </Grid.ColumnDefinitions>
             <!-- Menu -->
             <Menu Background="Transparent" VerticalAlignment="Center" IsMainMenu="True">
-                <MenuItem Header="Conexão serial" Command="{Binding OpenSerialConfigCommand}" 
-                          Foreground="{DynamicResource Brush.Text.Primary}" FontWeight="SemiBold"/>
+                <MenuItem Command="{Binding OpenSerialConfigCommand}" 
+                          Foreground="{DynamicResource Brush.Text.Primary}" FontWeight="SemiBold">
+                    <MenuItem.Header>
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Text="Conexão serial" VerticalAlignment="Center"/>
+                            <Ellipse Width="8" Height="8" Fill="{DynamicResource Brush.Status.Success}" 
+                                     Margin="6,0,0,0" VerticalAlignment="Center"
+                                     Visibility="{Binding IsSerialConnected, Converter={StaticResource BooleanToVisibilityConverter}}"/>
+                        </StackPanel>
+                    </MenuItem.Header>
+                </MenuItem>
             </Menu>
 
             <!-- Theme Toggle -->
@@ -277,14 +290,51 @@
                                  IsReadOnly="{Binding IsPendingAction, Converter={StaticResource InverseBooleanConverter}}"
                                  FontSize="16" FontWeight="SemiBold" Height="40">
                              <TextBox.Style>
-                                 <Style TargetType="TextBox" BasedOn="{StaticResource {x:Type TextBox}}">
-                                     <Style.Triggers>
-                                         <DataTrigger Binding="{Binding IsPartNameValid}" Value="False">
-                                             <Setter Property="BorderBrush" Value="{DynamicResource Brush.Status.Error}"/>
-                                             <Setter Property="BorderThickness" Value="2"/>
-                                             <Setter Property="ToolTip" Value="Nome difere do padrão."/>
-                                         </DataTrigger>
-                                     </Style.Triggers>
+                                 <Style TargetType="TextBox"> <!-- Not BasedOn to avoid template conflict, using full template -->
+                                     <Setter Property="Background" Value="{DynamicResource Brush.Input.Background}"/>
+                                     <Setter Property="Foreground" Value="{DynamicResource Brush.Text.Primary}"/>
+                                     <Setter Property="BorderBrush" Value="{DynamicResource Brush.Border.Base}"/>
+                                     <Setter Property="BorderThickness" Value="1"/>
+                                     <Setter Property="Padding" Value="8,6"/>
+                                     <Setter Property="Height" Value="35"/>
+                                     <Setter Property="VerticalContentAlignment" Value="Center"/>
+                                     <Setter Property="Template">
+                                         <Setter.Value>
+                                             <ControlTemplate TargetType="{x:Type TextBox}">
+                                                 <Border x:Name="border" 
+                                                         Background="{TemplateBinding Background}" 
+                                                         BorderBrush="{TemplateBinding BorderBrush}" 
+                                                         BorderThickness="{TemplateBinding BorderThickness}" 
+                                                         CornerRadius="6" 
+                                                         SnapsToDevicePixels="True">
+                                                     <ScrollViewer x:Name="PART_ContentHost" Focusable="false" HorizontalScrollBarVisibility="Hidden" VerticalScrollBarVisibility="Hidden"/>
+                                                 </Border>
+                                                 <ControlTemplate.Triggers>
+                                                     <Trigger Property="IsEnabled" Value="false">
+                                                         <Setter Property="Opacity" TargetName="border" Value="0.5"/>
+                                                     </Trigger>
+                                                     <Trigger Property="IsMouseOver" Value="true">
+                                                         <Setter Property="BorderBrush" TargetName="border" Value="{DynamicResource Brush.Text.Secondary}"/>
+                                                     </Trigger>
+                                                     <Trigger Property="IsKeyboardFocused" Value="true">
+                                                         <Setter Property="BorderBrush" TargetName="border" Value="{DynamicResource Brush.Border.Focus}"/>
+                                                         <Setter Property="BorderThickness" TargetName="border" Value="1"/>
+                                                         <Setter Property="Effect" TargetName="border">
+                                                             <Setter.Value>
+                                                                 <DropShadowEffect Color="{Binding Color, Source={StaticResource Brush.Border.Focus}}" BlurRadius="4" ShadowDepth="0" Opacity="0.4"/>
+                                                             </Setter.Value>
+                                                         </Setter>
+                                                     </Trigger>
+                                                     <!-- Validation Trigger (Last to win) -->
+                                                     <DataTrigger Binding="{Binding IsPartNameValid}" Value="False">
+                                                         <Setter Property="BorderBrush" TargetName="border" Value="{DynamicResource Brush.Status.Error}"/>
+                                                         <Setter Property="BorderThickness" TargetName="border" Value="2"/>
+                                                         <Setter Property="ToolTip" Value="Nome difere do padrão."/>
+                                                     </DataTrigger>
+                                                 </ControlTemplate.Triggers>
+                                             </ControlTemplate>
+                                         </Setter.Value>
+                                     </Setter>
                                  </Style>
                              </TextBox.Style>
                         </TextBox>
@@ -296,7 +346,8 @@
                     <TextBlock DockPanel.Dock="Top" Text="Resultados:" 
                                FontWeight="Bold" FontSize="14" Margin="0,0,0,10" Foreground="{DynamicResource Brush.Text.Primary}"/>
                     
-                    <DataGrid ItemsSource="{Binding MeasuredResults}" 
+                    <DataGrid x:Name="ResultsDataGrid"
+                              ItemsSource="{Binding MeasuredResults}" 
                               Style="{StaticResource ModernDataGrid}">
                         <DataGrid.Columns>
                             <DataGridTemplateColumn Header="Característica" 
