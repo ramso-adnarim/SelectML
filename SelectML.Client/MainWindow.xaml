@@ -208,16 +208,16 @@
                                         <ColumnDefinition Width="*"/>
                                     </Grid.ColumnDefinitions>
                                     <StackPanel>
-                                        <TextBlock Text="Login" FontSize="11" Foreground="{DynamicResource Brush.Text.Secondary}"/>
+                                        <TextBlock Text="Login" FontSize="11" Foreground="{DynamicResource Brush.Text.Secondary}" Margin="0,0,0,5"/>
                                         <TextBox Text="{Binding DbUser, UpdateSourceTrigger=PropertyChanged}" IsEnabled="{Binding IsSqlCredentialsEnabled}" Style="{StaticResource {x:Type TextBox}}"/>
                                     </StackPanel>
                                     <StackPanel Grid.Column="2">
-                                        <TextBlock Text="Senha" FontSize="11" Foreground="{DynamicResource Brush.Text.Secondary}"/>
+                                        <TextBlock Text="Senha" FontSize="11" Foreground="{DynamicResource Brush.Text.Secondary}" Margin="0,0,0,5"/>
                                         <PasswordBox x:Name="DbPasswordBox" IsEnabled="{Binding IsSqlCredentialsEnabled}" Style="{StaticResource {x:Type PasswordBox}}"/>
                                     </StackPanel>
                                 </Grid>
                                 
-                                <TextBlock Text="Base de Dados" FontSize="11" Foreground="{DynamicResource Brush.Text.Secondary}"/>
+                                <TextBlock Text="Base de Dados" FontSize="11" Foreground="{DynamicResource Brush.Text.Secondary}" Margin="0,0,0,5"/>
                                 <Grid>
                                     <Grid.ColumnDefinitions>
                                         <ColumnDefinition Width="*"/>
@@ -225,11 +225,11 @@
                                     </Grid.ColumnDefinitions>
                                     <ComboBox ItemsSource="{Binding AvailableDatabases}" 
                                               Text="{Binding DbName}" 
-                                              IsEditable="True" 
+                                              IsEditable="False" 
                                               IsEnabled="{Binding IsConfigEnabled}" 
-                                              Style="{StaticResource {x:Type ComboBox}}"/>
+                                              Style="{StaticResource {x:Type ComboBox}}" VerticalAlignment="Center" Height="28"/>
                                     <Button Grid.Column="1" Command="{Binding LoadDatabasesCommand}" Content="↻" Style="{StaticResource IconButton}" 
-                                            Width="30" Margin="5,0,0,0" ToolTip="Atualizar lista" Foreground="{DynamicResource Brush.Text.Primary}"/>
+                                            Width="20" Margin="5,0,0,0" ToolTip="Atualizar lista" Foreground="{DynamicResource Brush.Text.Primary}" Cursor="Hand" FontSize="15"/>
                                 </Grid>
                             </StackPanel>
                         </Border>

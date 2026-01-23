@@ -81,7 +81,7 @@
         <Setter Property="VerticalContentAlignment" Value="Center"/>
         <Style.Triggers>
             <!-- Alternating Row Color is handled by DataGrid AlternationCount usually, but we can enforce it here if needed. 
-                 Prefer keeping it simple. 
+                 Prefer keeping it simple. -->
 
             <Trigger Property="IsMouseOver" Value="True">
                 <Setter Property="Background" Value="{DynamicResource Brush.Border.Base}"/> 
@@ -89,7 +89,7 @@
             
             <Trigger Property="IsSelected" Value="True">
                 <Setter Property="Background" Value="{DynamicResource Brush.Surface.Popup}"/>
-            </Trigger>-->
+            </Trigger>
             
             <!-- Error / Warning State (from previous phase) -->
             <DataTrigger Binding="{Binding IsRecognized}" Value="False">
