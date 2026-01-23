@@ -20,6 +20,93 @@
         <conv:BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter"/>
         <conv:WidthAdjustmentConverter x:Key="WidthAdjustmentConverter"/>
 
+        <!-- Custom Compact ComboBox Style for DataGrid -->
+        <Style x:Key="CompactComboBoxStyle" TargetType="ComboBox">
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Foreground" Value="{DynamicResource Brush.Text.Primary}"/>
+            <Setter Property="VerticalContentAlignment" Value="Center"/>
+            <Setter Property="IsEditable" Value="True"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="ComboBox">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+
+                            <!-- Custom Toggle Button -->
+                            <ToggleButton x:Name="ToggleButton" 
+                                          Grid.Column="1" 
+                                          Focusable="false"
+                                          ClickMode="Press"
+                                          IsChecked="{Binding IsDropDownOpen, Mode=TwoWay, RelativeSource={RelativeSource TemplatedParent}}"
+                                          Background="Transparent"
+                                          BorderThickness="0"
+                                          Width="16">
+                                <ToggleButton.Template>
+                                    <ControlTemplate TargetType="ToggleButton">
+                                        <Border Background="Transparent">
+                                            <Path Data="M 0 0 L 3.5 3.5 L 7 0 Z" 
+                                                  Fill="{DynamicResource Brush.Text.Secondary}" 
+                                                  HorizontalAlignment="Center" 
+                                                  VerticalAlignment="Center" 
+                                                  Margin="0,1,0,0"/>
+                                        </Border>
+                                    </ControlTemplate>
+                                </ToggleButton.Template>
+                            </ToggleButton>
+
+                            <!-- Editable TextBox (PART_EditableTextBox) -->
+                            <TextBox x:Name="PART_EditableTextBox"
+                                     HorizontalContentAlignment="Left"
+                                     VerticalContentAlignment="Center" 
+                                     Margin="2,0,0,0"
+                                     Padding="0,0,0,1"
+                                     Background="Transparent"
+                                     BorderThickness="0"
+                                     FontSize="{TemplateBinding FontSize}"
+                                     Foreground="{TemplateBinding Foreground}"
+                                     Focusable="True"
+                                     IsReadOnly="{Binding IsReadOnly, RelativeSource={RelativeSource TemplatedParent}}"/>
+
+                            <!-- Popup -->
+                            <Popup x:Name="Popup"
+                                   Placement="Bottom"
+                                   IsOpen="{TemplateBinding IsDropDownOpen}"
+                                   AllowsTransparency="True" 
+                                   Focusable="False"
+                                   PopupAnimation="Slide">
+                                <Grid x:Name="DropDown"
+                                      SnapsToDevicePixels="True"
+                                      MinWidth="{TemplateBinding ActualWidth}"
+                                      MaxHeight="{TemplateBinding MaxDropDownHeight}">
+                                    <Border x:Name="DropDownBorder"
+                                            Background="{DynamicResource Brush.Surface.Card}"
+                                            BorderThickness="1"
+                                            BorderBrush="{DynamicResource Brush.Border.Base}"
+                                            CornerRadius="4">
+                                        <ScrollViewer SnapsToDevicePixels="True">
+                                            <StackPanel IsItemsHost="True" KeyboardNavigation.DirectionalNavigation="Contained" />
+                                        </ScrollViewer>
+                                    </Border>
+                                </Grid>
+                            </Popup>
+                        </Grid>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="HasItems" Value="false">
+                                <Setter TargetName="DropDownBorder" Property="MinHeight" Value="95"/>
+                            </Trigger>
+                            <Trigger Property="IsGrouping" Value="true">
+                                <Setter Property="ScrollViewer.CanContentScroll" Value="false"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
         <sel:FeatureColumnTemplateSelector x:Key="FeatureColumnTemplateSelector">
             <sel:FeatureColumnTemplateSelector.ReadOnlyTemplate>
                 <DataTemplate>
@@ -31,24 +118,8 @@
                 <DataTemplate>
                     <ComboBox ItemsSource="{Binding DataContext.KnownFeatures, RelativeSource={RelativeSource AncestorType=Window}}" 
                               Text="{Binding Characteristic, UpdateSourceTrigger=PropertyChanged}" 
-                              IsEditable="True"
                               IsEnabled="{Binding DataContext.IsPendingAction, RelativeSource={RelativeSource AncestorType=Window}}"
-                              VerticalAlignment="Stretch"
-                              HorizontalAlignment="Stretch"
-                              Height="NaN"
-                              VerticalContentAlignment="Center"
-                              Padding="4,0,0,0"
-                              Margin="0"
-                              BorderThickness="0"
-                              Background="Transparent">
-                        <ComboBox.Style>
-                            <Style TargetType="ComboBox" BasedOn="{StaticResource {x:Type ComboBox}}">
-                                <!-- Override default Height=30 from global style -->
-                                <Setter Property="Height" Value="Auto"/>
-                                <Setter Property="MinHeight" Value="0"/>
-                            </Style>
-                        </ComboBox.Style>
-                    </ComboBox>
+                              Style="{StaticResource CompactComboBoxStyle}"/>
                 </DataTemplate>
             </sel:FeatureColumnTemplateSelector.EditableTemplate>
         </sel:FeatureColumnTemplateSelector>
