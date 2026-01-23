@@ -1231,6 +1231,12 @@ namespace SelectML.Client.ViewModels
                  await Task.Delay(100);
                  ProcessFileBuffer();
             }
+            else
+            {
+                // Fix: Ensure we unlock the UI state if no pending buffers
+                IsPendingAction = false;
+                StatusMessage = "Aguardando...";
+            }
         }
         
         private async void ProcessFileBuffer()
