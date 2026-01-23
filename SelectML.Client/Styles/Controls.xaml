@@ -342,7 +342,6 @@
                                   HorizontalContentAlignment="{TemplateBinding HorizontalContentAlignment}" 
                                   IsReadOnly="{Binding IsReadOnly, RelativeSource={RelativeSource TemplatedParent}}" 
                                   Margin="{TemplateBinding Padding}" 
-                                  Style="{StaticResource {x:Type TextBox}}" 
                                   VerticalContentAlignment="{TemplateBinding VerticalContentAlignment}"
                                   Visibility="Collapsed"/>
                      </Grid>
