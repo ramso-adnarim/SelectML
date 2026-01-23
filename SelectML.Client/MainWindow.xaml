@@ -157,7 +157,7 @@
                                   SelectedIndex="-1"/>
                     </StackPanel>
                     <Button Grid.Column="1" Command="{Binding ClearParserCommand}"
-                            Content="✖" Width="30" Height="30" Margin="10,18,0,0"
+                            Content="✖" Width="25" Height="30" Margin="10,15,0,0"
                             Style="{StaticResource IconButton}" Foreground="{DynamicResource Brush.Status.Error}"
                             IsEnabled="{Binding IsConfigEnabled}"
                             VerticalAlignment="Bottom"/>
