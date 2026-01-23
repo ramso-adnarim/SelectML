@@ -33,13 +33,22 @@
                               Text="{Binding Characteristic, UpdateSourceTrigger=PropertyChanged}" 
                               IsEditable="True"
                               IsEnabled="{Binding DataContext.IsPendingAction, RelativeSource={RelativeSource AncestorType=Window}}"
-                              VerticalAlignment="Top"
-                              Height="15"
-                              FontSize="10"
-                              VerticalContentAlignment="Top"
-                              Padding="0,0,0,0"
-                              Style="{StaticResource {x:Type ComboBox}}"
-                              Margin="0"/>
+                              VerticalAlignment="Stretch"
+                              HorizontalAlignment="Stretch"
+                              Height="NaN"
+                              VerticalContentAlignment="Center"
+                              Padding="4,0,0,0"
+                              Margin="0"
+                              BorderThickness="0"
+                              Background="Transparent">
+                        <ComboBox.Style>
+                            <Style TargetType="ComboBox" BasedOn="{StaticResource {x:Type ComboBox}}">
+                                <!-- Override default Height=30 from global style -->
+                                <Setter Property="Height" Value="Auto"/>
+                                <Setter Property="MinHeight" Value="0"/>
+                            </Style>
+                        </ComboBox.Style>
+                    </ComboBox>
                 </DataTemplate>
             </sel:FeatureColumnTemplateSelector.EditableTemplate>
         </sel:FeatureColumnTemplateSelector>
