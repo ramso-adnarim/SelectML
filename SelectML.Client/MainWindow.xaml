@@ -23,7 +23,8 @@
         <sel:FeatureColumnTemplateSelector x:Key="FeatureColumnTemplateSelector">
             <sel:FeatureColumnTemplateSelector.ReadOnlyTemplate>
                 <DataTemplate>
-                    <TextBlock Text="{Binding Characteristic}" VerticalAlignment="Center" Margin="5,0"/>
+                    <TextBlock Text="{Binding Characteristic}" 
+                               VerticalAlignment="Center"/>
                 </DataTemplate>
             </sel:FeatureColumnTemplateSelector.ReadOnlyTemplate>
             <sel:FeatureColumnTemplateSelector.EditableTemplate>
@@ -32,10 +33,11 @@
                               Text="{Binding Characteristic, UpdateSourceTrigger=PropertyChanged}" 
                               IsEditable="True"
                               IsEnabled="{Binding DataContext.IsPendingAction, RelativeSource={RelativeSource AncestorType=Window}}"
-                              VerticalAlignment="Stretch"
-                              Height="{Binding ActualHeight, RelativeSource={RelativeSource AncestorType=DataGridCell}}"
-                              VerticalContentAlignment="Center"
-                              Padding="5,0,0,0"
+                              VerticalAlignment="Top"
+                              Height="15"
+                              FontSize="10"
+                              VerticalContentAlignment="Top"
+                              Padding="0,0,0,0"
                               Style="{StaticResource {x:Type ComboBox}}"
                               Margin="0"/>
                 </DataTemplate>
@@ -78,23 +80,23 @@
             <Menu Background="Transparent" VerticalAlignment="Center" IsMainMenu="True">
                 <MenuItem Command="{Binding OpenSerialConfigCommand}" 
                           Foreground="{DynamicResource Brush.Text.Primary}" FontWeight="SemiBold">
-                    <MenuItem.Header>
+                    <MenuItem.Header>                        
+                        <StackPanel Orientation="Horizontal">
                             <TextBlock Text="Conexão serial" VerticalAlignment="Center"/>
-                            <StackPanel Orientation="Horizontal" Visibility="{Binding IsSerialConnected, Converter={StaticResource BooleanToVisibilityConverter}}">
-                                <Ellipse Width="8" Height="8" Fill="{DynamicResource Brush.Status.Success}" 
-                                         Margin="6,0,0,0" VerticalAlignment="Center" x:Name="SerialIndicator"/>
-                                <StackPanel.Triggers>
-                                    <EventTrigger RoutedEvent="Loaded">
-                                        <BeginStoryboard>
-                                            <Storyboard RepeatBehavior="Forever" AutoReverse="True">
-                                                <DoubleAnimation Storyboard.TargetName="SerialIndicator"
-                                                                 Storyboard.TargetProperty="Opacity"
-                                                                 From="1.0" To="0.4" Duration="0:0:1"/>
-                                            </Storyboard>
-                                        </BeginStoryboard>
-                                    </EventTrigger>
-                                </StackPanel.Triggers>
-                            </StackPanel>
+                            <Ellipse Width="8" Height="8" Fill="{DynamicResource Brush.Status.Success}" Visibility="{Binding IsSerialConnected, Converter={StaticResource BooleanToVisibilityConverter}}" 
+                                        Margin="6,0,0,0" VerticalAlignment="Center" x:Name="SerialIndicator"/>
+                            <StackPanel.Triggers>
+                                <EventTrigger RoutedEvent="Loaded">
+                                    <BeginStoryboard>
+                                        <Storyboard RepeatBehavior="Forever" AutoReverse="True">
+                                            <DoubleAnimation Storyboard.TargetName="SerialIndicator"
+                                                                Storyboard.TargetProperty="Opacity"
+                                                                From="1.0" To="0.4" Duration="0:0:1"/>
+                                        </Storyboard>
+                                    </BeginStoryboard>
+                                </EventTrigger>
+                            </StackPanel.Triggers>
+                        </StackPanel>
                     </MenuItem.Header>
                 </MenuItem>
             </Menu>
