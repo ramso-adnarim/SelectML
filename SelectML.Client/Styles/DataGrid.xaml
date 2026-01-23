@@ -11,13 +11,12 @@
         <Setter Property="HorizontalGridLinesBrush" Value="{DynamicResource Brush.Border.Base}"/>
         <Setter Property="VerticalGridLinesBrush" Value="{DynamicResource Brush.Border.Base}"/>
         <Setter Property="HeadersVisibility" Value="Column"/>
-        <!--<Setter Property="RowValidationRules" Value="{x:Null}"/>  Turn off default ugly validation -->
         <Setter Property="AutoGenerateColumns" Value="False"/>
         <Setter Property="CanUserAddRows" Value="False"/>
         <Setter Property="CanUserDeleteRows" Value="False"/>
         <Setter Property="CanUserResizeRows" Value="False"/>
         <Setter Property="SelectionMode" Value="Single"/>
-        <Setter Property="RowHeight" Value="35"/> <!-- More breathing room -->
+        <Setter Property="RowHeight" Value="20"/>
         <Setter Property="ColumnHeaderStyle" Value="{DynamicResource ModernDataGridColumnHeader}"/>
         <Setter Property="RowStyle" Value="{DynamicResource ModernDataGridRow}"/>
         <Setter Property="CellStyle" Value="{DynamicResource ModernDataGridCell}"/>
@@ -67,7 +66,8 @@
         </Setter>
         <Style.Triggers>
             <Trigger Property="IsSelected" Value="True">
-                <Setter Property="Foreground" Value="{DynamicResource Brush.Action.Primary}"/>
+                <!--<Setter Property="Foreground" Value="{DynamicResource Brush.Action.Primary}"/>-->
+                <Setter Property="BorderBrush" Value="{DynamicResource Brush.Action.Primary}"/>
                 <Setter Property="FontWeight" Value="Bold"/>
             </Trigger>
         </Style.Triggers>
@@ -81,21 +81,20 @@
         <Setter Property="VerticalContentAlignment" Value="Center"/>
         <Style.Triggers>
             <!-- Alternating Row Color is handled by DataGrid AlternationCount usually, but we can enforce it here if needed. 
-                 Prefer keeping it simple. -->
-            
+                 Prefer keeping it simple. 
+
             <Trigger Property="IsMouseOver" Value="True">
-                 <!-- Subtle hover effect -->
                 <Setter Property="Background" Value="{DynamicResource Brush.Border.Base}"/> 
             </Trigger>
             
             <Trigger Property="IsSelected" Value="True">
-                <Setter Property="Background" Value="{DynamicResource Brush.Surface.Popup}"/> <!-- A bit distinct -->
-            </Trigger>
+                <Setter Property="Background" Value="{DynamicResource Brush.Surface.Popup}"/>
+            </Trigger>-->
             
             <!-- Error / Warning State (from previous phase) -->
             <DataTrigger Binding="{Binding IsRecognized}" Value="False">
                 <Setter Property="Background" Value="{DynamicResource Brush.Status.Error.Background}"/>
-                <Setter Property="ToolTip" Value="Característica não encontrada no banco"/>
+                <Setter Property="ToolTip" Value="Característica não reconhecida"/>
             </DataTrigger>
         </Style.Triggers>
     </Style>

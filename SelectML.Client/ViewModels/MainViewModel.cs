@@ -34,7 +34,7 @@ namespace SelectML.Client.ViewModels
 
         // Propriedades de Estado da UI
         private bool _isConfigLocked;
-        private string _configButtonText = "Salvar/Iniciar";
+        private string _configButtonText = "Iniciar";
         private bool _isExpanded = true;
         private string _statusMessage = "Aguardando configuração...";
         private bool _isPendingAction;
@@ -391,7 +391,7 @@ namespace SelectML.Client.ViewModels
                  }
                  else
                  {
-                     DetectedStationName = "Não Identificada";
+                     DetectedStationName = "Não identificada";
                  }
 
                  if (!string.IsNullOrEmpty(routine))
@@ -577,7 +577,7 @@ namespace SelectML.Client.ViewModels
 
             // Set DbName separately to avoid triggering BuildConnectionString multiple times unnecessarily,
             // or ensure it defaults correctly.
-            _dbName = !string.IsNullOrEmpty(config.DbName) ? config.DbName : "SelectML";
+            _dbName = !string.IsNullOrEmpty(config.DbName) ? config.DbName : "MeasurLink10";
             OnPropertyChanged(nameof(DbName));
 
             // Populate AvailableDatabases with at least the current one if not empty
@@ -709,7 +709,7 @@ namespace SelectML.Client.ViewModels
         {
             var builder = new Microsoft.Data.SqlClient.SqlConnectionStringBuilder();
             builder.DataSource = !string.IsNullOrEmpty(DbServer) ? DbServer : @"localhost\MLSQLExpress";
-            builder.InitialCatalog = !string.IsNullOrEmpty(DbName) ? DbName : "SelectML";
+            builder.InitialCatalog = !string.IsNullOrEmpty(DbName) ? DbName : "MeasurLink10";
             builder.TrustServerCertificate = true; // Often needed for local devs
 
             if (DbUseWindowsAuth)
@@ -732,7 +732,7 @@ namespace SelectML.Client.ViewModels
             {
                 if (SelectedParser == null)
                 {
-                    StatusMessage = "Monitoramento de Arquivo: Desativado (Modo Serial)";
+                    StatusMessage = "Monitoramento de arquivo: Desativado (Modo Serial)";
                     Log.Information("File monitoring disabled (No parser selected)");
                     return;
                 }

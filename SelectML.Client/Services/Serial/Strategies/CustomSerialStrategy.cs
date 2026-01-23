@@ -70,7 +70,7 @@ namespace SelectML.Client.Services.Serial.Strategies
                     {
                         string feature = _config.DataProtocol.TargetFeatureName;
                         bool isGeneric = string.IsNullOrWhiteSpace(feature);
-                        if (isGeneric) feature = "Pendente de Seleção";
+                        if (isGeneric) feature = "Selecione...";
 
                         return new SerialMeasurement
                         {

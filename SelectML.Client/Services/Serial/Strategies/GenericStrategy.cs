@@ -36,7 +36,7 @@ namespace SelectML.Client.Services.Serial.Strategies
                     return new SerialMeasurement
                     {
                         Value = val,
-                        FeatureName = "Pendente de Seleção",
+                        FeatureName = "Selecione...",
                         IsGeneric = true,
                         Timestamp = DateTime.Now
                     };

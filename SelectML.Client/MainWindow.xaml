@@ -8,7 +8,7 @@
         xmlns:sel="clr-namespace:SelectML.Client.Selectors"
         xmlns:tb="http://www.hardcodet.net/taskbar"
         mc:Ignorable="d"
-        Title="SelectML - Monitoramento de Medição" Height="650" Width="500"
+        Title="SelectML" Height="650" Width="500"
         Background="{DynamicResource Brush.Background.Base}" 
         Foreground="{DynamicResource Brush.Text.Primary}" 
         Icon="/SelectML-logo-short-light.png"
@@ -287,14 +287,18 @@
 
                 <!-- DataGrid -->
                 <DockPanel Grid.Row="1">
-                    <TextBlock DockPanel.Dock="Top" Text="Resultados::" 
+                    <TextBlock DockPanel.Dock="Top" Text="Resultados:" 
                                FontWeight="Bold" FontSize="14" Margin="0,0,0,10" Foreground="{DynamicResource Brush.Text.Primary}"/>
                     
                     <DataGrid ItemsSource="{Binding MeasuredResults}" 
                               Style="{StaticResource ModernDataGrid}">
                         <DataGrid.Columns>
-                            <DataGridTemplateColumn Header="Característica" Width="*" CellTemplateSelector="{StaticResource FeatureColumnTemplateSelector}"/>
-                            <DataGridTextColumn Header="Valor" Binding="{Binding Value}" Width="*">
+                            <DataGridTemplateColumn Header="Característica" 
+                                                    Width="*" 
+                                                    CellTemplateSelector="{StaticResource FeatureColumnTemplateSelector}"/>
+                            <DataGridTextColumn Header="Valor" 
+                                                Binding="{Binding Value}" 
+                                                Width="*">
                                 <DataGridTextColumn.ElementStyle>
                                     <Style TargetType="TextBlock">
                                         <Setter Property="Foreground" Value="{DynamicResource Brush.Action.Primary}"/>
@@ -312,7 +316,7 @@
                                 <Setter Property="ContextMenu">
                                     <Setter.Value>
                                         <ContextMenu>
-                                            <MenuItem Header="Excluir Linha" 
+                                            <MenuItem Header="Excluir valor" 
                                                       Command="{Binding PlacementTarget.Tag.RemoveRowCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}" 
                                                       CommandParameter="{Binding}" />
                                         </ContextMenu>
@@ -334,10 +338,10 @@
                       Margin="0,0,20,0" 
                       FontWeight="SemiBold"/>
             
-            <Button Command="{Binding CancelCommand}" Content="CANCELAR" 
+            <Button Command="{Binding CancelCommand}" Content="Cancelar" 
                     Style="{StaticResource DangerButton}" Margin="0,0,10,0"/>
             
-            <Button Command="{Binding SendCommand}" Content="ENVIAR" 
+            <Button Command="{Binding SendCommand}" Content="Enviar" 
                     Style="{StaticResource PrimaryButton}"/>
         </StackPanel>
 

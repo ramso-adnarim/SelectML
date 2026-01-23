@@ -65,7 +65,7 @@
                         <Trigger Property="IsEnabled" Value="false">
                             <Setter Property="Background" TargetName="border" Value="{DynamicResource Brush.Border.Base}"/>
                             <Setter Property="TextElement.Foreground" TargetName="contentPresenter" Value="{DynamicResource Brush.Text.Inactive}"/>
-                            <Setter Property="Effect" TargetName="border" Value="{x:Null}"/>
+                            <Setter Property="Effect" TargetName="border" Value="{x:Null}"/> 
                         </Trigger>
                     </ControlTemplate.Triggers>
                 </ControlTemplate>
@@ -151,6 +151,12 @@
                         </Trigger>
                         <Trigger Property="IsPressed" Value="true">
                             <Setter Property="Opacity" TargetName="border" Value="0.8"/>
+                        </Trigger>
+                        <Trigger Property="IsEnabled" Value="false">
+                            <Setter Property="Background" TargetName="border" Value="{DynamicResource Brush.Border.Base}"/>
+                            <Setter Property="TextElement.Foreground" TargetName="contentPresenter" Value="{DynamicResource Brush.Text.Inactive}"/>
+                            <Setter Property="Effect" TargetName="border" Value="{x:Null}"/>
+                            <Setter Property="BorderBrush" Value="Transparent"/> 
                         </Trigger>
                     </ControlTemplate.Triggers>
                 </ControlTemplate>

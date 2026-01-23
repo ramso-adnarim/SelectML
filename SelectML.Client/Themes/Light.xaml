@@ -23,6 +23,9 @@
     <SolidColorBrush x:Key="Brush.Action.Primary.Hover" Color="#2563EB"/> <!-- Slightly darker/richer blue for hover on light -->
     <SolidColorBrush x:Key="Brush.Action.Primary.Foreground" Color="#FFFFFF"/>
 
+    <!-- Danger / Cancel -->
+    <SolidColorBrush x:Key="Brush.Cancel.Enable.Border" Color="#FF707070"/>
+
     <!-- Status -->
     <SolidColorBrush x:Key="Brush.Status.Success" Color="#22c55e"/>
     <SolidColorBrush x:Key="Brush.Status.Warning" Color="#f59e0b"/>
