@@ -479,6 +479,14 @@
                                         </ContextMenu>
                                     </Setter.Value>
                                 </Setter>
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding HasDuplicateName}" Value="True">
+                                        <Setter Property="Background" Value="#22FF0000"/>
+                                        <Setter Property="BorderBrush" Value="#FFA00000"/>
+                                        <Setter Property="BorderThickness" Value="1"/>
+                                        <Setter Property="ToolTip" Value="Nome duplicado. Altere para permitir o envio."/>
+                                    </DataTrigger>
+                                </Style.Triggers>
                             </Style>
                          </DataGrid.RowStyle>
                     </DataGrid>

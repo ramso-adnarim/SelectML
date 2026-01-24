@@ -967,7 +967,6 @@ namespace SelectML.Client.ViewModels
              }
         }
         
-        // Placeholder for Validation
         private void TriggerValidation() 
         {
              // 1. Validate Part Name
@@ -980,14 +979,42 @@ namespace SelectML.Client.ViewModels
                  IsPartNameValid = true; 
              }
 
-             // 2. Validate Rows
+             // 2. Validate Rows (Recognition)
              if (MeasuredResults != null)
              {
                  foreach (var item in MeasuredResults)
                  {
                      ValidateItem(item);
                  }
+                 
+                 // 3. Mark Duplicates
+                 CheckDuplicates();
              }
+             
+             CommandManager.InvalidateRequerySuggested();
+        }
+
+        private void CheckDuplicates()
+        {
+            if (MeasuredResults == null) return;
+
+            var groups = MeasuredResults.GroupBy(x => x.Characteristic?.Trim(), StringComparer.OrdinalIgnoreCase);
+            bool anyChanged = false;
+
+            foreach (var group in groups)
+            {
+                bool isDuplicate = group.Count() > 1 && !string.IsNullOrWhiteSpace(group.Key);
+                foreach (var item in group)
+                {
+                     if (item.HasDuplicateName != isDuplicate)
+                     {
+                         item.HasDuplicateName = isDuplicate;
+                         anyChanged = true;
+                     }
+                }
+            }
+            
+            if (anyChanged) CommandManager.InvalidateRequerySuggested();
         }
         
         private void ValidateItem(ResultItem item)
@@ -1018,10 +1045,7 @@ namespace SelectML.Client.ViewModels
         {
             if (e.PropertyName == nameof(ResultItem.Characteristic))
             {
-                if (sender is ResultItem item)
-                {
-                    ValidateItem(item);
-                }
+                TriggerValidation();
             }
         }
         private async Task LoadFeaturesForPart()
@@ -1065,11 +1089,13 @@ namespace SelectML.Client.ViewModels
 
         private bool CanExecuteAction(object obj)
         {
-            // Early Cancel: Allow cancel if we have ANY data, even if fields are missing
             if (obj is string commandName && commandName == "Cancel")
             {
                  return IsPendingAction || MeasuredResults.Count > 0;
             }
+            // Cannot send if there are duplicates
+            if (MeasuredResults.Any(r => r.HasDuplicateName)) return false;
+
             return IsPendingAction && !string.IsNullOrWhiteSpace(PartName) && !string.IsNullOrWhiteSpace(BatchNumber);
         }
 
@@ -1085,9 +1111,25 @@ namespace SelectML.Client.ViewModels
                 PartName = PartName,
                 BatchNumber = BatchNumber,
                 // Inherit date from file if available, else Now
-                MeasureDate = _currentData?.MeasureDate ?? DateTime.Now,
-                Results = MeasuredResults.ToDictionary(k => k.Characteristic, v => v.Value)
+                MeasureDate = _currentData?.MeasureDate ?? DateTime.Now
             };
+
+            try
+            {
+                dataToSend.Results = MeasuredResults.ToDictionary(k => k.Characteristic, v => v.Value);
+            }
+            catch (ArgumentException)
+            {
+                StatusMessage = "Erro: Nomes de características duplicados detectados.";
+                System.Windows.MessageBox.Show("Existem características com o mesmo nome na lista. Corrija antes de enviar.", "Erro de Validação", MessageBoxButton.OK, MessageBoxImage.Warning);
+                return;
+            }
+            catch (Exception ex)
+            {
+                StatusMessage = $"Erro ao preparar dados: {ex.Message}";
+                Log.Error(ex, "Error creating dictionary for send");
+                return;
+            }
 
 
             // Phase 5: Validation Check
@@ -1209,6 +1251,7 @@ namespace SelectML.Client.ViewModels
             if (obj is ResultItem item && MeasuredResults.Contains(item))
             {
                 MeasuredResults.Remove(item);
+                TriggerValidation();
 
                 if (MeasuredResults.Count == 0)
                 {
@@ -1310,6 +1353,7 @@ namespace SelectML.Client.ViewModels
                     }
 
                     MeasuredResults.Add(newItem);
+                    TriggerValidation();
                     
                     // Ensure we lock out the File Watcher
                     if (!IsPendingAction)

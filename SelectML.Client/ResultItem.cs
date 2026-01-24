@@ -34,6 +34,13 @@ namespace SelectML.Client
             set { _isEditable = value; OnPropertyChanged(); }
         }
 
+        private bool _hasDuplicateName;
+        public bool HasDuplicateName
+        {
+            get => _hasDuplicateName;
+            set { _hasDuplicateName = value; OnPropertyChanged(); }
+        }
+
         public event PropertyChangedEventHandler PropertyChanged;
         protected void OnPropertyChanged([CallerMemberName] string name = null)
         {
