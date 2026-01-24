@@ -30,10 +30,15 @@
             <!-- Strategy Selection -->
             <TextBlock Text="Dispositivo:" FontWeight="SemiBold" Margin="0,0,0,5" Foreground="{DynamicResource TextBrush}"/>
             <ComboBox ItemsSource="{Binding AvailableStrategies}" 
-                      DisplayMemberPath="Name"
                       SelectedItem="{Binding SelectedStrategy}" 
                       IsEnabled="{Binding IsDisconnected}"
-                      Height="24" Margin="0,0,0,10"/>
+                      Height="24" Margin="0,0,0,10}">
+                 <ComboBox.ItemTemplate>
+                    <DataTemplate>
+                        <TextBlock Text="{Binding Name}"/>
+                    </DataTemplate>
+                </ComboBox.ItemTemplate>
+            </ComboBox>
 
             <!-- Custom Config Button -->
             <StackPanel Orientation="Horizontal" Visibility="{Binding IsCustomStrategySelected, Converter={StaticResource BooleanToVisibilityConverter}}">

@@ -260,9 +260,14 @@
                         <ComboBox ItemsSource="{Binding AvailableParsers}" 
                                   SelectedItem="{Binding SelectedParser}"
                                   IsEnabled="{Binding IsConfigEnabled}"
-                                  DisplayMemberPath="MachineName"
                                   Style="{StaticResource {x:Type ComboBox}}"
-                                  SelectedIndex="-1"/>
+                                  SelectedIndex="-1">
+                            <ComboBox.ItemTemplate>
+                                <DataTemplate>
+                                    <TextBlock Text="{Binding MachineName}"/>
+                                </DataTemplate>
+                            </ComboBox.ItemTemplate>
+                        </ComboBox>
                     </StackPanel>
                     <Button Grid.Column="1" Command="{Binding ClearParserCommand}"
                             Content="✖" Width="25" Height="30" Margin="10,15,0,0"
