@@ -26,6 +26,7 @@ namespace SelectML.Client.Services
         // Serial Persistence
         public string LastSerialPort { get; set; }
         public string LastSerialStrategy { get; set; }
+        public string LastSerialFeatureName { get; set; }
     }
 
     public class ConfigService

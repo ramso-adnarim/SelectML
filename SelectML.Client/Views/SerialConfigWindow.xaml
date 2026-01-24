@@ -40,12 +40,20 @@
                 </ComboBox.ItemTemplate>
             </ComboBox>
 
-            <!-- Custom Config Button -->
-            <StackPanel Orientation="Horizontal" Visibility="{Binding IsCustomStrategySelected, Converter={StaticResource BooleanToVisibilityConverter}}">
+            <!-- Custom Config Button & Default Feature Name -->
+            <StackPanel Orientation="Horizontal">
+                <StackPanel Orientation="Vertical" Margin="0,0,10,0" Width="180">
+                    <TextBlock Text="Nome padrão de característica:" FontSize="11" Foreground="{DynamicResource TextBrush}" Margin="0,0,0,3"/>
+                    <TextBox Text="{Binding DefaultFeatureName}" 
+                             IsEnabled="{Binding IsDisconnected}"
+                             Height="26" VerticalContentAlignment="Center"/>
+                </StackPanel>
+
                 <Button Content="Editar JSON" 
                         Command="{Binding OpenJsonConfigCommand}" 
-                        Padding="10,5" 
+                        Padding="10,5" VerticalAlignment="Bottom" Height="26"
                         IsEnabled="{Binding IsDisconnected}"
+                        Visibility="{Binding IsCustomStrategySelected, Converter={StaticResource BooleanToVisibilityConverter}}"
                         Style="{DynamicResource GhostButton}"/>
             </StackPanel>
         </StackPanel>

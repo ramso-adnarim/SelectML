@@ -15,6 +15,7 @@ namespace SelectML.Client.ViewModels
     {
         private string _selectedPort;
         private ISerialDeviceStrategy _selectedStrategy;
+        private string _defaultFeatureName;
         private string _connectionStatus = "Desconectado";
         private System.Windows.Media.Brush _connectionStatusBrush = System.Windows.Media.Brushes.Gray;
         private readonly ConfigService _configService;
@@ -43,6 +44,11 @@ namespace SelectML.Client.ViewModels
             {
                  var strategy = System.Linq.Enumerable.FirstOrDefault(AvailableStrategies, s => s.GetType().Name == config.LastSerialStrategy);
                  if (strategy != null) SelectedStrategy = strategy;
+            }
+
+            if (!string.IsNullOrEmpty(config.LastSerialFeatureName))
+            {
+                DefaultFeatureName = config.LastSerialFeatureName;
             }
 
             ConnectCommand = new RelayCommand(ExecuteConnect, CanConnect);
@@ -95,6 +101,12 @@ namespace SelectML.Client.ViewModels
 
         public bool IsCustomStrategySelected => SelectedStrategy is CustomSerialStrategy;
 
+        public string DefaultFeatureName
+        {
+            get => _defaultFeatureName;
+            set { _defaultFeatureName = value; OnPropertyChanged(); }
+        }
+
         public bool IsConnected => SerialPortService.Instance.IsConnected;
         public bool IsDisconnected => !IsConnected;
 
@@ -120,6 +132,7 @@ namespace SelectML.Client.ViewModels
                 var config = _configService.Load();
                 config.LastSerialPort = SelectedPort;
                 config.LastSerialStrategy = SelectedStrategy.GetType().Name;
+                config.LastSerialFeatureName = DefaultFeatureName;
                 _configService.Save(config);
 
                 // Check for Hot-Reload if Custom
