@@ -25,10 +25,20 @@ namespace SelectML.Client.Services
 
             try
             {
-                // Use GithubSource if the URL implies a GitHub repo, or simply default to it as requested
-                // For flexibility, we could check if it contains "github.com", but the request is explicit.
-                var source = new GithubSource(_updateUrl, null, false);
-                var mgr = new UpdateManager(source);
+                UpdateManager mgr;
+
+                // Simple heuristic: if it looks like a file path or generic URL, use default UpdateManager (SimpleWebSource)
+                // If it looks like a GitHub URL, use GithubSource.
+                if (_updateUrl.Contains("github.com", StringComparison.OrdinalIgnoreCase))
+                {
+                     var source = new GithubSource(_updateUrl, null, false);
+                     mgr = new UpdateManager(source);
+                }
+                else
+                {
+                     // Local path or static web server
+                     mgr = new UpdateManager(_updateUrl);
+                }
 
                 // Check for updates
                 var updateInfo = await mgr.CheckForUpdatesAsync();
@@ -55,8 +65,16 @@ namespace SelectML.Client.Services
         {
              try
              {
-                 var source = new GithubSource(_updateUrl, null, false);
-                 var mgr = new UpdateManager(source);
+                 UpdateManager mgr;
+                 if (_updateUrl.Contains("github.com", StringComparison.OrdinalIgnoreCase))
+                 {
+                      var source = new GithubSource(_updateUrl, null, false);
+                      mgr = new UpdateManager(source);
+                 }
+                 else
+                 {
+                      mgr = new UpdateManager(_updateUrl);
+                 }
 
                  Log.Information("Downloading update...");
                  await mgr.DownloadUpdatesAsync(updateInfo);
