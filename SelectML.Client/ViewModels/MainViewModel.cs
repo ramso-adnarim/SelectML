@@ -82,6 +82,7 @@ namespace SelectML.Client.ViewModels
 
         // Serial Buffer
         private Queue<SerialMeasurement> _serialBuffer = new Queue<SerialMeasurement>();
+        private string _currentSerialFeatureName;
         private Queue<string> _fileBuffer = new Queue<string>();
         // _isProcessingFile is effectively tracked by IsPendingAction, but we'll add explicit tracking if needed or use IsPendingAction.
         // Prompt requested _isProcessingFile flag.
@@ -583,6 +584,10 @@ namespace SelectML.Client.ViewModels
             win.DataContext = vm;
             win.Owner = System.Windows.Application.Current.MainWindow;
             win.ShowDialog();
+            
+            // Reload Main Config settings relative to serial (Default Feature Name)
+            var config = _configService.Load();
+            _currentSerialFeatureName = config.LastSerialFeatureName;
         }
 
         private void LoadParsers()
@@ -629,6 +634,8 @@ namespace SelectML.Client.ViewModels
 
             // Initialize Database Service
             _databaseService = new DatabaseService(config.ConnectionString);
+
+            _currentSerialFeatureName = config.LastSerialFeatureName;
         }
 
         private void ExecuteSaveConfig(object obj)
@@ -1343,10 +1350,10 @@ namespace SelectML.Client.ViewModels
                     var item = _serialBuffer.Dequeue();
                     MeasuredResults.Add(new ResultItem 
                     { 
-                        Characteristic = item.FeatureName, 
+                        Characteristic = !string.IsNullOrWhiteSpace(_currentSerialFeatureName) ? _currentSerialFeatureName : item.FeatureName, 
                         Value = item.Value, 
                         IsRecognized = !item.IsGeneric,
-                        IsEditable = item.IsGeneric
+                        IsEditable = true // Always editable for Serial
                     });
                 }
                 
@@ -1370,12 +1377,16 @@ namespace SelectML.Client.ViewModels
                 else
                 {
                     // Scenario B: Append direct
+                    string featureName = !string.IsNullOrWhiteSpace(_currentSerialFeatureName) 
+                                         ? _currentSerialFeatureName 
+                                         : e.FeatureName;
+
                     var newItem = new ResultItem 
                     { 
-                        Characteristic = e.FeatureName, 
+                        Characteristic = featureName, 
                         Value = e.Value, 
                         IsRecognized = !e.IsGeneric,
-                        IsEditable = e.IsGeneric
+                        IsEditable = true // Always editable for Serial
                     };
                     
                     if (newItem.IsEditable)
