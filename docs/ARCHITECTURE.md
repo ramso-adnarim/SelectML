@@ -2,105 +2,79 @@
 
 Este documento serve como a "Fonte da Verdade" técnica para o projeto SelectML. Destina-se à equipe de engenharia e manutenção, detalhando decisões críticas de arquitetura, fluxo de dados e integrações.
 
-## 1. Diagrama de Componentes
+## 1. Diagrama de Componentes (Híbrido)
 
-A arquitetura segue o padrão MVVM, com separação clara entre a camada de apresentação (Client), o núcleo de domínio (Core) e a persistência de dados.
+A arquitetura V1.1.0 suporta entrada dupla: Arquivos (Watcher) e Serial (PortService).
 
 ```mermaid
 graph TD
     subgraph "SelectML.Client (WPF)"
         View[MainWindow_View] -->|DataBinding| VM[MainViewModel_ViewModel]
         VM -->|Gerencia| FSW[FileSystemWatcher_Service]
+        VM -->|Assina Eventos| SS[SerialPortService]
         VM -->|Utiliza| PL[PluginLoader_Service]
         VM -->|Persistência Config| CS[ConfigService]
         VM -->|Coordena| FLS[FileLifecycleService]
         VM -->|Consome| DB[DatabaseService]
-        VM -->|Logs| SER[Serilog]
-        TI[TaskbarIcon_SystemTray] -.->|Eventos| VM
+        
+        SS -->|Usa| STR[ISerialDeviceStrategy]
     end
 
     subgraph "SelectML.Core (Shared Contracts)"
         IMP[<< Interface >>\nIMachineParser]
         DTO[MeasurementData_DTO]
-        IDB[<< Interface >>\nIDatabaseService]
     end
 
-    subgraph "Plugins (External Assemblies)"
-        PV[SelectML.Parsers.ViciVision.dll] -.->|Implementa| IMP
-        PO[Outros Parsers...] -.->|Implementa| IMP
+    subgraph "Hardware & IO"
+        RS232[Dispositivo Serial] -- Cabo --> SS
+        CMM[CMM/Vici] -- Arquivo --> DISK[Pasta Monitorada]
     end
 
-    subgraph "Infraestrutura Externa"
-        SQL[SQL Server]
-        DISK[File System]
-    end
-
-    PL -->|Reflection/Load| PV
-    FSW -->|Event:Created| VM
-    DB -.->|Implementa| IDB
-    DB -->|TDS Protocol| SQL
-    FLS -->|I/O| DISK
+    FSW -.->|Detecta| DISK
+    SS -.->|Lê| RS232
 ```
 
 ## 2. Fluxo de Dados (Data Flow)
 
-O ciclo de vida de um arquivo no SelectML foi desenhado para garantir integridade e rastreabilidade (Data Governance).
+O SelectML V1.1.0 opera em modo **Híbrido**, processando dados de duas fontes distintas com estratégias de buffer diferentes.
 
-### Passo a Passo
+### 2.1 Fluxo de Arquivo (Máquinas Automáticas)
+1.  **Entrada**: `FileSystemWatcher` detecta arquivo (TXT/CSV).
+2.  **Parsing**: Plugin converte para `MeasurementData` (contém Nome da Peça e Lote).
+3.  **Validação**: SQL Server valida se a peça existe.
+4.  **Buffer**: Dados vão direto para a UI.
 
-1.  **Entrada (Input)**:
-    - O `FileSystemWatcher` detecta um novo arquivo na pasta monitorada.
-    - Mecanismo de "Debounce/Retry" aguarda a liberação do arquivo (lock) pela máquina.
+### 2.2 Fluxo Serial (Paquímetros/Micrômetros) - "Buffer Reverso"
+No fluxo serial, os dados chegam picados (medida a medida) e muitas vezes **antes** do operador definir qual peça está medindo.
 
-2.  **Parsing**:
-    - O Plugin selecionado lê o arquivo (Encoding Latin1).
-    - Converte o texto bruto para o objeto `MeasurementData`.
+1.  **Entrada**: `SerialPortService` recebe bytes -> String.
+2.  **Parsing Imediato**: `ISerialDeviceStrategy` converte string bruta em valor numérico.
+3.  **Buffer de Espera**:
+    - Se o usuário **JÁ** selecionou uma peça na UI: A medida é adicionada à linha atual da tabela.
+    - Se **NÃO** há peça selecionada: A medida entra no **"Buffer Reverso"** (uma fila em memória).
+4.  **Flush**: Assim que o usuário seleciona/cria uma peça, o Buffer Reverso é descarregado na ordem de chegada, preenchendo as primeiras características.
 
-3.  **Ciclo de Vida (File Lifecycle)**:
-    - **Backup Atômico**: O `FileLifecycleService` copia o arquivo original para a pasta `/Backup`.
-    - **Verificação**: Confirma se o tamanho do backup bate com a origem.
-    - **Delete**: Remove o arquivo da pasta de entrada (limpando a área de drop).
-    - *Nota*: Isso ocorre **antes** de qualquer validação de negócio para garantir que nunca perderemos o dado bruto.
+## 3. Componentes Chave V1.1.0
 
-4.  **Validação Antecipada (Early Detection)**:
-    - O sistema consulta o SQL (`IDatabaseService`) usando o Lote (BatchNumber).
-    - Recupera o Nome da Estação e a lista de Features Esperadas.
-    - Valida se as medições encontradas conferem com o esperado no banco.
+### SerialService & Strategies
+- **SerialPortService**: Singleton. Mantém a porta aberta e o buffer de leitura de bytes.
+- **ISerialDeviceStrategy**: Define como interpretar o protocolo.
+    - *U-WAVE*: Protocolo Mitutoyo (ex: `01A+123.456CR`).
+    - *Custom*: Regex configurável via JSON.
 
-5.  **Decisão (Human-in-the-Loop vs Auto)**:
-    - **Manual**: O operador revisa os dados na tela, vê alertas de features não reconhecidas e clica em "Enviar".
-    - **Automático**: Se habilitado e sem erros críticos, o sistema pula a revisão e envia direto.
+### Design System
+A V1.1.0 introduziu um sistema de temas robusto (`Styles/Themes/`), separando paletas de cores (Dark/Light) dos templates de controles.
 
-6.  **Geração de Saída**:
-    - O arquivo CSV padronizado (UTF-8 BOM) é gerado.
-    - Salvo no diretório de destino: `[Root]\[StationName]\`.
+## 4. Governança de Dados
+**(Mantido da V1.0)**
+- **Backup First**: Arquivos são copiados para `/Backup` antes do processamento.
+- **Safe I/O**: Checksum de tamanho antes de deletar a origem.
 
-## 3. Decisões de Design Chave
+## 5. Estratégia de Codificação (Encoding)
+- **Arquivo**: `Encoding.Latin1` (Padrão para máquinas legadas).
+- **Serial**: ASCII/Latin1.
+- **Saída CSV**: `UTF8Encoding(true)` (BOM) para Excel.
 
-### 3.1 Governança de Dados (Backup First)
-**Decisão**: Nunca processar o arquivo "in-place".
-**Justificativa**: Em ambientes industriais, arquivos podem ser corrompidos ou apagados acidentalmente. A estratégia "Copy-Verify-Delete" garante que sempre tenhamos uma cópia bruta ("Raw Data") no diretório de Backup antes de tentar qualquer lógica de negócio complexa que possa falhar.
-
-### 3.2 Validação Antecipada (Early Detection)
-**Decisão**: Validar contra o SQL Server imediatamente após o parse.
-**Justificativa**: Em vez de esperar o CSV chegar ao sistema final para descobrir que o lote não existe, o SelectML avisa o operador na hora. Isso reduz o tempo de feedback de horas para segundos.
-
-### 3.3 Modelo de Concorrência
-- **Monitoramento**: Thread do `FileSystemWatcher`.
-- **UI**: Thread principal (WPF Dispatcher).
-- **Background**: Operações pesadas (IO, Banco) são feitas via `Task.Run` ou métodos `Async` para não congelar a interface.
-- **System Tray**: A aplicação minimiza para a bandeja, mantendo o monitoramento ativo sem ocupar espaço na barra de tarefas. O ícone pulsa (animação) para indicar atividade.
-
-### 3.4 Logging e Auditoria (Serilog)
-- **Console**: Para debug em desenvolvimento.
-- **Arquivo**: Logs diários (`logs/log-.txt`) com retenção configurável.
-- Registra todas as etapas críticas: detecção de arquivo, sucesso no parse, erros de SQL e limpeza automática.
-
-## 4. Estratégia de Codificação (Encoding)
-
-- **Leitura (Input)**: `Encoding.Latin1` (ISO-8859-1). Essencial para ler símbolos de engenharia (Ø, °) de máquinas legadas.
-- **Escrita (Output)**: `UTF8Encoding(true)` (com BOM). Essencial para compatibilidade correta com Excel e sistemas ERP modernos.
-
-## 5. Extensibilidade
-
-Novas máquinas são adicionadas via Plugins (`SelectML.Parsers.*.dll`) depositados na pasta `/Plugins`. O `PluginLoader` descobre e carrega essas DLLs na inicialização, sem necessidade de alterar o executável principal.
+## 6. Extensibilidade
+- **Plugins de Arquivo**: DLLs externas (`SelectML.Parsers.*.dll`).
+- **Drivers Seriais**: Por enquanto, internos (`Strategies/`). Expansão futura para DLLs se necessário.

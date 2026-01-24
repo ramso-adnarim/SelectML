@@ -8,8 +8,8 @@ namespace SelectML.Client.Services
     public class FileLifecycleService
     {
         /// <summary>
-        /// Moves the input file to a Backup directory immediately after reading.
-        /// Performs an atomic Copy-Verify-Delete operation.
+        /// Move o arquivo de entrada para um diretório de Backup imediatamente após a leitura.
+        /// Realiza uma operação atômica de Copiar-Verificar-Deletar para garantir a integridade.
         /// </summary>
         public void ArchiveInputFile(string filePath, string watchDirectory)
         {
@@ -24,36 +24,36 @@ namespace SelectML.Client.Services
 
             try
             {
-                // 1. Copy (overwrite if exists, though unique names are expected usually)
+                // 1. Copiar (sobrescreve se existir, embora nomes únicos sejam esperados)
                 File.Copy(filePath, destPath, true);
 
-                // 2. Verify Integrity (Size Check)
+                // 2. Verificar Integridade (Checagem de Tamanho)
                 var sourceInfo = new FileInfo(filePath);
                 var destInfo = new FileInfo(destPath);
 
                 if (sourceInfo.Length == destInfo.Length)
                 {
-                    // 3. Delete Source
+                    // 3. Deletar Origem
                     File.Delete(filePath);
-                    Log.Information("Archived file: {Source} -> {Dest}", filePath, destPath);
+                    Log.Information("Arquivo arquivado: {Source} -> {Dest}", filePath, destPath);
                 }
                 else
                 {
-                    // Integrity check failed
-                    throw new IOException($"Backup integrity check failed for {fileName}. Source size: {sourceInfo.Length}, Dest size: {destInfo.Length}");
+                    // Falha na checagem de integridade
+                    throw new IOException($"Falha na verificação de integridade do backup para {fileName}. Tam Origem: {sourceInfo.Length}, Tam Destino: {destInfo.Length}");
                 }
             }
             catch (Exception ex)
             {
-                Log.Error(ex, "Failed to archive file {File}. Source was NOT deleted.", filePath);
-                // Re-throw to abort processing of this file
+                Log.Error(ex, "Falha ao arquivar arquivo {File}. A origem NÃO foi deletada.", filePath);
+                // Relançar para abortar o processamento deste arquivo
                 throw;
             }
         }
 
         /// <summary>
-        /// Cleans up old files from the Backup directory and Logs directory based on retention policy.
-        /// Designed to run as a background task.
+        /// Limpa arquivos antigos do diretório de Backup e Logs baseado na política de retenção.
+        /// Projetado para rodar como uma tarefa em segundo plano.
         /// </summary>
         public async Task PerformCleanupAsync(string watchDirectory, int retentionDays)
         {

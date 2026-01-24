@@ -1,0 +1,13 @@
+{
+    "PortConfig": {
+        "BaudRate": 9600,
+        "DataBits": 8,
+        "Parity": "None",
+        "StopBits": "One"
+    },
+    "DataProtocol": {
+        "Terminator": "\r",
+        "ExtractionRegex": "([+\\-]?\\d+([.,]\\d+)?)",
+        "TargetFeatureName": ""
+    }
+}

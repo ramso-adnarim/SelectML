@@ -1,9 +1,46 @@
 <ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
                     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
-    <SolidColorBrush x:Key="AppBackgroundBrush" Color="#F5F5F5"/>
+
+    <!-- ConnectML Light Identity (Clean) -->
+
+    <!-- Backgrounds -->
+    <SolidColorBrush x:Key="Brush.Background.Base" Color="#F3F4F6"/>
+    <SolidColorBrush x:Key="Brush.Surface.Card" Color="#FFFFFF"/>
+    <SolidColorBrush x:Key="Brush.Surface.Popup" Color="#FFFFFF"/>
+
+    <!-- Borders -->
+    <SolidColorBrush x:Key="Brush.Border.Base" Color="#E5E7EB"/>
+    <SolidColorBrush x:Key="Brush.Border.Focus" Color="#136dec"/>
+
+    <!-- Text -->
+    <SolidColorBrush x:Key="Brush.Text.Primary" Color="#111827"/>
+    <SolidColorBrush x:Key="Brush.Text.Secondary" Color="#6B7280"/>
+    <SolidColorBrush x:Key="Brush.Text.Inactive" Color="#9CA3AF"/>
+    <SolidColorBrush x:Key="Brush.Text.Inverse" Color="#FFFFFF"/>
+
+    <!-- Actions / Accent -->
+    <SolidColorBrush x:Key="Brush.Action.Primary" Color="#136dec"/>
+    <SolidColorBrush x:Key="Brush.Action.Primary.Hover" Color="#2563EB"/> <!-- Slightly darker/richer blue for hover on light -->
+    <SolidColorBrush x:Key="Brush.Action.Primary.Foreground" Color="#FFFFFF"/>
+
+    <!-- Danger / Cancel -->
+    <SolidColorBrush x:Key="Brush.Cancel.Enable.Border" Color="#FF707070"/>
+
+    <!-- Status -->
+    <SolidColorBrush x:Key="Brush.Status.Success" Color="#22c55e"/>
+    <SolidColorBrush x:Key="Brush.Status.Warning" Color="#f59e0b"/>
+    <SolidColorBrush x:Key="Brush.Status.Error" Color="#ef4444"/>
+    <SolidColorBrush x:Key="Brush.Status.Error.Background" Color="#FEF2F2"/> <!-- Light Red bg for errors -->
+
+    <!-- Inputs -->
+    <SolidColorBrush x:Key="Brush.Input.Background" Color="#FFFFFF"/>
+
+    <!-- Legacy Mappings (Temporary Support) -->
+    <SolidColorBrush x:Key="AppBackgroundBrush" Color="#F3F4F6"/>
     <SolidColorBrush x:Key="CardBackgroundBrush" Color="#FFFFFF"/>
-    <SolidColorBrush x:Key="TextBrush" Color="#333333"/>
-    <SolidColorBrush x:Key="BorderBrush" Color="#DDDDDD"/>
-    <SolidColorBrush x:Key="InputBackgroundBrush" Color="#FAFAFA"/>
-    <SolidColorBrush x:Key="WarningBackgroundBrush" Color="#FFCCCC"/>
+    <SolidColorBrush x:Key="TextBrush" Color="#111827"/>
+    <SolidColorBrush x:Key="BorderBrush" Color="#E5E7EB"/>
+    <SolidColorBrush x:Key="InputBackgroundBrush" Color="#FFFFFF"/>
+    <SolidColorBrush x:Key="WarningBackgroundBrush" Color="#FEF2F2"/>
+
 </ResourceDictionary>

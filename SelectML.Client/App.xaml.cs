@@ -15,6 +15,8 @@ namespace SelectML.Client
     {
         protected override void OnStartup(StartupEventArgs e)
         {
+            RegisterWindowCommands();
+
             // Initialize Velopack
             VelopackApp.Build()
                 .Run();
@@ -47,16 +49,65 @@ namespace SelectML.Client
             base.OnExit(e);
         }
 
+        private void RegisterWindowCommands()
+        {
+            System.Windows.Input.CommandManager.RegisterClassCommandBinding(typeof(Window), new System.Windows.Input.CommandBinding(SystemCommands.CloseWindowCommand, OnCloseWindow));
+            System.Windows.Input.CommandManager.RegisterClassCommandBinding(typeof(Window), new System.Windows.Input.CommandBinding(SystemCommands.MaximizeWindowCommand, OnMaximizeWindow, OnCanResizeWindow));
+            System.Windows.Input.CommandManager.RegisterClassCommandBinding(typeof(Window), new System.Windows.Input.CommandBinding(SystemCommands.MinimizeWindowCommand, OnMinimizeWindow, OnCanMinimizeWindow));
+            System.Windows.Input.CommandManager.RegisterClassCommandBinding(typeof(Window), new System.Windows.Input.CommandBinding(SystemCommands.RestoreWindowCommand, OnRestoreWindow, OnCanResizeWindow));
+        }
+
+        private void OnCanResizeWindow(object sender, System.Windows.Input.CanExecuteRoutedEventArgs e)
+        {
+            e.CanExecute = sender is Window w && (w.ResizeMode == ResizeMode.CanResize || w.ResizeMode == ResizeMode.CanResizeWithGrip);
+        }
+
+        private void OnCanMinimizeWindow(object sender, System.Windows.Input.CanExecuteRoutedEventArgs e)
+        {
+            e.CanExecute = sender is Window w && w.ResizeMode != ResizeMode.NoResize;
+        }
+
+        private void OnCloseWindow(object sender, System.Windows.Input.ExecutedRoutedEventArgs e)
+        {
+            SystemCommands.CloseWindow((Window)e.Parameter);
+        }
+
+        private void OnMaximizeWindow(object sender, System.Windows.Input.ExecutedRoutedEventArgs e)
+        {
+            SystemCommands.MaximizeWindow((Window)e.Parameter);
+        }
+
+        private void OnMinimizeWindow(object sender, System.Windows.Input.ExecutedRoutedEventArgs e)
+        {
+            SystemCommands.MinimizeWindow((Window)e.Parameter);
+        }
+
+        private void OnRestoreWindow(object sender, System.Windows.Input.ExecutedRoutedEventArgs e)
+        {
+            SystemCommands.RestoreWindow((Window)e.Parameter);
+        }
+
         public void SetTheme(bool isDark)
         {
-            // Update ResourceDictionary
-            var dict = new ResourceDictionary();
             string themeName = isDark ? "Dark" : "Light";
-            dict.Source = new Uri($"Themes/{themeName}.xaml", UriKind.Relative);
 
             // Clear old theme and add new one
             this.Resources.MergedDictionaries.Clear();
-            this.Resources.MergedDictionaries.Add(dict);
+            
+            // 1. Theme (Colors)
+            var themeDict = new ResourceDictionary();
+            themeDict.Source = new Uri($"pack://application:,,,/SelectML.Client;component/Themes/{themeName}.xaml");
+            this.Resources.MergedDictionaries.Add(themeDict);
+
+            // 2. Control Styles
+            var controlsDict = new ResourceDictionary();
+            controlsDict.Source = new Uri("pack://application:,,,/SelectML.Client;component/Styles/Controls.xaml");
+            this.Resources.MergedDictionaries.Add(controlsDict);
+
+            // 3. DataGrid Styles
+            var dataGridDict = new ResourceDictionary();
+            dataGridDict.Source = new Uri("pack://application:,,,/SelectML.Client;component/Styles/DataGrid.xaml");
+            this.Resources.MergedDictionaries.Add(dataGridDict);
 
             // Update Window Icon
             if (this.MainWindow != null)
