@@ -10,6 +10,7 @@
 
 > **Versão 1.1.1 Released!**
 > Novidades: Correção de Splash Screen, Melhoria no feedback de atualização e Ajustes finos na UI.
+> 
 > [Baixar Última Versão](https://github.com/mitutoyo-brasil-bsg/SelectML/releases/tag/1.1.1)
 
 ## 🗺️ Mapa do Repositório
