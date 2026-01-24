@@ -15,6 +15,8 @@ namespace SelectML.Client
     {
         protected override void OnStartup(StartupEventArgs e)
         {
+            RegisterWindowCommands();
+
             // Initialize Velopack
             VelopackApp.Build()
                 .Run();
@@ -45,6 +47,44 @@ namespace SelectML.Client
             Log.Information("Application Exiting");
             Log.CloseAndFlush();
             base.OnExit(e);
+        }
+
+        private void RegisterWindowCommands()
+        {
+            System.Windows.Input.CommandManager.RegisterClassCommandBinding(typeof(Window), new System.Windows.Input.CommandBinding(SystemCommands.CloseWindowCommand, OnCloseWindow));
+            System.Windows.Input.CommandManager.RegisterClassCommandBinding(typeof(Window), new System.Windows.Input.CommandBinding(SystemCommands.MaximizeWindowCommand, OnMaximizeWindow, OnCanResizeWindow));
+            System.Windows.Input.CommandManager.RegisterClassCommandBinding(typeof(Window), new System.Windows.Input.CommandBinding(SystemCommands.MinimizeWindowCommand, OnMinimizeWindow, OnCanMinimizeWindow));
+            System.Windows.Input.CommandManager.RegisterClassCommandBinding(typeof(Window), new System.Windows.Input.CommandBinding(SystemCommands.RestoreWindowCommand, OnRestoreWindow, OnCanResizeWindow));
+        }
+
+        private void OnCanResizeWindow(object sender, System.Windows.Input.CanExecuteRoutedEventArgs e)
+        {
+            e.CanExecute = sender is Window w && (w.ResizeMode == ResizeMode.CanResize || w.ResizeMode == ResizeMode.CanResizeWithGrip);
+        }
+
+        private void OnCanMinimizeWindow(object sender, System.Windows.Input.CanExecuteRoutedEventArgs e)
+        {
+            e.CanExecute = sender is Window w && w.ResizeMode != ResizeMode.NoResize;
+        }
+
+        private void OnCloseWindow(object sender, System.Windows.Input.ExecutedRoutedEventArgs e)
+        {
+            SystemCommands.CloseWindow((Window)e.Parameter);
+        }
+
+        private void OnMaximizeWindow(object sender, System.Windows.Input.ExecutedRoutedEventArgs e)
+        {
+            SystemCommands.MaximizeWindow((Window)e.Parameter);
+        }
+
+        private void OnMinimizeWindow(object sender, System.Windows.Input.ExecutedRoutedEventArgs e)
+        {
+            SystemCommands.MinimizeWindow((Window)e.Parameter);
+        }
+
+        private void OnRestoreWindow(object sender, System.Windows.Input.ExecutedRoutedEventArgs e)
+        {
+            SystemCommands.RestoreWindow((Window)e.Parameter);
         }
 
         public void SetTheme(bool isDark)

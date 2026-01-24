@@ -437,4 +437,101 @@
         </Setter>
     </Style>
 
+    <!-- =================================================================== -->
+    <!-- WINDOW (Modern Style) -->
+    <!-- =================================================================== -->
+    <Style x:Key="ModernWindowStyle" TargetType="Window">
+        <Setter Property="Background" Value="{DynamicResource Brush.Background.Base}"/>
+        <Setter Property="Foreground" Value="{DynamicResource Brush.Text.Primary}"/>
+        <Setter Property="WindowChrome.WindowChrome">
+            <Setter.Value>
+                <WindowChrome CaptionHeight="32" 
+                              GlassFrameThickness="0" 
+                              CornerRadius="0" 
+                              ResizeBorderThickness="6"/>
+            </Setter.Value>
+        </Setter>
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="Window">
+                    <Border BorderBrush="{DynamicResource Brush.Border.Base}" BorderThickness="1" Background="{TemplateBinding Background}">
+                        <Grid>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="*"/>
+                            </Grid.RowDefinitions>
+                            
+                            <!-- Title Bar -->
+                            <Border Grid.Row="0" Height="32" Background="{DynamicResource Brush.Surface.Card}">
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="Auto"/>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                    </Grid.ColumnDefinitions>
+                                    
+                                    <!-- Icon & Title -->
+                                    <StackPanel Orientation="Horizontal" Margin="10,0,0,0" VerticalAlignment="Center">
+                                        <Image Source="{TemplateBinding Icon}" Width="16" Height="16" Margin="0,0,10,0"/>
+                                        <TextBlock Text="{TemplateBinding Title}" FontWeight="SemiBold" FontSize="12" VerticalAlignment="Center" Foreground="{DynamicResource Brush.Text.Primary}"/>
+                                    </StackPanel>
+                                    
+                                    <!-- Window Controls -->
+                                    <StackPanel Grid.Column="2" Orientation="Horizontal">
+                                        <Button Command="{x:Static SystemCommands.MinimizeWindowCommand}" CommandParameter="{Binding RelativeSource={RelativeSource TemplatedParent}}"
+                                                Style="{StaticResource TitleBarButton}" Content="0"/> <!-- Webdings 0 = Minimize -->
+                                        <Button Command="{x:Static SystemCommands.MaximizeWindowCommand}" CommandParameter="{Binding RelativeSource={RelativeSource TemplatedParent}}"
+                                                Style="{StaticResource TitleBarButton}" Content="1" 
+                                                Visibility="{Binding RelativeSource={RelativeSource TemplatedParent}, Path=ResizeMode, Converter={StaticResource BooleanToVisibilityConverter}}"/> <!-- Webdings 1 = Maximize -->
+                                        <Button Command="{x:Static SystemCommands.CloseWindowCommand}" CommandParameter="{Binding RelativeSource={RelativeSource TemplatedParent}}"
+                                                Style="{StaticResource TitleBarCloseButton}" Content="r"/> <!-- Webdings r = Close -->
+                                    </StackPanel>
+                                </Grid>
+                            </Border>
+
+                            <!-- Content -->
+                            <ContentPresenter Grid.Row="1"/>
+                        </Grid>
+                    </Border>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <!-- Helper Styles for Title Bar Buttons -->
+    <Style x:Key="TitleBarButton" TargetType="Button">
+        <Setter Property="Width" Value="46"/>
+        <Setter Property="Height" Value="32"/>
+        <Setter Property="Background" Value="Transparent"/>
+        <Setter Property="BorderThickness" Value="0"/>
+        <Setter Property="WindowChrome.IsHitTestVisibleInChrome" Value="True"/>
+        <Setter Property="FontFamily" Value="Webdings"/>
+        <Setter Property="FontSize" Value="10"/>
+        <Setter Property="Foreground" Value="{DynamicResource Brush.Text.Secondary}"/>
+        <Setter Property="Template">
+             <Setter.Value>
+                 <ControlTemplate TargetType="Button">
+                     <Border Background="{TemplateBinding Background}">
+                         <TextBlock Text="{TemplateBinding Content}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                     </Border>
+                     <ControlTemplate.Triggers>
+                         <Trigger Property="IsMouseOver" Value="True">
+                             <Setter Property="Background" Value="{DynamicResource Brush.Border.Base}"/>
+                             <Setter Property="Foreground" Value="{DynamicResource Brush.Text.Primary}"/>
+                         </Trigger>
+                     </ControlTemplate.Triggers>
+                 </ControlTemplate>
+             </Setter.Value>
+        </Setter>
+    </Style>
+    
+    <Style x:Key="TitleBarCloseButton" TargetType="Button" BasedOn="{StaticResource TitleBarButton}">
+        <Style.Triggers>
+             <Trigger Property="IsMouseOver" Value="True">
+                 <Setter Property="Background" Value="#E81123"/>
+                 <Setter Property="Foreground" Value="White"/>
+             </Trigger>
+        </Style.Triggers>
+    </Style>
+
 </ResourceDictionary>
