@@ -442,8 +442,8 @@
 
     <!-- Helper Styles for Title Bar Buttons -->
     <Style x:Key="TitleBarButton" TargetType="Button">
-        <Setter Property="Width" Value="46"/>
-        <Setter Property="Height" Value="32"/>
+        <Setter Property="Width" Value="30"/>
+        <Setter Property="Height" Value="30"/>
         <Setter Property="Background" Value="Transparent"/>
         <Setter Property="BorderThickness" Value="0"/>
         <Setter Property="WindowChrome.IsHitTestVisibleInChrome" Value="True"/>
@@ -501,7 +501,7 @@
                             </Grid.RowDefinitions>
                             
                             <!-- Title Bar -->
-                            <Border Grid.Row="0" Height="32" Background="{DynamicResource Brush.Surface.Card}">
+                            <Border Grid.Row="0" Height="28" Background="{DynamicResource Brush.Surface.Card}">
                                 <Grid>
                                     <Grid.ColumnDefinitions>
                                         <ColumnDefinition Width="Auto"/>
