@@ -264,7 +264,7 @@
                                   SelectedIndex="-1">
                             <ComboBox.ItemTemplate>
                                 <DataTemplate>
-                                    <TextBlock Text="{Binding MachineName}"/>
+                                    <TextBlock Text="{Binding MachineName}" VerticalAlignment="Center" FontSize="12" Margin="0,4,0,0"/>
                                 </DataTemplate>
                             </ComboBox.ItemTemplate>
                         </ComboBox>
@@ -337,10 +337,13 @@
                                         <ColumnDefinition Width="Auto"/>
                                     </Grid.ColumnDefinitions>
                                     <ComboBox ItemsSource="{Binding AvailableDatabases}" 
-                                              Text="{Binding DbName}" 
+                                              Text="{Binding DbName}"
                                               IsEditable="False" 
                                               IsEnabled="{Binding IsConfigEnabled}" 
-                                              Style="{StaticResource {x:Type ComboBox}}" VerticalAlignment="Center" Height="28"/>
+                                              Style="{StaticResource {x:Type ComboBox}}" 
+                                              VerticalAlignment="Center"
+                                              VerticalContentAlignment="Center"
+                                              Height="28"/>
                                     <Button Grid.Column="1" Command="{Binding LoadDatabasesCommand}" Content="↻" Style="{StaticResource IconButton}" 
                                             Width="20" Margin="5,0,0,0" ToolTip="Atualizar lista" Foreground="{DynamicResource Brush.Text.Primary}" Cursor="Hand" FontSize="15"/>
                                 </Grid>

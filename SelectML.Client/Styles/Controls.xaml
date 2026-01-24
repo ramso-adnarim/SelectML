@@ -342,6 +342,7 @@
                                   HorizontalContentAlignment="{TemplateBinding HorizontalContentAlignment}" 
                                   IsReadOnly="{Binding IsReadOnly, RelativeSource={RelativeSource TemplatedParent}}" 
                                   Margin="{TemplateBinding Padding}" 
+                                  FontSize="15"
                                   VerticalContentAlignment="{TemplateBinding VerticalContentAlignment}"
                                   Visibility="Collapsed"/>
                      </Grid>
