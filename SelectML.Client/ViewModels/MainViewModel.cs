@@ -161,6 +161,13 @@ namespace SelectML.Client.ViewModels
             set { _isPartNameValid = value; OnPropertyChanged(); }
         }
 
+        private bool _isBatchNumberValid = true;
+        public bool IsBatchNumberValid
+        {
+            get => _isBatchNumberValid;
+            set { _isBatchNumberValid = value; OnPropertyChanged(); }
+        }
+
         private void PerformCleanup()
         {
             try
@@ -370,6 +377,8 @@ namespace SelectML.Client.ViewModels
             }
         }
 
+        private bool _suppressBatchLookup;
+
         public string BatchNumber
         {
             get => _batchNumber;
@@ -379,8 +388,8 @@ namespace SelectML.Client.ViewModels
                 OnPropertyChanged();
                 CommandManager.InvalidateRequerySuggested();
                 
-                // Trigger Station Lookup if not file mode
-                if (!_isProcessingFile && !string.IsNullOrWhiteSpace(value))
+                // Trigger Station Lookup unless suppressed (programmatic load)
+                if (!_suppressBatchLookup)
                 {
                     _ = DetectStationAndFeatures();
                 }
@@ -391,12 +400,21 @@ namespace SelectML.Client.ViewModels
         {
              try
              {
+                 if (string.IsNullOrWhiteSpace(BatchNumber)) 
+                 {
+                     IsBatchNumberValid = true; // Empirically, empty is valid until typed? Or pending. Let's say valid to avoid redbox on clear.
+                     return;
+                 }
+
                  var station = await _databaseService.GetStationNameAsync(BatchNumber);
                  var routine = await _databaseService.GetRoutineNameAsync(BatchNumber);
+
+                 bool found = false;
 
                  if (!string.IsNullOrEmpty(station))
                  {
                      DetectedStationName = station;
+                     found = true;
                  }
                  else
                  {
@@ -406,6 +424,7 @@ namespace SelectML.Client.ViewModels
                  if (!string.IsNullOrEmpty(routine))
                  {
                      _expectedPartName = routine;
+                     found = true;
                      // Auto-fill if empty
                      if (string.IsNullOrWhiteSpace(PartName))
                      {
@@ -417,6 +436,8 @@ namespace SelectML.Client.ViewModels
                      _expectedPartName = null;
                  }
                  
+                 IsBatchNumberValid = found;
+
                  // Also load features if possible (redundant with PartName trigger but safer)
                  await LoadFeaturesForPart();
                  TriggerValidation();
@@ -863,11 +884,21 @@ namespace SelectML.Client.ViewModels
                          _currentData = data;
 
                          PartName = data.PartName;
+                         
+                         _suppressBatchLookup = true;
                          BatchNumber = data.BatchNumber;
+                         _suppressBatchLookup = false;
 
                          // Phase 5: Early Detection and Validation
                          DetectedStationName = await _databaseService.GetStationNameAsync(data.BatchNumber);
                          _expectedPartName = await _databaseService.GetRoutineNameAsync(data.BatchNumber);
+                         
+                         // Manually set validation state since we suppressed the automatic check
+                         IsBatchNumberValid = !string.IsNullOrEmpty(DetectedStationName) || !string.IsNullOrEmpty(_expectedPartName);
+                         // If no batch number in file (empty), we might consider it valid initially or invalid? 
+                         // Logic says: if empty, valid (until typed).
+                         if (string.IsNullOrWhiteSpace(data.BatchNumber)) IsBatchNumberValid = true;
+
                          var expectedFeatures = await _databaseService.GetFeaturesForRunAsync(data.BatchNumber);
                          // Populate KnownFeatures for Validation
                           System.Windows.Application.Current.Dispatcher.Invoke(() =>
