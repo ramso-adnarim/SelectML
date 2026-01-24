@@ -6,7 +6,7 @@
     <Style x:Key="ModernDataGrid" TargetType="DataGrid">
         <Setter Property="Background" Value="{DynamicResource Brush.Input.Background}"/> 
         <Setter Property="BorderBrush" Value="{DynamicResource Brush.Border.Base}"/>
-        <Setter Property="BorderThickness" Value="1"/>
+        <Setter Property="BorderThickness" Value="0"/>
         <Setter Property="GridLinesVisibility" Value="Horizontal"/>
         <Setter Property="HorizontalGridLinesBrush" Value="{DynamicResource Brush.Border.Base}"/>
         <Setter Property="VerticalGridLinesBrush" Value="{DynamicResource Brush.Border.Base}"/>
@@ -16,7 +16,7 @@
         <Setter Property="CanUserDeleteRows" Value="False"/>
         <Setter Property="CanUserResizeRows" Value="False"/>
         <Setter Property="SelectionMode" Value="Single"/>
-        <Setter Property="RowHeight" Value="20"/>
+        <Setter Property="RowHeight" Value="21"/>
         <Setter Property="ColumnHeaderStyle" Value="{DynamicResource ModernDataGridColumnHeader}"/>
         <Setter Property="RowStyle" Value="{DynamicResource ModernDataGridRow}"/>
         <Setter Property="CellStyle" Value="{DynamicResource ModernDataGridCell}"/>
@@ -30,9 +30,9 @@
         <Setter Property="Padding" Value="10,0"/>
         <Setter Property="HorizontalContentAlignment" Value="Left"/>
         <Setter Property="VerticalContentAlignment" Value="Center"/>
-        <Setter Property="BorderThickness" Value="0,0,0,1"/>
+        <Setter Property="BorderThickness" Value="0,0,0,2"/>
         <Setter Property="BorderBrush" Value="{DynamicResource Brush.Border.Base}"/>
-        <Setter Property="Height" Value="35"/>
+        <Setter Property="Height" Value="25"/>
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="DataGridColumnHeader">
