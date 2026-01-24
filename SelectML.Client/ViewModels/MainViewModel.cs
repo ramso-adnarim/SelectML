@@ -540,7 +540,12 @@ namespace SelectML.Client.ViewModels
 
         private void ExecuteOpenUpdateWindow(object obj)
         {
-            if (!IsUpdateAvailable) return;
+            if (!IsUpdateAvailable)
+            {
+                 // Feedback for user when clicking the green checkmark
+                 System.Windows.MessageBox.Show($"Você está utilizando a versão mais recente ({CurrentVersion}).", "SelectML", MessageBoxButton.OK, MessageBoxImage.Information);
+                 return;
+            }
 
             var window = new UpdateWindow();
             window.DataContext = this;

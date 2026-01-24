@@ -44,8 +44,8 @@ if (Test-Path $pluginSource) {
 Gera o instalador e arquivos de update em `Releases`.
 
 ```powershell
-# Substitua 1.1.0 pela versão correta!
-vpk pack --packId SelectML --packVersion 1.1.0 --packDir .\publish --mainExe SelectML.Client.exe --icon "SelectML.Client\Resources\SelectML-logo-short-light.ico"
+# Substitua 1.1.1 pela versão correta!
+vpk pack --packId SelectML --packVersion 1.1.1 --packDir .\publish --mainExe SelectML.Client.exe --icon "SelectML.Client\Resources\SelectML-logo-short-light.ico" --splashImage "SelectML.Client\Resources\SelectML-splash.png"
 ```
 
 ---
@@ -53,11 +53,11 @@ vpk pack --packId SelectML --packVersion 1.1.0 --packDir .\publish --mainExe Sel
 ## ☁️ Upload (GitHub Releases)
 
 1. Vá para **GitHub > Releases > Draft a new release**.
-2. **Tag**: `v1.1.0` (Use 'v' prefixo por convenção, ou apenas o número).
-3. **Título**: `Versão 1.1.0`.
+2. **Tag**: `v1.1.1` (Use 'v' prefixo por convenção, ou apenas o número).
+3. **Título**: `Versão 1.1.1`.
 4. **Anexos Obrigatórios** (da pasta `Releases`):
-   - `SelectML-1.1.0-win-x64-Setup.exe` (Instalador)
-   - `SelectML-1.1.0-win-x64-full.nupkg` (Pacote Full)
+   - `SelectML-1.1.1-win-x64-Setup.exe` (Instalador)
+   - `SelectML-1.1.1-win-x64-full.nupkg` (Pacote Full)
    - `RELEASES` (Manifesto - **CRUCIAL**: Sobrescrever se já existir)
 5. **Publish**.
 
