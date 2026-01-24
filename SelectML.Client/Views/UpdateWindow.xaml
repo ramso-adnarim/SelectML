@@ -8,9 +8,9 @@
         WindowStartupLocation="CenterOwner"
         ResizeMode="NoResize"
         ShowInTaskbar="False"
-        WindowStyle="ToolWindow"
         Background="{DynamicResource AppBackgroundBrush}"
-        Foreground="{DynamicResource TextBrush}">
+        Foreground="{DynamicResource TextBrush}"
+        Style="{StaticResource ModernWindowStyle}">
 
     <Grid Margin="20">
         <Grid.RowDefinitions>

@@ -4,7 +4,8 @@
         xmlns:conv="clr-namespace:SelectML.Client.Converters"
         Title="Conexão serial" Height="305" Width="320"
         WindowStartupLocation="CenterOwner" ResizeMode="NoResize"
-        Background="{DynamicResource AppBackgroundBrush}" Foreground="{DynamicResource TextBrush}">
+        Background="{DynamicResource AppBackgroundBrush}" Foreground="{DynamicResource TextBrush}"
+        Style="{StaticResource ModernWindowStyle}">
     
     <Window.Resources>
         <conv:BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter"/>
