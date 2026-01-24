@@ -19,16 +19,27 @@ namespace SelectML.Client.Services.Serial
         public event EventHandler<string>? ErrorReceived;
         public event EventHandler<bool>? ConnectionStatusChanged;
 
+        /// <summary>
+        /// Construtor privado para garantir o padrão Singleton.
+        /// </summary>
         private SerialPortService() { }
 
+        /// <summary>
+        /// Retorna a lista de nomes de portas COM disponíveis no sistema (ex: "COM1", "COM3").
+        /// </summary>
         public string[] GetAvailablePorts()
         {
             return SerialPort.GetPortNames();
         }
 
+        /// <summary>
+        /// Abre a conexão serial com a porta especificada e configura a estratégia de parsing.
+        /// </summary>
+        /// <param name="portName">Nome da porta (ex: "COM1")</param>
+        /// <param name="strategy">Estratégia de interpretação dos dados (ex: U-WAVE ou Custom)</param>
         public void Connect(string portName, ISerialDeviceStrategy strategy)
         {
-            Disconnect(); // Ensure clean state
+            Disconnect(); // Garante estado limpo antes de conectar
 
             try
             {
@@ -43,10 +54,10 @@ namespace SelectML.Client.Services.Serial
                     config.StopBits
                 );
 
-                // Ensure we read efficiently
+                // Assina o evento de recebimento de dados
                 _serialPort.DataReceived += OnDataReceived;
                 _serialPort.Open();
-                _serialPort.DiscardInBuffer(); // Clear old trash
+                _serialPort.DiscardInBuffer(); // Limpa lixo antigo do buffer da porta
                 
                 ConnectionStatusChanged?.Invoke(this, true);
             }
@@ -56,6 +67,9 @@ namespace SelectML.Client.Services.Serial
             }
         }
 
+        /// <summary>
+        /// Fecha a conexão serial e libera recursos.
+        /// </summary>
         public void Disconnect()
         {
             if (_serialPort != null)
@@ -68,7 +82,7 @@ namespace SelectML.Client.Services.Serial
                     }
                     _serialPort.Dispose();
                 }
-                catch { /* Ignore close errors */ }
+                catch { /* Ignora erros de fechamento */ }
                 finally
                 {
                     _serialPort = null;
@@ -97,11 +111,14 @@ namespace SelectML.Client.Services.Serial
             }
         }
 
+        /// <summary>
+        /// Processa o buffer acumulado, extraindo linhas completas e delegando para a estratégia atual.
+        /// </summary>
         private void ProcessBuffer()
         {
             string content = _buffer.ToString();
             
-            // Handles both \r and \n as delimiters
+            // Lida com \r e \n como delimitadores de quebra de linha
             while (true)
             {
                 int r = content.IndexOf('\r');
@@ -116,13 +133,13 @@ namespace SelectML.Client.Services.Serial
 
                 string line = content.Substring(0, idx);
                 
-                // Remove line + terminator from buffer
+                // Remove linha + terminador do buffer acumulado
                 _buffer.Remove(0, idx + 1);
                 content = _buffer.ToString();
 
                 if (!string.IsNullOrWhiteSpace(line))
                 {
-                    // Parse logic
+                    // Lógica de Parse delegada para a estratégia
                     if (_currentStrategy != null)
                     {
                         try 

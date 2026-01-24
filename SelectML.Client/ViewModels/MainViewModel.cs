@@ -657,15 +657,7 @@ namespace SelectML.Client.ViewModels
                     return;
                 }
 
-                /* 
-                // Allow null parser for Serial Only mode
-                if (SelectedParser == null)
-                {
-                    System.Windows.MessageBox.Show("Selecione um plugin de máquina.", "Erro", MessageBoxButton.OK, MessageBoxImage.Error);
-                    Log.Warning("No parser selected");
-                    return;
-                }
-                */
+
 
                 var config = _configService.Load(); // Reload to keep existing keys
                 config.WatchDirectory = WatchDirectory;
@@ -840,7 +832,7 @@ namespace SelectML.Client.ViewModels
 
         private async void OnFileCreated(object sender, FileSystemEventArgs e)
         {
-            // Reverse Buffer Logic
+            // Lógica de Buffer Reverso (Priority Queue)
             if (IsPendingAction)
             {
                 _fileBuffer.Enqueue(e.FullPath);
@@ -872,7 +864,7 @@ namespace SelectML.Client.ViewModels
 
                  if (data.IsValid)
                  {
-                     // Phase 6: Archive Immediately
+                     // Fase 6: Arquivar Imediatamente (Bypass de segurança)
                      try
                      {
                          _fileLifecycleService.ArchiveInputFile(fullPath, WatchDirectory);
@@ -886,8 +878,8 @@ namespace SelectML.Client.ViewModels
 
                      await System.Windows.Application.Current.Dispatcher.InvokeAsync(async () =>
                      {
-                         _isProcessingFile = true; // Protect against Serial Data loss during processing
-                         IsPendingAction = true; // Ensure locked
+                         _isProcessingFile = true; // Protege contra perda de dados Seriais durante processamento (Modo Exclusivo)
+                         IsPendingAction = true; // Garante travamento da UI
                          _currentData = data;
 
                          PartName = data.PartName;
@@ -986,7 +978,7 @@ namespace SelectML.Client.ViewModels
                          else
                          {
                              IsPendingAction = true;
-                             _isProcessingFile = true; // Mark as File Mode (Locks out Serial)
+                             _isProcessingFile = true; // Marca como Modo Arquivo (Bloqueia Serial)
                              StatusMessage = "Dados carregados. Verifique e clique em Enviar.";
                              RequestRestoreWindow?.Invoke();
                          }
@@ -1306,10 +1298,10 @@ namespace SelectML.Client.ViewModels
             BatchNumber = string.Empty;
             DetectedStationName = string.Empty;
             MeasuredResults.Clear();
-            KnownFeatures.Clear(); // Fix: Clear stale features
-            _currentData = null;   // Fix: Reset current data context
-            _isProcessingFile = false; // Release File Mode lock
-            // IsPendingAction should be false here usually, unless we re-activate it for Buffered data
+            KnownFeatures.Clear(); // Limpa features obsoletas
+            _currentData = null;   // Reseta contexto de dados do arquivo
+            _isProcessingFile = false; // Libera o lock do Modo Arquivo
+            // IsPendingAction deve ser false aqui, a menos que reativado por dados buferizados
             
             // Check Buffers
             if (_serialBuffer.Count > 0)
@@ -1370,13 +1362,13 @@ namespace SelectML.Client.ViewModels
             {
                 if (_isProcessingFile)
                 {
-                    // Scenario A: Collision. Queue it.
+                    // Cenário A: Colisão. Enfileirar no Buffer Reverso.
                     _serialBuffer.Enqueue(e);
                     StatusMessage = $"Dado serial em buffer ({_serialBuffer.Count})...";
                 }
                 else
                 {
-                    // Scenario B: Append direct
+                    // Cenário B: Adicionar direto (Sem arquivo sendo processado)
                     string featureName = !string.IsNullOrWhiteSpace(_currentSerialFeatureName) 
                                          ? _currentSerialFeatureName 
                                          : e.FeatureName;

@@ -18,6 +18,10 @@ namespace SelectML.Parsers.ViciVision
             return Path.GetExtension(filePath).ToLower() == ".csv";
         }
 
+        /// <summary>
+        /// Realiza o parsing de um arquivo CSV gerado pela ViciVision.
+        /// Estratégia: Lê a primeira linha como Cabeçalho (Nomes) e a última linha não vazia como Valores.
+        /// </summary>
         public MeasurementData Parse(string filePath)
         {
             var data = new MeasurementData();

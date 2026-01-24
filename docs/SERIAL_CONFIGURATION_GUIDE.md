@@ -73,3 +73,22 @@ Após salvar o arquivo `custom_device_config.json`:
 1. Vá no SelectML.
 2. Menu **Conexão > Configurar Conexão**.
 3. Selecione "Customizado" novamente (ou reconecte) para que o arquivo seja recarregado.
+
+---
+
+## Estratégia Nativa: Mitutoyo U-WAVE
+
+O SelectML já possui suporte nativo para o sistema **Mitutoyo U-WAVE**. Se você selecionar "Mitutoyo U-WAVE" na tela de configuração serial, ele ignorará o arquivo `.json` e usará a lógica interna otimizada.
+
+**Protocolo Esperado:**
+Formato padrão Mitutoyo: `01A+123.456CR`
+- `01`: ID do canal (ignorável para canal único)
+- `A`: Código de tipo de dado
+- `+` ou `-`: Sinal
+- `123.456`: Valor Numérico
+- `CR`: Carriage Return (Terminador)
+
+**Regras Específicas:**
+- O comando de requisição de dados (DREQ) não é enviado pelo PC. O U-WAVE deve estar configurado para enviar dados ao pressionar o botão no paquímetro/micrômetro.
+- O SelectML faz o parsing automático e extrai o valor numérico, convertendo para Double independente da cultura (ponto ou vírgula).
+

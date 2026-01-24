@@ -1,4 +1,27 @@
+<p align="center">
+  <img src="docs/SelectML-logo-dark.png" alt="SelectML Logo" width="200"/>
+</p>
+
 # SelectML - Monitoramento de Medições Industriais
+
+![Version](https://img.shields.io/badge/Version-1.1.0-blue)
+![Build](https://img.shields.io/badge/Build-Passing-brightgreen)
+![Platform](https://img.shields.io/badge/Platform-Windows_WPF-blueviolet)
+
+> **Versão 1.1.0 Released!**
+> Novidades: Arquitetura Híbrida (Serial + Arquivo), UI Renovada (Dark Mode Nativo) e Buffer Reverso.
+> [Baixar Última Versão](#)
+
+## 🗺️ Mapa do Repositório
+
+Para navegar com eficiência no código e documentação:
+
+- **[🤖 AI Codebase Map](docs/AI_CODEBASE_MAP.md)**: Índice otimizado para Agentes de IA e novos devs.
+- **[🏛️ Arquitetura Técnica](docs/ARCHITECTURE.md)**: Diagramas, Fluxo de Dados e Decisões de Design.
+- **[🔌 Guia de Plugins](docs/PLUGIN_GUIDE.md)**: Como criar drivers para novas máquinas.
+- **[📟 Configuração Serial](docs/SERIAL_CONFIGURATION_GUIDE.md)**: Ajuste fino para RS232 e U-WAVE.
+
+---
 
 ## Visão Geral do Projeto
 
@@ -7,21 +30,18 @@ O **SelectML** é uma solução de **Middleware Industrial** desenvolvida em **W
 Diferente de um simples "copiador de arquivos", o SelectML oferece uma camada robusta de **Governança de Dados** e **Validação em Tempo Real**, garantindo que apenas dados limpos e padronizados cheguem ao banco de dados corporativo.
 
 **Principais Funcionalidades:**
-- **Monitoramento Contínuo:** Detecta arquivos automaticamente assim que são gerados pela máquina.
+- **Híbrido (Novo):** Aceita tanto arquivos de CMMs quanto medição serial manual (Paquímetros).
 - **Validação SQL (Early Detection):** Verifica se o Lote e as Características existem no banco de dados antes de processar.
 - **Human-in-the-Loop:** Interface para revisão manual dos dados com destaque visual para erros ou features desconhecidas.
-- **Ciclo de Vida Seguro:** Backup automático de todos os arquivos brutos (Raw Data) com retenção configurável.
-- **System Tray:** Roda silenciosamente na bandeja do sistema, com notificações (Balloon Tips) e restauração automática ("Wake-on-Event").
-- **Dark Mode:** Suporte nativo a temas Claro e Escuro para conforto visual no chão de fábrica.
+- **Ciclo de Vida Seguro:** Backup automático de todos os arquivos brutos (Raw Data).
+- **System Tray:** Roda silenciosamente na bandeja do sistema.
 
 ---
 
 ## Arquitetura Simplificada
 
 O sistema segue o fluxo:
-`Máquina -> Arquivo TXT -> SelectML (Plugin) -> Validação SQL -> CSV Padronizado -> ERP`
-
-Para detalhes técnicos profundos, consulte a [Documentação de Arquitetura](docs/ARCHITECTURE.md).
+`Máquina/Serial -> Buffer -> Validação -> CSV Padronizado -> ERP`
 
 ---
 
