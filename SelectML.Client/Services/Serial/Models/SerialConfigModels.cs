@@ -14,6 +14,9 @@ namespace SelectML.Client.Services.Serial.Models
         
         [JsonConverter(typeof(JsonStringEnumConverter))]
         public StopBits StopBits { get; set; } = StopBits.One;
+
+        public bool DtrEnable { get; set; } = false;
+        public bool RtsEnable { get; set; } = false;
     }
 
     public class DataProtocol

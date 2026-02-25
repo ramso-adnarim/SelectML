@@ -16,7 +16,9 @@ O arquivo é dividido em duas seções: `PortConfig` (Hardware) e `DataProtocol`
         "BaudRate": 9600,       // Velocidade (Ex: 9600, 19200, 115200)
         "DataBits": 8,          // Bits de dados (Geralmente 8)
         "Parity": "None",       // Paridade (None, Odd, Even, Mark, Space)
-        "StopBits": "One"       // Bits de parada (One, Two, OnePointFive)
+        "StopBits": "One",      // Bits de parada (One, Two, OnePointFive)
+        "DtrEnable": true,      // Sinal DTR (Obrigatório para alguns dispositivos Mitutoyo)
+        "RtsEnable": true       // Sinal RTS (Obrigatório para alguns dispositivos Mitutoyo)
     },
     "DataProtocol": {
         "Terminator": "\r",     // Caractere que indica fim de linha. Use "\r" (CR) ou "\n" (LF).

@@ -4,11 +4,12 @@
     <TargetFramework>net8.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
-    <OutputPath>C:\Aplicativos\ML - FILE SELECTOR - V2\SelectML\SelectML.Client\bin\Debug\net8.0-windows\Plugins\</OutputPath>
+    <OutputPath>C:\Users\omiranda\source\repos\mitutoyo-brasil-bsg\SelectML\SelectML.Client\bin\Debug\net8.0-windows\Plugins\</OutputPath>
     
     <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
     <AppendRuntimeIdentifierToOutputPath>false</AppendRuntimeIdentifierToOutputPath>
     <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
+    <BaseOutputPath>C:\Users\omiranda\source\repos\mitutoyo-brasil-bsg\SelectML\SelectML.Client\bin\Debug\net8.0-windows\Plugins</BaseOutputPath>
   </PropertyGroup>
 
   <ItemGroup>

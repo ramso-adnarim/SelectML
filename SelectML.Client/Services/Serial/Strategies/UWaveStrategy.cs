@@ -16,7 +16,9 @@ namespace SelectML.Client.Services.Serial.Strategies
                 BaudRate = 57600,
                 DataBits = 8,
                 Parity = Parity.None,
-                StopBits = StopBits.One
+                StopBits = StopBits.One,
+                DtrEnable = true,
+                RtsEnable = true
             };
         }
 

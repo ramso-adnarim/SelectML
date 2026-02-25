@@ -56,6 +56,11 @@ namespace SelectML.Client.Services.Serial
 
                 // Assina o evento de recebimento de dados
                 _serialPort.DataReceived += OnDataReceived;
+                
+                // Configura sinais de controle de hardware
+                _serialPort.DtrEnable = config.DtrEnable;
+                _serialPort.RtsEnable = config.RtsEnable;
+
                 _serialPort.Open();
                 _serialPort.DiscardInBuffer(); // Limpa lixo antigo do buffer da porta
                 

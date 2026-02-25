@@ -4,14 +4,14 @@
 
 # SelectML - Monitoramento de Medições Industriais
 
-![Version](https://img.shields.io/badge/Version-1.1.1-blue)
+![Version](https://img.shields.io/badge/Version-1.1.2-blue)
 ![Build](https://img.shields.io/badge/Build-Passing-brightgreen)
 ![Platform](https://img.shields.io/badge/Platform-Windows_WPF-blueviolet)
 
-> **Versão 1.1.1 Released!**
-> Novidades: Correção de Splash Screen, Melhoria no feedback de atualização e Ajustes finos na UI.
+> **Versão 1.1.2 Released!**
+> Novidades: Correção na comunicação serial U-WAVE (DTR/RTS) e Persistência/Início Automático de conexões.
 > 
-> [Baixar Última Versão](https://github.com/mitutoyo-brasil-bsg/SelectML/releases/tag/1.1.1)
+> [Baixar Última Versão](https://github.com/mitutoyo-brasil-bsg/SelectML/releases/tag/1.1.2)
 
 ## 🗺️ Mapa do Repositório
 
