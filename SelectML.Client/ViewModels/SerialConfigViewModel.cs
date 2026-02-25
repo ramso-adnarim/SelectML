@@ -133,6 +133,7 @@ namespace SelectML.Client.ViewModels
                 config.LastSerialPort = SelectedPort;
                 config.LastSerialStrategy = SelectedStrategy.GetType().Name;
                 config.LastSerialFeatureName = DefaultFeatureName;
+                config.AutoStartSerial = true; // Habilita início automático se conectar com sucesso
                 _configService.Save(config);
 
                 // Check for Hot-Reload if Custom
@@ -154,6 +155,12 @@ namespace SelectML.Client.ViewModels
         private void ExecuteDisconnect(object obj)
         {
             SerialPortService.Instance.Disconnect();
+            
+            // Desabilita início automático no desconectar manual
+            var config = _configService.Load();
+            config.AutoStartSerial = false;
+            _configService.Save(config);
+
             UpdateStatus();
         }
 

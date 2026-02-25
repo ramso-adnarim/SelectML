@@ -148,9 +148,8 @@ namespace SelectML.Client.ViewModels
             SerialPortService.Instance.ConnectionStatusChanged += (s, connected) => IsSerialConnected = connected;
             IsSerialConnected = SerialPortService.Instance.IsConnected;
 
-            // Hook into collection changes to validation
-            // Ideally we should hook into item PropertyChanged but we already do that in OnSerialMeasurementReceived roughly
-            // We'll iterate in TriggerValidation.
+            // Process Auto-Start if applicable
+            _ = ProcessAutoStart();
         }
 
         // Validation Properties
@@ -651,6 +650,12 @@ namespace SelectML.Client.ViewModels
                 IsConfigLocked = false;
                 ConfigButtonText = "Salvar e Iniciar";
                 StatusMessage = "Monitoramento pausado. Edite as configurações.";
+
+                // Desabilita início automático se o usuário parar manualmente
+                var config = _configService.Load();
+                config.AutoStartDatabase = false;
+                _configService.Save(config);
+
                 Log.Information("Configuration unlocked for editing");
             }
             else
@@ -676,6 +681,7 @@ namespace SelectML.Client.ViewModels
                 config.DbName = DbName;
                 config.ConnectionString = ConnectionString;
 
+                config.AutoStartDatabase = true; // Habilita início automático se iniciar com sucesso
                 _configService.Save(config);
                 Log.Information("Configuration saved");
                 
@@ -1431,6 +1437,53 @@ namespace SelectML.Client.ViewModels
         private void UpdateStatus(string msg)
         {
             System.Windows.Application.Current.Dispatcher.Invoke(() => StatusMessage = msg);
+        }
+
+        private async Task ProcessAutoStart()
+        {
+             var config = _configService.Load();
+
+             // 1. Auto-Start Database/File Monitoring
+             if (config.AutoStartDatabase && !string.IsNullOrEmpty(config.WatchDirectory) && Directory.Exists(config.WatchDirectory))
+             {
+                 try
+                 {
+                     StatusMessage = "Iniciando monitoramento automático...";
+                     StartWatcher();
+                     IsConfigLocked = true;
+                     ConfigButtonText = "Editar";
+                     IsExpanded = false;
+                     Log.Information("Database/File auto-start successful");
+                 }
+                 catch (Exception ex)
+                 {
+                     Log.Error(ex, "Failed during database auto-start");
+                     UpdateStatus("Falha no início automático do monitoramento.");
+                 }
+             }
+
+             // 2. Auto-Start Serial
+             if (config.AutoStartSerial && !string.IsNullOrEmpty(config.LastSerialPort) && !string.IsNullOrEmpty(config.LastSerialStrategy))
+             {
+                 try
+                 {
+                     // Instantiate the strategy
+                     ISerialDeviceStrategy strategy = null;
+                     if (config.LastSerialStrategy == nameof(UWaveStrategy)) strategy = new UWaveStrategy();
+                     else if (config.LastSerialStrategy == nameof(GenericStrategy)) strategy = new GenericStrategy();
+                     else if (config.LastSerialStrategy == nameof(CustomSerialStrategy)) strategy = new CustomSerialStrategy();
+
+                     if (strategy != null)
+                     {
+                         SerialPortService.Instance.Connect(config.LastSerialPort, strategy);
+                         Log.Information("Serial auto-start successful on {Port}", config.LastSerialPort);
+                     }
+                 }
+                 catch (Exception ex)
+                 {
+                     Log.Error(ex, "Failed during serial auto-start on {Port}", config.LastSerialPort);
+                 }
+             }
         }
 
         private bool CanChangeConfig(object obj) => IsConfigEnabled;
