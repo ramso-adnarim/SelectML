@@ -20,6 +20,7 @@ using SelectML.Client; // Needed for ResultItem
 using SelectML.Client.Views; // For ConfirmationWindow
 using System.Collections.Generic;
 using Velopack;
+using SelectML.Client.Services.Serial.Strategies;
 
 namespace SelectML.Client.ViewModels
 {
