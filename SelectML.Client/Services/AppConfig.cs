@@ -21,7 +21,7 @@ namespace SelectML.Client.Services
         public int DataRetentionDays { get; set; } = 30;
 
         // Updates
-        public string UpdateUrl { get; set; } = "https://github.com/mitutoyo-brasil-bsg/SelectML/";
+        public string UpdateUrl { get; set; } = "https://github.com/ramso-adnarim/SelectML/";
 
         // Serial Persistence
         public string LastSerialPort { get; set; }
