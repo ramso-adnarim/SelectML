@@ -7,6 +7,8 @@ namespace SelectML.Client.Services
     public class AppConfig
     {
         public string WatchDirectory { get; set; }
+        public string OutputDirectory { get; set; }
+        public bool UseOutputDirectory { get; set; } = false;
         public string LastPluginName { get; set; }
         public string ConnectionString { get; set; }
 

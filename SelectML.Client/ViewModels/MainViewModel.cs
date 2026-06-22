@@ -63,6 +63,8 @@ namespace SelectML.Client.ViewModels
 
         // Dados
         private string _watchDirectory;
+        private string _outputDirectory;
+        private bool _useOutputDirectory;
         private string _connectionString;
 
         // Database Config Fields
@@ -111,6 +113,7 @@ namespace SelectML.Client.ViewModels
 
             // Comandos
             SelectDirectoryCommand = new RelayCommand(ExecuteSelectDirectory, CanChangeConfig);
+            SelectOutputDirectoryCommand = new RelayCommand(ExecuteSelectOutputDirectory, CanChangeConfig);
             SaveConfigCommand = new RelayCommand(ExecuteSaveConfig);
             LoadDatabasesCommand = new RelayCommand(ExecuteLoadDatabases, CanChangeConfig);
             ToggleThemeCommand = new RelayCommand(ExecuteToggleTheme);
@@ -289,6 +292,18 @@ namespace SelectML.Client.ViewModels
         {
             get => _watchDirectory;
             set { _watchDirectory = value; OnPropertyChanged(); }
+        }
+
+        public string OutputDirectory
+        {
+            get => _outputDirectory;
+            set { _outputDirectory = value; OnPropertyChanged(); }
+        }
+
+        public bool UseOutputDirectory
+        {
+            get => _useOutputDirectory;
+            set { _useOutputDirectory = value; OnPropertyChanged(); }
         }
 
         public string ConnectionString
@@ -493,6 +508,7 @@ namespace SelectML.Client.ViewModels
 
         // --- Comandos ---
         public RelayCommand SelectDirectoryCommand { get; }
+        public RelayCommand SelectOutputDirectoryCommand { get; }
         public RelayCommand SaveConfigCommand { get; }
         public RelayCommand LoadDatabasesCommand { get; }
         public RelayCommand ToggleThemeCommand { get; }
@@ -609,6 +625,9 @@ namespace SelectML.Client.ViewModels
             if (!string.IsNullOrEmpty(config.WatchDirectory))
                 WatchDirectory = config.WatchDirectory;
 
+            OutputDirectory = config.OutputDirectory;
+            UseOutputDirectory = config.UseOutputDirectory;
+
             // Load individual DB fields
             DbServer = !string.IsNullOrEmpty(config.DbServer) ? config.DbServer : @"localhost\MLSQLExpress";
             DbUseWindowsAuth = config.DbUseWindowsAuth;
@@ -672,6 +691,8 @@ namespace SelectML.Client.ViewModels
 
                 var config = _configService.Load(); // Reload to keep existing keys
                 config.WatchDirectory = WatchDirectory;
+                config.OutputDirectory = OutputDirectory;
+                config.UseOutputDirectory = UseOutputDirectory;
                 config.LastPluginName = SelectedParser?.MachineName ?? ""; // Allow null
 
                 // Save DB fields
@@ -1205,6 +1226,34 @@ namespace SelectML.Client.ViewModels
                 // If action is SendAll, use original _currentData
             }
 
+            if (string.IsNullOrEmpty(DetectedStationName) || DetectedStationName == "Não identificada")
+            {
+                if (!IsAutoMode)
+                {
+                    var stations = await _databaseService.GetAllStationsAsync();
+                    var dlg = new SelectML.Client.Views.StationSelectionWindow(stations);
+                    dlg.Owner = System.Windows.Application.Current.MainWindow;
+                    dlg.ShowDialog();
+
+                    if (dlg.UserChoice == SelectML.Client.Views.StationSelectionChoice.SendWithStation)
+                    {
+                        DetectedStationName = dlg.SelectedStation;
+                    }
+                    else if (dlg.UserChoice == SelectML.Client.Views.StationSelectionChoice.SendUnidentified)
+                    {
+                        DetectedStationName = "Unidentified";
+                    }
+                    else
+                    {
+                        return; // User cancelled
+                    }
+                }
+                else
+                {
+                    DetectedStationName = "Unidentified";
+                }
+            }
+
             IsPendingAction = false;
             Log.Information("User manually approved data for Batch {Batch}", dataToSend.BatchNumber);
             await GenerateOutputCsv(dataToSend);
@@ -1230,7 +1279,7 @@ namespace SelectML.Client.ViewModels
             {
                 StatusMessage = "Salvando dados...";
 
-                string outputDir = Path.Combine(WatchDirectory, "Output");
+                string outputDir = UseOutputDirectory && !string.IsNullOrEmpty(OutputDirectory) ? OutputDirectory : Path.Combine(WatchDirectory, "Output");
 
                 // Reuse the detected station name if available, otherwise query again (or use cached property)
                 string stationName = DetectedStationName;
@@ -1496,6 +1545,17 @@ namespace SelectML.Client.ViewModels
             {
                 WatchDirectory = dlg.SelectedPath;
                 Log.Information("Watch directory changed to: {Directory}", WatchDirectory);
+            }
+        }
+
+        private void ExecuteSelectOutputDirectory(object obj)
+        {
+            var dlg = new System.Windows.Forms.FolderBrowserDialog();
+            dlg.Description = "Selecione o diretório de Saída";
+            if (dlg.ShowDialog() == System.Windows.Forms.DialogResult.OK)
+            {
+                OutputDirectory = dlg.SelectedPath;
+                Log.Information("Output directory changed to: {Directory}", OutputDirectory);
             }
         }
 

@@ -8,6 +8,7 @@ namespace SelectML.Core
         Task<string?> GetStationNameAsync(string batchNumber);
         Task<string?> GetRoutineNameAsync(string batchNumber);
         Task<List<string>> GetFeaturesForRunAsync(string batchNumber);
+        Task<List<string>> GetAllStationsAsync();
         Task<IEnumerable<string>> GetAvailableDatabasesAsync(string connectionString);
     }
 }

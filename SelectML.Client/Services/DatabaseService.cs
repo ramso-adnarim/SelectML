@@ -112,6 +112,42 @@ namespace SelectML.Client.Services
             return features;
         }
 
+        public async Task<List<string>> GetAllStationsAsync()
+        {
+            var stations = new List<string>();
+            if (string.IsNullOrWhiteSpace(_connectionString))
+                return stations;
+
+            string query = "SELECT StationName FROM dbo.Station ORDER BY StationName";
+
+            try
+            {
+                using (var connection = new SqlConnection(_connectionString))
+                {
+                    await connection.OpenAsync();
+                    using (var command = new SqlCommand(query, connection))
+                    {
+                        using (var reader = await command.ExecuteReaderAsync())
+                        {
+                            while (await reader.ReadAsync())
+                            {
+                                if (!reader.IsDBNull(0))
+                                {
+                                    stations.Add(reader.GetString(0));
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            catch (Exception)
+            {
+                // Fallback silencioso
+            }
+
+            return stations;
+        }
+
         public async Task<IEnumerable<string>> GetAvailableDatabasesAsync(string connectionString)
         {
             var databases = new List<string>();

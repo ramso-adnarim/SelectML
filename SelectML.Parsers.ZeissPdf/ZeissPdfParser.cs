@@ -28,6 +28,9 @@ namespace SelectML.Parsers.ZeissPdf
 
             try
             {
+                var config = ZeissPdfConfig.Load();
+                var context = new ParseContext();
+
                 using (var document = PdfDocument.Open(filePath))
                 {
                     if (document.NumberOfPages == 0) return data;
@@ -38,8 +41,8 @@ namespace SelectML.Parsers.ZeissPdf
                     var firstPageWords = firstPage.GetWords().OrderByDescending(w => w.BoundingBox.Bottom).ThenBy(w => w.BoundingBox.Left).ToList();
                     var headerLines = GroupWordsIntoLines(firstPageWords);
 
-                    data.PartName = ExtractHeaderSpatial(headerLines, "Part name");
-                    data.BatchNumber = ExtractHeaderSpatial(headerLines, "Run");
+                    data.PartName = ExtractHeaderSpatial(headerLines, config.PartNameLabel);
+                    data.BatchNumber = ExtractHeaderSpatial(headerLines, config.BatchNumberLabel);
 
                     string timeDateStr = ExtractHeaderSpatial(headerLines, "Time/Date");
                     if (!string.IsNullOrEmpty(timeDateStr))
@@ -57,7 +60,14 @@ namespace SelectML.Parsers.ZeissPdf
                     // Executa a varredura e injeta os resultados numéricos
                     foreach (var page in document.GetPages())
                     {
-                        ParseTablePage(page, data);
+                        ParseTablePage(page, data, context);
+                    }
+
+                    // Pós-processamento: Aplica o limite de casas decimais aos ângulos (Máx 6)
+                    int finalPrecision = context.MaxDecimals == 0 ? 3 : Math.Min(context.MaxDecimals, 6);
+                    foreach (var angle in context.PendingAngles)
+                    {
+                        data.Results[angle.Key] = Math.Round(angle.Value, finalPrecision);
                     }
                 }
             }
@@ -176,7 +186,13 @@ namespace SelectML.Parsers.ZeissPdf
             return string.Empty;
         }
 
-        private void ParseTablePage(Page page, MeasurementData data)
+        private class ParseContext
+        {
+            public int MaxDecimals { get; set; } = 0;
+            public List<KeyValuePair<string, double>> PendingAngles { get; set; } = new List<KeyValuePair<string, double>>();
+        }
+
+        private void ParseTablePage(Page page, MeasurementData data, ParseContext context)
         {
             var words = page.GetWords()
                 .OrderByDescending(w => w.BoundingBox.Bottom)
@@ -206,7 +222,7 @@ namespace SelectML.Parsers.ZeissPdf
 
                 if (inTable)
                 {
-                    ExtractFeatureFromLine(lineWords, data);
+                    ExtractFeatureFromLine(lineWords, data, context);
                 }
             }
         }
@@ -241,7 +257,7 @@ namespace SelectML.Parsers.ZeissPdf
             return lines;
         }
 
-        private void ExtractFeatureFromLine(List<Word> lineWords, MeasurementData data)
+        private void ExtractFeatureFromLine(List<Word> lineWords, MeasurementData data, ParseContext context)
         {
             if (lineWords.Count < 2) return;
 
@@ -285,16 +301,21 @@ namespace SelectML.Parsers.ZeissPdf
                     double sinal = graus < 0 ? -1 : 1;
                     double grauDecimal = (Math.Abs(graus) + (minutos / 60.0) + (segundos / 3600.0)) * sinal;
                     
-                    data.Results[featureName] = grauDecimal;
+                    // Adiciona na lista pendente para limitar as casas decimais ao final do Parsing
+                    context.PendingAngles.Add(new KeyValuePair<string, double>(featureName, grauDecimal));
                 }
                 return;
             }
 
             // 2. Tenta extrair Decimais lineares
-            var decMatches = Regex.Matches(valuesString, @"(-?\d+[.,]\d+)");
+            var decMatches = Regex.Matches(valuesString, @"(-?\d+[.,](\d+))");
             if (decMatches.Count >= 1)
             {
                 string measuredDecStr = decMatches[0].Groups[1].Value;
+                string fractionalPart = decMatches[0].Groups[2].Value;
+                
+                // Atualiza o rastreamento do número de casas decimais para guiar o arredondamento dos ângulos
+                context.MaxDecimals = Math.Max(context.MaxDecimals, fractionalPart.Length);
                 
                 // Normaliza ponto ou vírgula para vírgula, de modo que a pt-BR não falhe em ambientes mistos
                 string normalizedDec = measuredDecStr.Replace(".", ",");
