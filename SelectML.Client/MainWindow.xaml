@@ -355,7 +355,7 @@
                                     </Grid.ColumnDefinitions>
                                     <ComboBox ItemsSource="{Binding AvailableDatabases}" 
                                               Text="{Binding DbName}"
-                                              IsEditable="False" 
+                                              IsEditable="True" 
                                               IsEnabled="{Binding IsConfigEnabled}" 
                                               Style="{StaticResource {x:Type ComboBox}}" 
                                               VerticalAlignment="Center"
