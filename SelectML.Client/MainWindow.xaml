@@ -343,7 +343,7 @@
                                     </StackPanel>
                                     <StackPanel Grid.Column="2">
                                         <TextBlock Text="Senha" FontSize="11" Foreground="{DynamicResource Brush.Text.Secondary}" Margin="0,0,0,5"/>
-                                        <PasswordBox x:Name="DbPasswordBox" IsEnabled="{Binding IsSqlCredentialsEnabled}" Style="{StaticResource {x:Type PasswordBox}}"/>
+                                        <PasswordBox x:Name="DbPasswordBox" PasswordChanged="DbPasswordBox_PasswordChanged" IsEnabled="{Binding IsSqlCredentialsEnabled}" Style="{StaticResource {x:Type PasswordBox}}"/>
                                     </StackPanel>
                                 </Grid>
                                 
@@ -360,6 +360,7 @@
                                               Style="{StaticResource {x:Type ComboBox}}" 
                                               VerticalAlignment="Center"
                                               VerticalContentAlignment="Center"
+                                              Padding="0"
                                               FontSize="11"
                                               Height="28"/>
                                     <Button Grid.Column="1" Command="{Binding LoadDatabasesCommand}" Content="↻" Style="{StaticResource IconButton}" 

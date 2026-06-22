@@ -73,11 +73,12 @@ namespace SelectML.Client
             return false;
         }
 
+
         private void DbPasswordBox_PasswordChanged(object sender, RoutedEventArgs e)
         {
             if (this.DataContext is MainViewModel vm)
             {
-                vm.DbPassword = ((PasswordBox)sender).Password;
+                vm.DbPassword = DbPasswordBox.Password;
             }
         }
 
