@@ -58,7 +58,7 @@ graph TD
 | :--- | :--- |
 | **Buffer Reverso** | Lógica na `MainViewModel`. Quando medições seriais chegam e o usuário ainda não definiu o "Nome da Peça", elas entram numa fila (`_serialBuffer`). Ao definir o nome, a fila é processada. |
 | **Run** | Uma sequência completa de medições para uma única peça. Geralmente mapeada para um arquivo de saída CSV único. |
-| **U-WAVE** | Sistema de transmissão sem fio da Mitutoyo. No modo serial, envia dados no formato `01A+001.234CR`. |
+| **U-WAVE** | Sistema de transmissão sem fio da Protequality. No modo serial, envia dados no formato `01A+001.234CR`. |
 | **Feature** | Uma única característica medida (ex: "Diâmetro Externo 1"). |
 | **Velopack** | Framework usado para empacotamento, instalação e atualização automática da aplicação. |
 

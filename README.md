@@ -4,14 +4,19 @@
 
 # SelectML - Monitoramento de Medições Industriais
 
-![Version](https://img.shields.io/badge/Version-1.1.2-blue)
+![Version](https://img.shields.io/badge/Version-1.2.0-blue)
 ![Build](https://img.shields.io/badge/Build-Passing-brightgreen)
 ![Platform](https://img.shields.io/badge/Platform-Windows_WPF-blueviolet)
 
-> **Versão 1.1.2 Released!**
-> Novidades: Correção na comunicação serial U-WAVE (DTR/RTS) e Persistência/Início Automático de conexões.
+> **Versão 1.2.0 Released!**
+> Novidades V1.2.0:
+> - **Rebranding**: SelectML agora é oficialmente um produto **Protequality**.
+> - **Flexibilidade**: Parser Zeiss configurável via JSON (labels de características).
+> - **Roteamento Inteligente**: Novo suporte para escolha de Diretório de Saída (OutputDirectory).
+> - **Governança**: Modal Inteligente de Seleção de Estação para corridas desconhecidas (UI Modernizada).
+> - **Precisão de Dados**: Extração dinâmica do máximo de casas decimais do PDF para o arredondamento GMS.
 > 
-> [Baixar Última Versão](https://github.com/mitutoyo-brasil-bsg/SelectML/releases/tag/1.1.2)
+> [Baixar Última Versão](https://github.com/protequality/SelectML/releases/tag/1.2.0)
 
 ## 🗺️ Mapa do Repositório
 
@@ -74,7 +79,7 @@ A aplicação é configurada através do arquivo `appsettings.json` gerado na pr
 
 ## Guia de Desenvolvimento de Plugins
 
-Deseja integrar uma nova máquina (ex: Mitutoyo, Zeiss, Keyence)?
+Deseja integrar uma nova máquina (ex: Protequality, Zeiss, Keyence)?
 O SelectML utiliza uma arquitetura de plugins aberta.
 
 1.  Crie uma Class Library (.NET 8).

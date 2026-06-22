@@ -14,7 +14,7 @@ Os documentos técnicos foram alinhados com a realidade da V1.1.0:
 | Arquivo | Mudanças Principais |
 | :--- | :--- |
 | `ARCHITECTURE.md` | Diagrama Híbrido, Fluxo Serial, Governança de Dados. |
-| `SERIAL_CONFIGURATION_GUIDE.md` | Adicionado detalhe sobre estratégia nativa Mitutoyo U-WAVE. |
+| `SERIAL_CONFIGURATION_GUIDE.md` | Adicionado detalhe sobre estratégia nativa Protequality U-WAVE. |
 | `README.md` | Novo visual, badges, e links rápidos para o Mapa. |
 
 ## 3. Governança de Código (Audit)

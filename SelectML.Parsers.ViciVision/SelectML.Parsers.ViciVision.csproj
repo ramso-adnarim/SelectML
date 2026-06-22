@@ -1,15 +1,14 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <TargetFramework>net8.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
-    <OutputPath>C:\Antigravity\SelectML\SelectML.Client\bin\Debug\net8.0-windows\Plugins\</OutputPath>
+    <OutputPath>..\SelectML.Client\bin\$(Configuration)\net8.0-windows\Plugins\</OutputPath>
     
     <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
     <AppendRuntimeIdentifierToOutputPath>false</AppendRuntimeIdentifierToOutputPath>
     <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
-    <BaseOutputPath>C:\Antigravity\SelectML\SelectML.Client\bin\Debug\net8.0-windows\Plugins</BaseOutputPath>
   </PropertyGroup>
 
   <ItemGroup>

@@ -59,7 +59,7 @@ No fluxo serial, os dados chegam picados (medida a medida) e muitas vezes **ante
 ### SerialService & Strategies
 - **SerialPortService**: Singleton. Mantém a porta aberta e o buffer de leitura de bytes.
 - **ISerialDeviceStrategy**: Define como interpretar o protocolo.
-    - *U-WAVE*: Protocolo Mitutoyo (ex: `01A+123.456CR`).
+    - *U-WAVE*: Protocolo Protequality (ex: `01A+123.456CR`).
     - *Custom*: Regex configurável via JSON.
 
 ### Design System

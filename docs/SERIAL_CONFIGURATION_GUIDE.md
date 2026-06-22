@@ -17,8 +17,8 @@ O arquivo é dividido em duas seções: `PortConfig` (Hardware) e `DataProtocol`
         "DataBits": 8,          // Bits de dados (Geralmente 8)
         "Parity": "None",       // Paridade (None, Odd, Even, Mark, Space)
         "StopBits": "One",      // Bits de parada (One, Two, OnePointFive)
-        "DtrEnable": true,      // Sinal DTR (Obrigatório para alguns dispositivos Mitutoyo)
-        "RtsEnable": true       // Sinal RTS (Obrigatório para alguns dispositivos Mitutoyo)
+        "DtrEnable": true,      // Sinal DTR (Obrigatório para alguns dispositivos Protequality)
+        "RtsEnable": true       // Sinal RTS (Obrigatório para alguns dispositivos Protequality)
     },
     "DataProtocol": {
         "Terminator": "\r",     // Caractere que indica fim de linha. Use "\r" (CR) ou "\n" (LF).
@@ -78,12 +78,12 @@ Após salvar o arquivo `custom_device_config.json`:
 
 ---
 
-## Estratégia Nativa: Mitutoyo U-WAVE
+## Estratégia Nativa: Protequality U-WAVE
 
-O SelectML já possui suporte nativo para o sistema **Mitutoyo U-WAVE**. Se você selecionar "Mitutoyo U-WAVE" na tela de configuração serial, ele ignorará o arquivo `.json` e usará a lógica interna otimizada.
+O SelectML já possui suporte nativo para o sistema **Protequality U-WAVE**. Se você selecionar "Protequality U-WAVE" na tela de configuração serial, ele ignorará o arquivo `.json` e usará a lógica interna otimizada.
 
 **Protocolo Esperado:**
-Formato padrão Mitutoyo: `01A+123.456CR`
+Formato padrão Protequality: `01A+123.456CR`
 - `01`: ID do canal (ignorável para canal único)
 - `A`: Código de tipo de dado
 - `+` ou `-`: Sinal
