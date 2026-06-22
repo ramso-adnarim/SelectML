@@ -15,7 +15,7 @@
 > - **Governança**: Modal Inteligente de Seleção de Estação para corridas desconhecidas (UI Modernizada).
 > - **Precisão de Dados**: Extração dinâmica do máximo de casas decimais do PDF para o arredondamento GMS.
 > 
-> [Baixar Última Versão](https://github.com/protequality/SelectML/releases/tag/1.2.0)
+> [Baixar Última Versão](https://github.com/ramso-adnarim/SelectML/releases/tag/1.2.0) 
 
 ## 🗺️ Mapa do Repositório
 
