@@ -360,6 +360,7 @@
                                               Style="{StaticResource {x:Type ComboBox}}" 
                                               VerticalAlignment="Center"
                                               VerticalContentAlignment="Center"
+                                              FontSize="11"
                                               Height="28"/>
                                     <Button Grid.Column="1" Command="{Binding LoadDatabasesCommand}" Content="↻" Style="{StaticResource IconButton}" 
                                             Width="20" Margin="5,0,0,0" ToolTip="Atualizar lista" Foreground="{DynamicResource Brush.Text.Primary}" Cursor="Hand" FontSize="15"/>
