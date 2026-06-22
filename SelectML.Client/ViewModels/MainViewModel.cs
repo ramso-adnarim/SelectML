@@ -724,10 +724,10 @@ namespace SelectML.Client.ViewModels
             {
                 StatusMessage = "Listando bases de dados...";
 
-                // Build a connection string to master
+                // Build a connection string to master or the typed DB
                 var builder = new Microsoft.Data.SqlClient.SqlConnectionStringBuilder();
                 builder.DataSource = !string.IsNullOrEmpty(DbServer) ? DbServer : @"localhost\MLSQLExpress";
-                builder.InitialCatalog = "master";
+                builder.InitialCatalog = !string.IsNullOrEmpty(DbName) ? DbName : "master";
                 builder.TrustServerCertificate = true;
 
                 if (DbUseWindowsAuth)

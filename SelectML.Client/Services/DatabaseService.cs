@@ -140,9 +140,10 @@ namespace SelectML.Client.Services
                     }
                 }
             }
-            catch (Exception)
+            catch (Exception ex)
             {
-                // Fallback silencioso
+                // Fallback silencioso, mas vamos logar para diagnóstico
+                Serilog.Log.Error(ex, "Erro ao obter lista de estações");
             }
 
             return stations;
