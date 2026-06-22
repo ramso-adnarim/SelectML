@@ -729,6 +729,7 @@ namespace SelectML.Client.ViewModels
                 builder.DataSource = !string.IsNullOrEmpty(DbServer) ? DbServer : @"localhost\MLSQLExpress";
                 builder.InitialCatalog = !string.IsNullOrEmpty(DbName) ? DbName : "master";
                 builder.TrustServerCertificate = true;
+                builder.Encrypt = false;
 
                 if (DbUseWindowsAuth)
                 {
@@ -773,6 +774,7 @@ namespace SelectML.Client.ViewModels
             builder.DataSource = !string.IsNullOrEmpty(DbServer) ? DbServer : @"localhost\MLSQLExpress";
             builder.InitialCatalog = !string.IsNullOrEmpty(DbName) ? DbName : "MeasurLink10";
             builder.TrustServerCertificate = true; // Often needed for local devs
+            builder.Encrypt = false;
 
             if (DbUseWindowsAuth)
             {
