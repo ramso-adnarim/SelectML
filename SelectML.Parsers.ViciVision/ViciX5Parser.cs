@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
@@ -55,6 +55,11 @@ namespace SelectML.Parsers.ViciVision
             if (values.Length > 2)
             {
                 data.BatchNumber = values[2].Trim();
+            }
+
+            if (string.IsNullOrWhiteSpace(data.BatchNumber) && nameParts.Length > 1)
+            {
+                data.BatchNumber = nameParts[1].Trim();
             }
 
             // Data da medição
