@@ -10,7 +10,6 @@
 
 > **Versão 1.2.0 Released!**
 > Novidades V1.2.0:
-> - **Rebranding**: SelectML agora é oficialmente um produto **Protequality**.
 > - **Flexibilidade**: Parser Zeiss configurável via JSON (labels de características).
 > - **Roteamento Inteligente**: Novo suporte para escolha de Diretório de Saída (OutputDirectory).
 > - **Governança**: Modal Inteligente de Seleção de Estação para corridas desconhecidas (UI Modernizada).
