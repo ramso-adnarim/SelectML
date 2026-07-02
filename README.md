@@ -4,19 +4,19 @@
 
 # SelectML - Monitoramento de Medições Industriais
 
-![Version](https://img.shields.io/badge/Version-1.2.1-blue)
+![Version](https://img.shields.io/badge/Version-1.2.2-blue)
 ![Build](https://img.shields.io/badge/Build-Passing-brightgreen)
 ![Platform](https://img.shields.io/badge/Platform-Windows_WPF-blueviolet)
 
-> **Versão 1.2.1 Released!**
-> Novidades V1.2.1:
+> **Versão 1.2.2 Released!**
+> Novidades V1.2.2:
 > - **Novo Parser Integrado:** Adicionado suporte total para exportação JSON de máquinas ViciVision X5.
 > - **Melhorias:** Correções pontuais e melhorias de segurança.
 > - **Roteamento Inteligente**: Novo suporte para escolha de Diretório de Saída (OutputDirectory).
 > - **Governança**: Modal Inteligente de Seleção de Estação para corridas desconhecidas (UI Modernizada).
 > - **Precisão de Dados**: Extração dinâmica do máximo de casas decimais do PDF para o arredondamento GMS.
 > 
-> [Baixar Última Versão](https://github.com/ramso-adnarim/SelectML/releases/tag/1.2.1) 
+> [Baixar Última Versão](https://github.com/ramso-adnarim/SelectML/releases/tag/1.2.2) 
 
 ## 🗺️ Mapa do Repositório
 

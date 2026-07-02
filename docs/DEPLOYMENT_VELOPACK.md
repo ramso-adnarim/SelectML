@@ -1,6 +1,6 @@
 # Deploy Cheat Sheet (Velopack)
 
-Guia rápido para gerar releases da **SelectML (v1.2.1+)**.
+Guia rápido para gerar releases da **SelectML (v1.2.2+)**.
 
 ## 📋 Checklist Pré-Build
 - [ ] **Versão**: `Version` incrementada em `SelectML.Client.csproj`.
@@ -44,7 +44,7 @@ if (Test-Path $pluginSource) {
 Gera o instalador e arquivos de update em `Releases`.
 
 ```powershell
-vpk pack --packId SelectML --packAuthors "Protequality" --packTitle "SelectML" --packVersion 1.2.1 --packDir .\publish --mainExe SelectML.Client.exe --icon "SelectML.Client\Resources\SelectML-logo-short-light.ico" --splashImage "SelectML.Client\Resources\SelectML-splash.png" --shortcuts Desktop,StartMenu,Startup
+vpk pack --packId SelectML --packAuthors "Protequality" --packTitle "SelectML" --packVersion 1.2.2 --packDir .\publish --mainExe SelectML.Client.exe --icon "SelectML.Client\Resources\SelectML-logo-short-light.ico" --splashImage "SelectML.Client\Resources\SelectML-splash.png" --shortcuts Desktop,StartMenu,Startup
 ```
 
 ---
@@ -52,11 +52,11 @@ vpk pack --packId SelectML --packAuthors "Protequality" --packTitle "SelectML" -
 ## ☁️ Upload (GitHub Releases)
 
 1. Vá para **GitHub > Releases > Draft a new release**.
-2. **Tag**: `v1.2.1` (Use 'v' prefixo por convenção, ou apenas o número).
-3. **Título**: `Versão 1.2.1`.
+2. **Tag**: `v1.2.2` (Use 'v' prefixo por convenção, ou apenas o número).
+3. **Título**: `Versão 1.2.2`.
 4. **Anexar Arquivos**: Arraste os arquivos da pasta `Releases` gerados pelo Velopack:
-   - `SelectML-1.2.1-win-x64-Setup.exe` (Instalador)
-   - `SelectML-1.2.1-win-x64-full.nupkg` (Pacote Full)
+   - `SelectML-1.2.2-win-x64-Setup.exe` (Instalador)
+   - `SelectML-1.2.2-win-x64-full.nupkg` (Pacote Full)
    - `RELEASES` (Manifesto - **CRUCIAL**: Sobrescrever se já existir)
 5. **Publish**.
 
