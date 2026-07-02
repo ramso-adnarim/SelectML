@@ -43,4 +43,11 @@
     <SolidColorBrush x:Key="InputBackgroundBrush" Color="#161f2c"/>
     <SolidColorBrush x:Key="WarningBackgroundBrush" Color="#450a0a"/>
 
+    <!-- SystemColors Overrides for Custom Menu Themes -->
+    <SolidColorBrush x:Key="{x:Static SystemColors.MenuBrushKey}" Color="#253241"/>
+    <SolidColorBrush x:Key="{x:Static SystemColors.MenuTextBrushKey}" Color="#FFFFFF"/>
+    <SolidColorBrush x:Key="{x:Static SystemColors.WindowBrushKey}" Color="#253241"/>
+    <SolidColorBrush x:Key="{x:Static SystemColors.HighlightBrushKey}" Color="#3b82f6"/>
+    <SolidColorBrush x:Key="{x:Static SystemColors.HighlightTextBrushKey}" Color="#FFFFFF"/>
+
 </ResourceDictionary>

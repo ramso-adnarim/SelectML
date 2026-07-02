@@ -179,5 +179,40 @@ namespace SelectML.Client.Services
 
             return databases;
         }
+
+        public async Task<bool> TestConnectionAsync()
+        {
+            if (string.IsNullOrWhiteSpace(_connectionString))
+                return false;
+
+            try
+            {
+                using (var connection = new SqlConnection(_connectionString))
+                {
+                    await connection.OpenAsync();
+                    using (var command = new SqlCommand("SELECT 1", connection))
+                    {
+                        await command.ExecuteScalarAsync();
+                        return true;
+                    }
+                }
+            }
+            catch
+            {
+                return false;
+            }
+        }
+
+        public async Task TestConnectionThrowingAsync()
+        {
+            using (var connection = new SqlConnection(_connectionString))
+            {
+                await connection.OpenAsync();
+                using (var command = new SqlCommand("SELECT 1", connection))
+                {
+                    await command.ExecuteScalarAsync();
+                }
+            }
+        }
     }
 }

@@ -69,6 +69,28 @@ namespace SelectML.Parsers.ViciVisionJson
                                     if (!string.IsNullOrEmpty(name) && !data.Results.ContainsKey(name))
                                     {
                                         data.Results.Add(name, value);
+
+                                        // Read validation / tolerances
+                                        if (measurementNode.TryGetProperty("Validation", out JsonElement validationEl))
+                                        {
+                                            double nominal = 0;
+                                            double lower = 0;
+                                            double upper = 0;
+
+                                            if (validationEl.TryGetProperty("Nominal value", out JsonElement nomEl))
+                                                nomEl.TryGetDouble(out nominal);
+                                            if (validationEl.TryGetProperty("Lower tolerance", out JsonElement lowEl))
+                                                lowEl.TryGetDouble(out lower);
+                                            if (validationEl.TryGetProperty("Upper tolerance", out JsonElement upEl))
+                                                upEl.TryGetDouble(out upper);
+
+                                            data.Tolerances[name] = new CharacteristicTolerance
+                                            {
+                                                Nominal = nominal,
+                                                LowerTolerance = lower,
+                                                UpperTolerance = upper
+                                            };
+                                        }
                                     }
                                 }
                             }

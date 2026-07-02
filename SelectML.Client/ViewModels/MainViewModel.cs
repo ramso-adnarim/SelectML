@@ -57,9 +57,13 @@ namespace SelectML.Client.ViewModels
         private bool _iconToggle;
 
         // Events
-        public event Action<string, string> RequestShowBalloonTip;
+        public event Action<string, string, string> RequestShowBalloonTip;
         public event Action RequestRestoreWindow;
         public event Action RequestMinimizeWindow;
+
+        // DB connection monitoring
+        private string _dbConnectionStatus = "Inactive";
+        private System.Threading.CancellationTokenSource _dbMonitoringCts;
 
         // Dados
         private string _watchDirectory;
@@ -75,6 +79,7 @@ namespace SelectML.Client.ViewModels
         private string _dbName = "SelectML";
 
         private IMachineParser _selectedParser;
+        private string _nameModifierMode = "Disabled";
         private string _partName;
         private string _batchNumber;
         private string _detectedStationName;
@@ -267,6 +272,53 @@ namespace SelectML.Client.ViewModels
 
         // Helper to check if monitoring is effectively active for UI binding purposes
         public bool IsMonitoring => IsConfigLocked && !IsPendingAction;
+
+        public string DbConnectionStatus
+        {
+            get => _dbConnectionStatus;
+            set
+            {
+                if (_dbConnectionStatus != value)
+                {
+                    _dbConnectionStatus = value;
+                    OnPropertyChanged();
+                }
+            }
+        }
+
+        public string NameModifierMode
+        {
+            get => _nameModifierMode;
+            set
+            {
+                if (_nameModifierMode != value)
+                {
+                    _nameModifierMode = value;
+                    OnPropertyChanged();
+                    OnPropertyChanged(nameof(IsNameModifierDefaultActive));
+                    OnPropertyChanged(nameof(IsNameModifierDisabled));
+                    OnPropertyChanged(nameof(IsNameModifierCustomActive));
+                }
+            }
+        }
+
+        public bool IsNameModifierDefaultActive
+        {
+            get => NameModifierMode == "Default";
+            set { if (value) NameModifierMode = "Default"; }
+        }
+
+        public bool IsNameModifierDisabled
+        {
+            get => NameModifierMode == "Disabled";
+            set { if (value) NameModifierMode = "Disabled"; }
+        }
+
+        public bool IsNameModifierCustomActive
+        {
+            get => NameModifierMode == "Custom";
+            set { if (value) NameModifierMode = "Custom"; }
+        }
 
         public bool IsSqlCredentialsEnabled => !IsMonitoring && !DbUseWindowsAuth;
 
@@ -662,7 +714,7 @@ namespace SelectML.Client.ViewModels
             _currentSerialFeatureName = config.LastSerialFeatureName;
         }
 
-        private void ExecuteSaveConfig(object obj)
+        private async void ExecuteSaveConfig(object obj)
         {
             if (IsConfigLocked)
             {
@@ -687,7 +739,22 @@ namespace SelectML.Client.ViewModels
                     return;
                 }
 
+                StatusMessage = "Validando conexão com o banco de dados...";
+                BuildConnectionString();
 
+                // Test connection immediately
+                try
+                {
+                    var tempDbService = new DatabaseService(ConnectionString);
+                    await tempDbService.TestConnectionThrowingAsync();
+                }
+                catch (Exception ex)
+                {
+                    System.Windows.MessageBox.Show($"Falha de conexão com o banco de dados:\n{ex.Message}", "Erro de Conexão", MessageBoxButton.OK, MessageBoxImage.Error);
+                    Log.Error(ex, "Failed to connect to database during save config");
+                    StatusMessage = "Falha ao iniciar. Verifique as configurações de banco de dados.";
+                    return; // Return immediately, do not lock config or start monitoring!
+                }
 
                 var config = _configService.Load(); // Reload to keep existing keys
                 config.WatchDirectory = WatchDirectory;
@@ -821,6 +888,9 @@ namespace SelectML.Client.ViewModels
                     _iconToggle = !_iconToggle;
                 };
                 _iconTimer.Start();
+
+                // Start DB connection monitoring
+                StartDbConnectionMonitoring();
             }
             catch (Exception ex)
             {
@@ -832,6 +902,8 @@ namespace SelectML.Client.ViewModels
 
         private void StopWatcher()
         {
+            StopDbConnectionMonitoring();
+
             if (_watcher != null)
             {
                 _watcher.EnableRaisingEvents = false;
@@ -845,6 +917,84 @@ namespace SelectML.Client.ViewModels
                 _iconTimer = null;
             }
             TrayIconSource = _iconGrey;
+        }
+
+        private void StartDbConnectionMonitoring()
+        {
+            _dbMonitoringCts?.Cancel();
+            _dbMonitoringCts = new System.Threading.CancellationTokenSource();
+            var token = _dbMonitoringCts.Token;
+
+            Task.Run(async () =>
+            {
+                bool isReconnectingLogged = false;
+                bool lastFailedState = false;
+
+                while (!token.IsCancellationRequested)
+                {
+                    bool isConnected = await _databaseService.TestConnectionAsync();
+
+                    if (token.IsCancellationRequested) break;
+
+                    if (isConnected)
+                    {
+                        if (DbConnectionStatus != "Connected")
+                        {
+                            if (DbConnectionStatus == "Failed" || lastFailedState)
+                            {
+                                Log.Information("Database connection re-established.");
+                                RequestShowBalloonTip?.Invoke("SelectML - Sucesso", "Conexão com o banco de dados reestabelecida.", "Info");
+                            }
+                            DbConnectionStatus = "Connected";
+                        }
+                        isReconnectingLogged = false;
+                        lastFailedState = false;
+
+                        // Check every 10 seconds when connected
+                        try
+                        {
+                            await Task.Delay(10000, token);
+                        }
+                        catch (TaskCanceledException)
+                        {
+                            break;
+                        }
+                    }
+                    else
+                    {
+                        if (DbConnectionStatus != "Failed")
+                        {
+                            DbConnectionStatus = "Failed";
+                            lastFailedState = true;
+                            // Balloon tip warning is only shown ONCE when it transitions to Failed
+                            RequestShowBalloonTip?.Invoke("SelectML - Erro", "Falha de conexão com DB. Tentando reconectar...", "Error");
+                        }
+
+                        if (!isReconnectingLogged)
+                        {
+                            Log.Information("Database reconnection attempts started.");
+                            isReconnectingLogged = true;
+                        }
+
+                        // Fast reconnection interval: check every 2 seconds
+                        try
+                        {
+                            await Task.Delay(2000, token);
+                        }
+                        catch (TaskCanceledException)
+                        {
+                            break;
+                        }
+                    }
+                }
+            }, token);
+        }
+
+        private void StopDbConnectionMonitoring()
+        {
+            _dbMonitoringCts?.Cancel();
+            _dbMonitoringCts = null;
+            DbConnectionStatus = "Inactive";
         }
 
         private ImageSource LoadIcon(string resourcePath)
@@ -897,8 +1047,10 @@ namespace SelectML.Client.ViewModels
 
                  var data = SelectedParser.Parse(fullPath);
 
-                 if (data.IsValid)
+                 if (data != null && data.IsValid)
                  {
+                     ApplyNameModifier(data);
+
                      // Fase 6: Arquivar Imediatamente (Bypass de segurança)
                      try
                      {
@@ -971,7 +1123,8 @@ namespace SelectML.Client.ViewModels
                               {
                                   Characteristic = item.Key,
                                   Value = item.Value,
-                                  IsRecognized = isRecognized // Set initial state
+                                  IsRecognized = isRecognized, // Set initial state
+                                  IsEditable = true
                               };
                               newItem.PropertyChanged += ResultItem_PropertyChanged;
                               MeasuredResults.Add(newItem);
@@ -1301,9 +1454,9 @@ namespace SelectML.Client.ViewModels
                 var sb = new StringBuilder();
                 sb.AppendLine(data.PartName);
                 sb.AppendLine(data.BatchNumber);
-                sb.AppendLine(string.Join(",", data.Results.Keys));
+                sb.AppendLine(string.Join(";", data.Results.Keys));
                 var values = data.Results.Values.Select(v => v.ToString(System.Globalization.CultureInfo.InvariantCulture));
-                sb.AppendLine(string.Join(",", values));
+                sb.AppendLine(string.Join(";", values));
 
                 await File.WriteAllTextAsync(fullPath, sb.ToString(), new UTF8Encoding(true));
 
@@ -1311,7 +1464,7 @@ namespace SelectML.Client.ViewModels
 
                 if (IsAutoMode)
                 {
-                    RequestShowBalloonTip?.Invoke("SelectML - Processado", $"Arquivo salvo: {fileName}");
+                    RequestShowBalloonTip?.Invoke("SelectML - Processado", $"Arquivo salvo: {fileName}", "Info");
                 }
 
                 ResetUI();
@@ -1536,6 +1689,120 @@ namespace SelectML.Client.ViewModels
                      Log.Error(ex, "Failed during serial auto-start on {Port}", config.LastSerialPort);
                  }
              }
+        }
+
+        private void ApplyNameModifier(MeasurementData data)
+        {
+            if (NameModifierMode != "Default" || data == null) return;
+
+            var newResults = new Dictionary<string, double>();
+            var newTolerances = new Dictionary<string, CharacteristicTolerance>();
+
+            foreach (var kv in data.Results)
+            {
+                string originalName = kv.Key;
+                double value = kv.Value;
+
+                if (data.Tolerances.TryGetValue(originalName, out var tol))
+                {
+                    string symbol = GetCharacteristicSymbol(originalName, out bool isBefore);
+
+                    string toleranceStr;
+                    if (Math.Abs(tol.LowerTolerance) < 0.00001 && Math.Abs(tol.UpperTolerance) < 0.00001)
+                    {
+                        toleranceStr = "";
+                    }
+                    else if (Math.Abs(Math.Abs(tol.LowerTolerance) - Math.Abs(tol.UpperTolerance)) < 0.00001)
+                    {
+                        toleranceStr = $"±{FormatToleranceValue(Math.Abs(tol.UpperTolerance))}";
+                    }
+                    else if (Math.Abs(tol.LowerTolerance) < 0.00001)
+                    {
+                        string sign = tol.UpperTolerance >= 0 ? "+" : "";
+                        toleranceStr = $"{sign}{FormatToleranceValue(tol.UpperTolerance)}";
+                    }
+                    else if (Math.Abs(tol.UpperTolerance) < 0.00001)
+                    {
+                        string sign = tol.LowerTolerance >= 0 ? "+" : "";
+                        toleranceStr = $"{sign}{FormatToleranceValue(tol.LowerTolerance)}";
+                    }
+                    else
+                    {
+                        string upperSign = tol.UpperTolerance >= 0 ? "+" : "";
+                        string lowerSign = tol.LowerTolerance >= 0 ? "+" : "";
+                        toleranceStr = $"{upperSign}{FormatToleranceValue(tol.UpperTolerance)} {lowerSign}{FormatToleranceValue(tol.LowerTolerance)}";
+                    }
+
+                    string nominalPart = FormatValue(tol.Nominal);
+                    string modifiedName;
+                    if (string.IsNullOrEmpty(symbol))
+                    {
+                        modifiedName = string.IsNullOrEmpty(toleranceStr) ? nominalPart : $"{nominalPart} {toleranceStr}";
+                    }
+                    else if (isBefore)
+                    {
+                        modifiedName = string.IsNullOrEmpty(toleranceStr) ? $"{symbol}{nominalPart}" : $"{symbol}{nominalPart} {toleranceStr}";
+                    }
+                    else
+                    {
+                        modifiedName = string.IsNullOrEmpty(toleranceStr) ? $"{nominalPart}{symbol}" : $"{nominalPart}{symbol} {toleranceStr}";
+                    }
+
+                    newResults[modifiedName] = value;
+                    newTolerances[modifiedName] = tol;
+                }
+                else
+                {
+                    newResults[originalName] = value;
+                }
+            }
+
+            data.Results = newResults;
+            data.Tolerances = newTolerances;
+        }
+
+        private string GetCharacteristicSymbol(string name, out bool isBefore)
+        {
+            isBefore = false;
+            if (string.IsNullOrEmpty(name)) return "";
+
+            string lowerName = name.ToLowerInvariant();
+            if (lowerName.Contains("grau") || lowerName.Contains("minuto") || lowerName.Contains("segundo") || 
+                lowerName.Contains("angulo") || lowerName.Contains("ângulo") || lowerName.Contains("angle") || 
+                lowerName.Contains("°"))
+            {
+                isBefore = false;
+                return "°";
+            }
+            if (lowerName.Contains("ø") || lowerName.Contains("dia") || lowerName.Contains("diâmetro") || 
+                lowerName.Contains("diametro") || lowerName.Contains("diameter"))
+            {
+                isBefore = true;
+                return "Ø";
+            }
+
+            if (name.Contains("°"))
+            {
+                isBefore = false;
+                return "°";
+            }
+            if (name.Contains("Ø") || name.Contains("ø"))
+            {
+                isBefore = true;
+                return "Ø";
+            }
+
+            return "";
+        }
+
+        private string FormatValue(double val)
+        {
+            return val.ToString("0.00##", new System.Globalization.CultureInfo("pt-BR"));
+        }
+
+        private string FormatToleranceValue(double val)
+        {
+            return val.ToString("0.000", new System.Globalization.CultureInfo("pt-BR"));
         }
 
         private bool CanChangeConfig(object obj) => IsConfigEnabled;

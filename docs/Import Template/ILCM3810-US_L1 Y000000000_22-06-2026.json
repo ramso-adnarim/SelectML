@@ -1,0 +1,44 @@
+{
+    "Measurement Cycle": {
+        "General": {
+            "Batch Serial Number": "",
+            "Date": "22-06-2026",
+            "Hour": "11:32:13"
+        },
+        "Measurements": {
+            "21": {
+                "Name": "10°30' ±20'",
+                "Result": 10.5984,
+                "Validation": {
+                    "Lower prealarm": 10.2334,
+                    "Lower tolerance": -0.3333,
+                    "Nominal value": 10.5,
+                    "Upper prealarm": 10.7666,
+                    "Upper tolerance": 0.3333
+                }
+            },
+            "24": {
+                "Name": "Ø2,06 ±0,05",
+                "Result": 2.0884,
+                "Validation": {
+                    "Lower prealarm": 2.02,
+                    "Lower tolerance": -0.05,
+                    "Nominal value": 2.06,
+                    "Upper prealarm": 2.1,
+                    "Upper tolerance": 0.05
+                }
+            },
+            "27": {
+                "Name": "perfil da rosca",
+                "Result": 0.0336,
+                "Validation": {
+                    "Lower prealarm": 0.01,
+                    "Lower tolerance": -0.0,
+                    "Nominal value": 0.0,
+                    "Upper prealarm": 0.09,
+                    "Upper tolerance": 0.1
+                }
+            }
+        }
+    }
+}

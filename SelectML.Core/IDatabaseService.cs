@@ -10,5 +10,7 @@ namespace SelectML.Core
         Task<List<string>> GetFeaturesForRunAsync(string batchNumber);
         Task<List<string>> GetAllStationsAsync();
         Task<IEnumerable<string>> GetAvailableDatabasesAsync(string connectionString);
+        Task<bool> TestConnectionAsync();
+        Task TestConnectionThrowingAsync();
     }
 }

@@ -283,48 +283,68 @@ namespace SelectML.Parsers.ZeissPdf
             string featureName = columns[0].Trim();
             string valuesString = string.Join(" ", columns.Skip(1)).Replace("$", "");
 
-            // 1. Tenta extrair GMS
-            string gmsPattern = @"(-?\d+)(?:°|\^\{\\circ\}|\\circ)\s*(\d+)(?:'|\^\{\\prime\}|\\prime)\s*(\d+)(?:" + "\"" + @"|''|\^\{\\prime\\prime\}|\\prime\\prime)";
-            var gmsMatches = Regex.Matches(valuesString, gmsPattern);
-            
-            if (gmsMatches.Count >= 1)
+            // Regex pattern that matches either a GMS angle or a decimal number
+            string pattern = @"(?<gms>-?\d+(?:°|\^\{\\circ\}|\\circ)\s*\d+(?:'|\^\{\\prime\}|\\prime)\s*\d+(?:" + "\"" + @"|''|\^\{\\prime\\prime\}|\\prime\\prime))|(?<dec>[-+]?\d+[.,]\d+)";
+            var matches = Regex.Matches(valuesString, pattern);
+
+            var parsedValues = new List<double>();
+            foreach (Match match in matches)
             {
-                string measuredDegStr = gmsMatches[0].Groups[1].Value;
-                string measuredMinStr = gmsMatches[0].Groups[2].Value;
-                string measuredSecStr = gmsMatches[0].Groups[3].Value;
-                
-                // Conversão para Grau Decimal usando InvariantCulture pois são strings inteiras
-                if (double.TryParse(measuredDegStr, NumberStyles.Any, CultureInfo.InvariantCulture, out double graus) &&
-                    double.TryParse(measuredMinStr, NumberStyles.Any, CultureInfo.InvariantCulture, out double minutos) &&
-                    double.TryParse(measuredSecStr, NumberStyles.Any, CultureInfo.InvariantCulture, out double segundos))
+                if (match.Groups["gms"].Success)
                 {
-                    double sinal = graus < 0 ? -1 : 1;
-                    double grauDecimal = (Math.Abs(graus) + (minutos / 60.0) + (segundos / 3600.0)) * sinal;
-                    
-                    // Adiciona na lista pendente para limitar as casas decimais ao final do Parsing
-                    context.PendingAngles.Add(new KeyValuePair<string, double>(featureName, grauDecimal));
+                    string gmsVal = match.Groups["gms"].Value;
+                    string gmsPattern = @"(-?\d+)(?:°|\^\{\\circ\}|\\circ)\s*(\d+)(?:'|\^\{\\prime\}|\\prime)\s*(\d+)(?:" + "\"" + @"|''|\^\{\\prime\\prime\}|\\prime\\prime)";
+                    var gmsMatch = Regex.Match(gmsVal, gmsPattern);
+                    if (gmsMatch.Success &&
+                        double.TryParse(gmsMatch.Groups[1].Value, NumberStyles.Any, CultureInfo.InvariantCulture, out double degrees) &&
+                        double.TryParse(gmsMatch.Groups[2].Value, NumberStyles.Any, CultureInfo.InvariantCulture, out double minutes) &&
+                        double.TryParse(gmsMatch.Groups[3].Value, NumberStyles.Any, CultureInfo.InvariantCulture, out double seconds))
+                    {
+                        double sign = gmsMatch.Groups[1].Value.Contains("-") ? -1 : 1;
+                        double decimalDegrees = (Math.Abs(degrees) + (minutes / 60.0) + (seconds / 3600.0)) * sign;
+                        parsedValues.Add(decimalDegrees);
+                    }
                 }
-                return;
+                else if (match.Groups["dec"].Success)
+                {
+                    string decVal = match.Groups["dec"].Value;
+                    var decMatch = Regex.Match(decVal, @"[-+]?\d+[.,](\d+)");
+                    if (decMatch.Success)
+                    {
+                        context.MaxDecimals = Math.Max(context.MaxDecimals, decMatch.Groups[1].Value.Length);
+                    }
+
+                    string normalizedDec = decVal.Replace(".", ",");
+                    if (double.TryParse(normalizedDec, NumberStyles.Any, new CultureInfo("pt-BR"), out double measuredDec))
+                    {
+                        parsedValues.Add(measuredDec);
+                    }
+                }
             }
 
-            // 2. Tenta extrair Decimais lineares
-            var decMatches = Regex.Matches(valuesString, @"(-?\d+[.,](\d+))");
-            if (decMatches.Count >= 1)
+            if (parsedValues.Count >= 1)
             {
-                string measuredDecStr = decMatches[0].Groups[1].Value;
-                string fractionalPart = decMatches[0].Groups[2].Value;
-                
-                // Atualiza o rastreamento do número de casas decimais para guiar o arredondamento dos ângulos
-                context.MaxDecimals = Math.Max(context.MaxDecimals, fractionalPart.Length);
-                
-                // Normaliza ponto ou vírgula para vírgula, de modo que a pt-BR não falhe em ambientes mistos
-                string normalizedDec = measuredDecStr.Replace(".", ",");
-                
-                if (double.TryParse(normalizedDec, NumberStyles.Any, new CultureInfo("pt-BR"), out double measuredDec))
+                double measured = parsedValues[0];
+                double nominal = parsedValues.Count >= 2 ? parsedValues[1] : 0.0;
+                double upper = parsedValues.Count >= 3 ? parsedValues[2] : 0.0;
+                double lower = parsedValues.Count >= 4 ? parsedValues[3] : 0.0;
+
+                bool isGms = matches.Count > 0 && matches[0].Groups["gms"].Success;
+                if (isGms)
                 {
-                    data.Results[featureName] = measuredDec;
+                    context.PendingAngles.Add(new KeyValuePair<string, double>(featureName, measured));
                 }
-                return;
+                else
+                {
+                    data.Results[featureName] = measured;
+                }
+
+                data.Tolerances[featureName] = new CharacteristicTolerance
+                {
+                    Nominal = nominal,
+                    LowerTolerance = lower,
+                    UpperTolerance = upper
+                };
             }
         }
     }

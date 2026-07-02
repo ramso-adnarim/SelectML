@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 
 namespace SelectML.Core
@@ -17,6 +17,17 @@ namespace SelectML.Core
         // Value = Valor Medido (ex: 13.806)
         public Dictionary<string, double> Results { get; set; } = new Dictionary<string, double>();
 
+        // Tolerâncias e nominais para as características
+        // Key = Nome da característica
+        public Dictionary<string, CharacteristicTolerance> Tolerances { get; set; } = new Dictionary<string, CharacteristicTolerance>();
+
         public bool IsValid => !string.IsNullOrEmpty(PartName) && Results.Count > 0;
+    }
+
+    public class CharacteristicTolerance
+    {
+        public double Nominal { get; set; }
+        public double LowerTolerance { get; set; }
+        public double UpperTolerance { get; set; }
     }
 }

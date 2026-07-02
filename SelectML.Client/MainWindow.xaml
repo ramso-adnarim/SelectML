@@ -161,6 +161,140 @@
             </Grid.ColumnDefinitions>
             <!-- Menu -->
             <Menu Background="Transparent" VerticalAlignment="Center" IsMainMenu="True">
+                <Menu.Resources>
+                    <Style TargetType="MenuItem">
+                        <Setter Property="Foreground" Value="{DynamicResource Brush.Text.Primary}"/>
+                        <Setter Property="Background" Value="Transparent"/>
+                        <Setter Property="BorderBrush" Value="Transparent"/>
+                        <Setter Property="BorderThickness" Value="0"/>
+                        <Setter Property="Padding" Value="0,0,0,0"/>
+                        <Setter Property="Template">
+                            <Setter.Value>
+                                <ControlTemplate TargetType="MenuItem">
+                                    <Border x:Name="templateRoot" 
+                                            Background="{TemplateBinding Background}" 
+                                            BorderBrush="{TemplateBinding BorderBrush}" 
+                                            BorderThickness="{TemplateBinding BorderThickness}" 
+                                            CornerRadius="4"
+                                            SnapsToDevicePixels="True">
+                                        <Grid x:Name="Grid">
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="Auto" SharedSizeGroup="Icon"/>
+                                                <ColumnDefinition Width="*" />
+                                                <ColumnDefinition Width="Auto" SharedSizeGroup="Shortcut"/>
+                                                <ColumnDefinition Width="Auto"/>
+                                            </Grid.ColumnDefinitions>
+                                            
+                                            <!-- Checkmark or Icon -->
+                                            <ContentPresenter x:Name="Icon" 
+                                                              ContentSource="Icon" 
+                                                              Margin="6,0,6,0" 
+                                                              HorizontalAlignment="Center" 
+                                                              VerticalAlignment="Center"/>
+                                            <Grid x:Name="GlyphPanel" Visibility="Collapsed" Margin="6,0,6,0" VerticalAlignment="Center">
+                                                <Path x:Name="Glyph" Data="M1,5 L4,8 L9,1" Stroke="{DynamicResource Brush.Text.Primary}" StrokeThickness="2" Width="10" Height="10" Stretch="None"/>
+                                            </Grid>
+
+                                            <!-- Header Text -->
+                                            <ContentPresenter Grid.Column="1" 
+                                                              ContentSource="Header" 
+                                                              Margin="0,0,0,4" 
+                                                              RecognizesAccessKey="True" 
+                                                              SnapsToDevicePixels="{TemplateBinding SnapsToDevicePixels}"
+                                                              VerticalAlignment="Center"/>
+
+                                            <!-- Input Gesture Text -->
+                                            <TextBlock Grid.Column="2" 
+                                                       Text="{TemplateBinding InputGestureText}" 
+                                                       Margin="5,0,10,0" 
+                                                       Foreground="{DynamicResource Brush.Text.Secondary}" 
+                                                       VerticalAlignment="Center"/>
+
+                                            <!-- Arrow (for submenus) -->
+                                            <Path x:Name="RightArrow" 
+                                                  Grid.Column="3" 
+                                                  Data="M0,0 L4,4 L0,8 Z" 
+                                                  Fill="{DynamicResource Brush.Text.Primary}" 
+                                                  Margin="10,0,6,0" 
+                                                  VerticalAlignment="Center" 
+                                                  Visibility="Collapsed"/>
+
+                                            <!-- Popup for Submenus -->
+                                            <Popup x:Name="PART_Popup" 
+                                                   AllowsTransparency="True" 
+                                                   Focusable="False" 
+                                                   IsOpen="{Binding IsSubmenuOpen, RelativeSource={RelativeSource TemplatedParent}}" 
+                                                   Placement="Bottom" 
+                                                   PopupAnimation="Slide">
+                                                <Border x:Name="SubMenuBorder" 
+                                                        Background="{DynamicResource Brush.Surface.Popup}" 
+                                                        BorderBrush="{DynamicResource Brush.Border.Base}" 
+                                                        BorderThickness="1" 
+                                                        CornerRadius="6"
+                                                        Padding="2"
+                                                        Margin="0,4,0,4">
+                                                    <Border.Effect>
+                                                        <DropShadowEffect BlurRadius="12" Color="#000000" Opacity="0.3" ShadowDepth="3"/>
+                                                    </Border.Effect>
+                                                    <ScrollViewer x:Name="SubMenuScrollViewer" CanContentScroll="True">
+                                                        <ItemsPresenter x:Name="ItemsPresenter" 
+                                                                        KeyboardNavigation.DirectionalNavigation="Contained" 
+                                                                        SnapsToDevicePixels="{TemplateBinding SnapsToDevicePixels}"/>
+                                                    </ScrollViewer>
+                                                </Border>
+                                            </Popup>
+                                        </Grid>
+                                    </Border>
+                                    <ControlTemplate.Triggers>
+                                        <!-- Role-specific triggers -->
+                                        <Trigger Property="Role" Value="TopLevelHeader">
+                                            <Setter TargetName="RightArrow" Property="Visibility" Value="Collapsed"/>
+                                            <Setter TargetName="PART_Popup" Property="Placement" Value="Bottom"/>
+                                        </Trigger>
+                                        <Trigger Property="Role" Value="TopLevelItem">
+                                            <Setter TargetName="RightArrow" Property="Visibility" Value="Collapsed"/>
+                                            <Setter TargetName="PART_Popup" Property="Visibility" Value="Collapsed"/>
+                                        </Trigger>
+                                        <Trigger Property="Role" Value="SubmenuHeader">
+                                            <Setter TargetName="RightArrow" Property="Visibility" Value="Visible"/>
+                                            <Setter TargetName="PART_Popup" Property="Placement" Value="Right"/>
+                                        </Trigger>
+                                        <Trigger Property="Role" Value="SubmenuItem">
+                                            <Setter TargetName="RightArrow" Property="Visibility" Value="Collapsed"/>
+                                            <Setter TargetName="PART_Popup" Property="Visibility" Value="Collapsed"/>
+                                        </Trigger>
+                                        
+                                        <!-- Checkable MenuItem support -->
+                                        <Trigger Property="IsCheckable" Value="True">
+                                            <Setter TargetName="GlyphPanel" Property="Visibility" Value="Visible"/>
+                                            <Setter TargetName="Icon" Property="Visibility" Value="Collapsed"/>
+                                        </Trigger>
+                                        <Trigger Property="IsChecked" Value="True">
+                                            <Setter TargetName="Glyph" Property="Visibility" Value="Visible"/>
+                                        </Trigger>
+                                        <Trigger Property="IsChecked" Value="False">
+                                            <Setter TargetName="Glyph" Property="Visibility" Value="Collapsed"/>
+                                        </Trigger>
+                                        
+                                        <!-- Selection highlight states -->
+                                        <Trigger Property="IsHighlighted" Value="True">
+                                            <Setter Property="Background" Value="{DynamicResource Brush.Action.Primary.Hover}"/>
+                                            <Setter Property="Foreground" Value="{DynamicResource Brush.Text.Inverse}"/>
+                                            <Setter TargetName="Glyph" Property="Stroke" Value="{DynamicResource Brush.Text.Inverse}"/>
+                                            <Setter TargetName="RightArrow" Property="Fill" Value="{DynamicResource Brush.Text.Inverse}"/>
+                                        </Trigger>
+                                        
+                                        <!-- Disabled state -->
+                                        <Trigger Property="IsEnabled" Value="False">
+                                            <Setter Property="Foreground" Value="{DynamicResource Brush.Text.Inactive}"/>
+                                            <Setter TargetName="RightArrow" Property="Fill" Value="{DynamicResource Brush.Text.Inactive}"/>
+                                        </Trigger>
+                                    </ControlTemplate.Triggers>
+                                </ControlTemplate>
+                            </Setter.Value>
+                        </Setter>
+                    </Style>
+                </Menu.Resources>
                 <MenuItem Command="{Binding OpenSerialConfigCommand}" 
                           Foreground="{DynamicResource Brush.Text.Primary}" FontWeight="SemiBold">
                     <MenuItem.Header>                        
@@ -181,6 +315,11 @@
                             </StackPanel.Triggers>
                         </StackPanel>
                     </MenuItem.Header>
+                </MenuItem>
+                <MenuItem Header="Modificador de nomes" Foreground="{DynamicResource Brush.Text.Primary}" FontWeight="SemiBold" VerticalAlignment="Center">
+                    <MenuItem Header="Ativar" ToolTip="Aplica a regra Default" IsCheckable="True" IsChecked="{Binding IsNameModifierDefaultActive}"/>
+                    <MenuItem Header="Desativar" IsCheckable="True" IsChecked="{Binding IsNameModifierDisabled}"/>
+                    <MenuItem Header="Personalizar" IsEnabled="False" Foreground="{DynamicResource Brush.Text.Inactive}"/>
                 </MenuItem>
             </Menu>
 
@@ -223,8 +362,32 @@
 
                     <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center" Margin="0,0,30,0"
                                 Visibility="{Binding IsMonitoring, Converter={StaticResource BooleanToVisibilityConverter}}">
-                        <Ellipse Width="8" Height="8" Fill="{DynamicResource Brush.Status.Success}" x:Name="OnlineIndicator"/>
-                        <TextBlock Text="Online" Foreground="{DynamicResource Brush.Status.Success}" Margin="8,0,0,0" VerticalAlignment="Center" FontWeight="Bold"/>
+                        <Ellipse Width="8" Height="8" x:Name="OnlineIndicator">
+                            <Ellipse.Style>
+                                <Style TargetType="Ellipse">
+                                    <Setter Property="Fill" Value="{DynamicResource Brush.Status.Success}"/>
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding DbConnectionStatus}" Value="Failed">
+                                            <Setter Property="Fill" Value="{DynamicResource Brush.Status.Error}"/>
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </Ellipse.Style>
+                        </Ellipse>
+                        <TextBlock Margin="8,0,0,0" VerticalAlignment="Center" FontWeight="Bold">
+                            <TextBlock.Style>
+                                <Style TargetType="TextBlock">
+                                    <Setter Property="Text" Value="Online"/>
+                                    <Setter Property="Foreground" Value="{DynamicResource Brush.Status.Success}"/>
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding DbConnectionStatus}" Value="Failed">
+                                            <Setter Property="Text" Value="Falha de conexão com DB"/>
+                                            <Setter Property="Foreground" Value="{DynamicResource Brush.Status.Error}"/>
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </TextBlock.Style>
+                        </TextBlock>
                         
                         <!-- Pulse Animation -->
                         <StackPanel.Triggers>
@@ -320,7 +483,35 @@
                     <!-- Right: DB Config -->
                     <StackPanel Grid.Column="2">
                         <TextBlock Text="Banco de Dados" Style="{StaticResource LabelText}"/>
-                        <Border BorderBrush="{DynamicResource Brush.Border.Base}" BorderThickness="1" CornerRadius="6" Padding="10">
+                        <Border BorderThickness="1" CornerRadius="6" Padding="10">
+                            <Border.Style>
+                                <Style TargetType="Border">
+                                    <Setter Property="BorderBrush" Value="{DynamicResource Brush.Border.Base}"/>
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding DbConnectionStatus}" Value="Connected">
+                                            <Setter Property="BorderBrush" Value="{DynamicResource Brush.Status.Success}"/>
+                                        </DataTrigger>
+                                        <DataTrigger Binding="{Binding DbConnectionStatus}" Value="Failed">
+                                            <Setter Property="BorderBrush">
+                                                <Setter.Value>
+                                                    <SolidColorBrush Color="#ef4444"/>
+                                                </Setter.Value>
+                                            </Setter>
+                                            <DataTrigger.EnterActions>
+                                                <BeginStoryboard x:Name="PulsingRedBorderStoryboard">
+                                                    <Storyboard RepeatBehavior="Forever" AutoReverse="True">
+                                                        <DoubleAnimation Storyboard.TargetProperty="BorderBrush.Opacity"
+                                                                         From="1.0" To="0.3" Duration="0:0:1"/>
+                                                    </Storyboard>
+                                                </BeginStoryboard>
+                                            </DataTrigger.EnterActions>
+                                            <DataTrigger.ExitActions>
+                                                <StopStoryboard BeginStoryboardName="PulsingRedBorderStoryboard"/>
+                                            </DataTrigger.ExitActions>
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </Border.Style>
                             <StackPanel>
                             <TextBlock Text="Servidor" FontSize="11" Foreground="{DynamicResource Brush.Text.Secondary}"/>
                                 <TextBox Text="{Binding DbServer, UpdateSourceTrigger=PropertyChanged}" IsEnabled="{Binding IsConfigEnabled}" Margin="0,2,0,8" Style="{StaticResource {x:Type TextBox}}"/>

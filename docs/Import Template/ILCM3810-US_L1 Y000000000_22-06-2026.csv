@@ -1,0 +1,5 @@
+data,Hora,Número de Lote,10°30' ±20',Ø2,06 ±0,05,perfil da rosca,
+Nominal value,,,10.5000,2.0600,0.0000
+Lower tolerance,,,-0.3333,-0.0500,-0.0000
+Upper tolerance,,,0.3333,0.0500,0.1000
+22-06-2026,11:12:16,,10.6628,2.0808,0.0297

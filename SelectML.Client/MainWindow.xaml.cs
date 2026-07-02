@@ -26,7 +26,13 @@ namespace SelectML.Client
             this.DataContext = vm;
 
             // Subscribe to VM events
-            vm.RequestShowBalloonTip += (title, msg) => MyNotifyIcon.ShowBalloonTip(title, msg, BalloonIcon.Info);
+            vm.RequestShowBalloonTip += (title, msg, iconType) =>
+            {
+                var icon = BalloonIcon.Info;
+                if (iconType == "Warning") icon = BalloonIcon.Warning;
+                else if (iconType == "Error") icon = BalloonIcon.Error;
+                MyNotifyIcon.ShowBalloonTip(title, msg, icon);
+            };
             vm.RequestRestoreWindow += () =>
             {
                 Show();
