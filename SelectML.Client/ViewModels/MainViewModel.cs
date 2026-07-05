@@ -298,6 +298,18 @@ namespace SelectML.Client.ViewModels
                     OnPropertyChanged(nameof(IsNameModifierDefaultActive));
                     OnPropertyChanged(nameof(IsNameModifierDisabled));
                     OnPropertyChanged(nameof(IsNameModifierCustomActive));
+
+                    try
+                    {
+                        var config = _configService.Load();
+                        config.NameModifierMode = _nameModifierMode;
+                        _configService.Save(config);
+                        Log.Information("NameModifierMode changed and saved: {Mode}", _nameModifierMode);
+                    }
+                    catch (Exception ex)
+                    {
+                        Log.Error(ex, "Failed to save NameModifierMode configuration");
+                    }
                 }
             }
         }
@@ -712,6 +724,19 @@ namespace SelectML.Client.ViewModels
             _databaseService = new DatabaseService(config.ConnectionString);
 
             _currentSerialFeatureName = config.LastSerialFeatureName;
+
+            if (!string.IsNullOrEmpty(config.NameModifierMode))
+            {
+                _nameModifierMode = config.NameModifierMode;
+            }
+            else
+            {
+                _nameModifierMode = "Disabled";
+            }
+            OnPropertyChanged(nameof(NameModifierMode));
+            OnPropertyChanged(nameof(IsNameModifierDefaultActive));
+            OnPropertyChanged(nameof(IsNameModifierDisabled));
+            OnPropertyChanged(nameof(IsNameModifierCustomActive));
         }
 
         private async void ExecuteSaveConfig(object obj)

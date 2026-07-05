@@ -33,6 +33,9 @@ namespace SelectML.Client.Services
         // Auto-Start Persistence
         public bool AutoStartDatabase { get; set; } = false;
         public bool AutoStartSerial { get; set; } = false;
+
+        // Name Modifier
+        public string NameModifierMode { get; set; } = "Disabled";
     }
 
     public class ConfigService
