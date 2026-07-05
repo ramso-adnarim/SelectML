@@ -608,13 +608,22 @@ namespace SelectML.Client.ViewModels
                      {
                          _pendingUpdate = updateInfo;
                          NewVersionString = updateInfo.TargetFullRelease.Version.ToString();
+                         StatusMessage = $"Baixando nova versão ({NewVersionString}) em segundo plano...";
+                     });
+
+                     // Baixa e registra para aplicar ao sair
+                     await _velopackService.DownloadAndInstallAsync(updateInfo);
+
+                     System.Windows.Application.Current.Dispatcher.Invoke(() =>
+                     {
                          IsUpdateAvailable = true;
+                         StatusMessage = $"Nova versão {NewVersionString} pronta para instalar. Clique no ícone de alerta para reiniciar.";
                      });
                  }
              }
              catch (Exception ex)
              {
-                 Log.Error(ex, "Error checking for updates in background");
+                 Log.Error(ex, "Error checking and downloading updates automatically");
              }
         }
 
@@ -637,19 +646,19 @@ namespace SelectML.Client.ViewModels
         {
             if (_pendingUpdate != null)
             {
-                // Close the dialog if it's open (it should be, since this command is from the dialog)
                 if (obj is Window win) win.Close();
-                // Or handle via attached property or just assume user clicked it.
-                // Best practice: passing window as CommandParameter
 
                 try
                 {
-                   StatusMessage = "Baixando e instalando atualização...";
+                   StatusMessage = "Reiniciando para aplicar atualização...";
                    await _velopackService.DownloadAndInstallAsync(_pendingUpdate);
+                   
+                   // Encerra a aplicação para que o Velopack possa aplicar a atualização e reiniciar a app
+                   System.Windows.Application.Current.Shutdown();
                 }
                 catch (Exception ex)
                 {
-                    System.Windows.MessageBox.Show($"Erro ao atualizar: {ex.Message}");
+                    System.Windows.MessageBox.Show($"Erro ao atualizar e reiniciar: {ex.Message}");
                 }
             }
         }

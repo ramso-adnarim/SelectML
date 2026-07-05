@@ -55,12 +55,13 @@ vpk pack --packId SelectML --packAuthors "Protequality" --packTitle "SelectML" -
 ## ☁️ Upload (GitHub Releases)
 
 1. Vá para **GitHub > Releases > Draft a new release**.
-2. **Tag**: `v1.2.2` (Use 'v' prefixo por convenção, ou apenas o número).
-3. **Título**: `Versão 1.2.2`.
-4. **Anexar Arquivos**: Arraste os arquivos da pasta `Releases` gerados pelo Velopack:
-   - `SelectML-1.2.2-win-x64-Setup.exe` (Instalador)
-   - `SelectML-1.2.2-win-x64-full.nupkg` (Pacote Full)
-   - `RELEASES` (Manifesto - **CRUCIAL**: Sobrescrever se já existir)
+2. **Tag**: `v1.2.2` (Use o prefixo 'v' por convenção, correspondendo à versão do release).
+3. **Título**: `Versão 1.2.2` (ou a versão correspondente).
+4. **Anexar Arquivos**: Arraste os arquivos gerados pelo Velopack dentro da pasta `Releases`:
+   - `SelectML-win-Setup.exe` (Instalador completo do Windows)
+   - `SelectML-1.2.2-full.nupkg` (Pacote completo da versão atual)
+   - `SelectML-1.2.2-delta.nupkg` (Pacote delta/incremental, opcional mas recomendado para updates menores)
+   - `releases.win.json` (Manifesto de atualização de ativos do Velopack - **CRUCIAL**: Sobrescrever se já existir!)
 5. **Publish**.
 
-> 💡 **Dica**: O arquivo `RELEASES` é o cérebro do update. Ele deve conter o hash SHA1 correto dos pacotes. O `vpk pack` atualiza isso automaticamente, então sempre suba a versão mais recente gerada.
+> 💡 **Dica**: O arquivo **`releases.win.json`** é o cérebro do atualizador automático no Windows. Ele gerencia as somas de verificação SHA e os metadados dos pacotes. O `vpk pack` atualiza esse arquivo local automaticamente a cada geração de versão, portanto, certifique-se de sempre fazer o upload dele atualizado na release do GitHub.
