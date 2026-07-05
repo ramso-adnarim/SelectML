@@ -78,12 +78,12 @@ Após salvar o arquivo `custom_device_config.json`:
 
 ---
 
-## Estratégia Nativa: Ramso Adnarim U-WAVE
+## Estratégia Nativa: Mitutoyo U-WAVE
 
-O SelectML já possui suporte nativo para o sistema **Ramso Adnarim U-WAVE**. Se você selecionar "Ramso Adnarim U-WAVE" na tela de configuração serial, ele ignorará o arquivo `.json` e usará a lógica interna otimizada.
+O SelectML já possui suporte nativo para o sistema **Mitutoyo U-WAVE**. Se você selecionar "Mitutoyo U-WAVE" na tela de configuração serial, ele ignorará o arquivo `.json` e usará a lógica interna otimizada.
 
 **Protocolo Esperado:**
-Formato padrão Ramso Adnarim: `01A+123.456CR`
+Formato padrão Mitutoyo U-WAVE: `01A+123.456CR`
 - `01`: ID do canal (ignorável para canal único)
 - `A`: Código de tipo de dado
 - `+` ou `-`: Sinal
@@ -101,7 +101,7 @@ Formato padrão Ramso Adnarim: `01A+123.456CR`
 A partir da versão 1.2.2, o SelectML persiste as últimas configurações utilizadas para comunicação serial no arquivo `appsettings.json`.
 
 - **`LastSerialPort`**: Salva a última porta COM conectada.
-- **`LastSerialStrategy`**: Salva a estratégia de protocolo utilizada (ex: "Ramso Adnarim U-WAVE" ou "Customizado").
+- **`LastSerialStrategy`**: Salva a estratégia de protocolo utilizada (ex: "Mitutoyo U-WAVE" ou "Customizado").
 - **`LastSerialFeatureName`**: Salva o nome da última característica genérica selecionada.
 - **`AutoStartSerial`**: Se marcado na UI, o sistema tentará abrir a conexão serial automaticamente na inicialização do aplicativo usando as últimas configurações salvas.
 

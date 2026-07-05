@@ -1,10 +1,10 @@
 # Documentação de Arquitetura SelectML
 
-Este documento serve como a "Fonte da Verdade" técnica para o projeto SelectML (rebrand Ramso Adnarim). Destina-se à equipe de engenharia e manutenção, detalhando decisões críticas de arquitetura, fluxo de dados e integrações na versão V1.2.2.
+Este documento serve como a "Fonte da Verdade" técnica para o projeto SelectML. Destina-se à equipe de engenharia e manutenção, detalhando decisões de arquitetura, fluxo de dados e integrações na versão V1.2.3.
 
 ## 1. Diagrama de Componentes (Híbrido)
 
-A arquitetura V1.2.2 suporta entrada dupla (Arquivos via Watcher e Serial via PortService), com plugins para formatos CSV, JSON e PDF.
+A arquitetura V1.2.3 suporta entrada dupla (Arquivos via Watcher e Serial via PortService), com plugins para formatos CSV, JSON e PDF.
 
 ```mermaid
 graph TD
@@ -59,7 +59,7 @@ No fluxo serial, os dados chegam de forma incremental (medida por medida) e muit
     - Se **NÃO** há peça selecionada: O valor entra no **"Buffer Reverso"** (fila em memória).
 4.  **Flush**: Quando a peça é selecionada, o buffer reverso preenche as características na ordem de chegada.
 
-## 3. Componentes Chave V1.2.2
+## 3. Componentes Chave V1.2.3
 
 ### DatabaseService (SQL Server)
 - **Conectividade Resiliente**: A string de conexão usa `Encrypt=false` por padrão para evitar falhas de handshake TLS em servidores locais mais antigos.

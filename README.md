@@ -6,42 +6,40 @@
   </picture>
 </p>
 
-# SelectML - Monitoramento de Medições Industriais
+# SelectML - Interface de monitoramento e entrega de arquivos de medição
 
 ![Version](https://img.shields.io/badge/Version-1.2.3-blue)
 ![Build](https://img.shields.io/badge/Build-Passing-brightgreen)
 ![Platform](https://img.shields.io/badge/Platform-Windows_WPF-blueviolet)
 
-> **Versão 1.2.3 Released!**
-> Novidades V1.2.3:
-> - **Atualização Automática Silenciosa:** O sistema agora verifica e baixa atualizações em segundo plano de forma totalmente automática no startup do aplicativo.
-> - **Reinicialização Instantânea:** Inclusão da ação "Atualizar e Reiniciar" no modal de atualização que fecha o sistema, aplica o patch de atualização e o reabre na nova versão de maneira imediata.
-> - **Limpeza de Ativos (Otimização de Deploy):** Exclusão automática de assemblies satélites de idiomas estrangeiros na publicação (ex: es, fr, ja, ko), reduzindo o número de arquivos e mantendo suporte nativo em PT-BR.
-> - **Identidade Visual Renovada:** Logotipo dinâmico responsivo a tema no repositório, novos ícones de aplicação e splash screen com estampagem automática de versão.
-> - **System Tray Dinâmico:** Ícone de bandeja herda o tema ativo (claro/escuro) e desenha um indicador de status dinâmico (verde ativo / cinza inativo).
+> **Versão 1.2.3**
+> Novidades:
+> - **Atualização automática silenciosa:** A aplicação agora verifica e baixa atualizações em segundo plano de forma totalmente automática na inicialização.
+> - **Reinicialização instantânea:** Inclusão da ação "Atualizar e Reiniciar" no modal de atualização que fecha o sistema, aplica o patch de atualização e o reabre na nova versão de maneira imediata.
+> - **Identidade visual renovada:** Logotipo dinâmico responsivo a tema no repositório, novos ícones de aplicação e splash screen com estampagem automática de versão.
 > 
-> [Baixar Última Versão](https://github.com/ramso-adnarim/SelectML/releases/tag/1.2.3) 
+> [Baixar última versão](https://github.com/ramso-adnarim/SelectML/releases/tag/1.2.3) 
 
-## 🗺️ Mapa do Repositório
+## 🗺️ Mapa do repositório
 
 Para navegar com eficiência no código e documentação:
 
-- **[🤖 AI Codebase Map](docs/AI_CODEBASE_MAP.md)**: Índice otimizado para Agentes de IA e novos devs.
+- **[🤖 AI Codebase Map](docs/AI_CODEBASE_MAP.md)**: Índice otimizado para Agentes de IA.
 - **[🏛️ Arquitetura Técnica](docs/ARCHITECTURE.md)**: Diagramas, Fluxo de Dados e Decisões de Design.
-- **[🔌 Guia de Plugins](docs/PLUGIN_GUIDE.md)**: Como criar drivers para novas máquinas.
-- **[📟 Configuração Serial](docs/SERIAL_CONFIGURATION_GUIDE.md)**: Ajuste fino para RS232 e U-WAVE.
+- **[🔌 Guia de Plugins](docs/PLUGIN_GUIDE.md)**: Como criar parsers para novas máquinas.
+- **[📟 Configuração Serial](docs/SERIAL_CONFIGURATION_GUIDE.md)**: Ajustes de comunicação com dispositivos seriais.
 
 ---
 
-## Visão Geral do Projeto
+## Visão geral do projeto
 
-O **SelectML** é uma solução de **Middleware Industrial** desenvolvida em **WPF (.NET 8)**. Ele atua como uma ponte inteligente entre máquinas de medição (CMMs, ViciVision, Zeiss) e os sistemas de gestão de qualidade (MES/ERP).
+O **SelectML** é um **Middleware** desenvolvido em **WPF (.NET 8)**. Ele atua como uma ponte entre máquinas de medição (CMMs, VMMs e etc) e o software MeasurLink da Mitutoyo.
 
-Diferente de um simples "copiador de arquivos", o SelectML oferece uma camada robusta de **Governança de Dados** e **Validação em Tempo Real**, garantindo que apenas dados limpos e padronizados cheguem ao banco de dados corporativo.
+Diferente de um simples "copiador de arquivos", o SelectML oferece uma camada robusta de **governança de dados** e **validação em tempo real**, garantindo que apenas dados limpos e padronizados cheguem ao banco de dados.
 
-**Principais Funcionalidades:**
+**Principais funcionalidades:**
 - **Híbrido (Novo):** Aceita tanto arquivos de CMMs quanto medição serial manual (Paquímetros).
-- **Validação SQL (Early Detection):** Verifica se o Lote e as Características existem no banco de dados antes de processar.
+- **Validação SQL:** Verifica se o Lote e as Características existem no banco de dados antes de processar.
 - **Human-in-the-Loop:** Interface para revisão manual dos dados com destaque visual para erros ou features desconhecidas.
 - **Ciclo de Vida Seguro:** Backup automático de todos os arquivos brutos (Raw Data).
 - **System Tray:** Roda silenciosamente na bandeja do sistema.
@@ -51,13 +49,13 @@ Diferente de um simples "copiador de arquivos", o SelectML oferece uma camada ro
 ## Arquitetura Simplificada
 
 O sistema segue o fluxo:
-`Máquina/Serial -> Buffer -> Validação -> CSV Padronizado -> ERP`
+`Máquina/Serial -> Buffer -> Validação -> CSV Padronizado -> MeasurLink`
 
 ---
 
 ## Configuração (appsettings.json)
 
-A aplicação é configurada através do arquivo `appsettings.json` gerado na primeira execução ou distribuído junto com o binário.
+A aplicação é configurada através do arquivo `appsettings.json`.
 
 **Exemplo de Configuração:**
 ```json
@@ -83,7 +81,7 @@ A aplicação é configurada através do arquivo `appsettings.json` gerado na pr
 
 ## Guia de Desenvolvimento de Plugins
 
-Deseja integrar uma nova máquina (ex: Protequality, Zeiss, Keyence)?
+Deseja integrar uma nova máquina (ex: Hexagon, Zeiss, Keyence) com formato de arquivo diferente?
 O SelectML utiliza uma arquitetura de plugins aberta.
 
 1.  Crie uma Class Library (.NET 8).
@@ -91,7 +89,7 @@ O SelectML utiliza uma arquitetura de plugins aberta.
 3.  Retorne um objeto `MeasurementData`.
 4.  Coloque a DLL na pasta `/Plugins`.
 
-👉 **[Leia o Guia Completo de Plugins Aqui](docs/PLUGIN_GUIDE.md)**
+👉 **[Leia o guia completo de plugins aqui](docs/PLUGIN_GUIDE.md)**
 
 ---
 
