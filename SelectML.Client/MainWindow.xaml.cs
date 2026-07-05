@@ -25,17 +25,22 @@ namespace SelectML.Client
             var vm = new MainViewModel();
             this.DataContext = vm;
 
-            // Subscribe to VM PropertyChanged to update the tray icon
+            // Subscribe to VM PropertyChanged to update the tray icon and window icon
             vm.PropertyChanged += (s, ev) =>
             {
                 if (ev.PropertyName == nameof(vm.TrayIconSource))
                 {
                     UpdateNotifyIcon(vm.TrayIconSource);
                 }
+                else if (ev.PropertyName == nameof(vm.IsDarkMode))
+                {
+                    UpdateWindowIcon(vm.IsDarkMode);
+                }
             };
 
-            // Set initial tray icon
+            // Set initial icons
             UpdateNotifyIcon(vm.TrayIconSource);
+            UpdateWindowIcon(vm.IsDarkMode);
 
             // Subscribe to VM events
             vm.RequestShowBalloonTip += (title, msg, iconType) =>
@@ -210,5 +215,21 @@ namespace SelectML.Client
 
         [System.Runtime.InteropServices.DllImport("user32.dll", CharSet = System.Runtime.InteropServices.CharSet.Auto)]
         private static extern bool DestroyIcon(IntPtr handle);
+
+        private void UpdateWindowIcon(bool isDarkMode)
+        {
+            try
+            {
+                string iconPath = isDarkMode ? "Resources/SelectML-logo-short-dark.ico" : "Resources/SelectML-logo-short-light.ico";
+                var uri = new Uri($"pack://application:,,,/SelectML.Client;component/{iconPath}");
+                var icon = new BitmapImage(uri);
+                icon.Freeze();
+                this.Icon = icon;
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Error updating window icon: {ex.Message}");
+            }
+        }
     }
 }
