@@ -68,7 +68,7 @@ function Convert-PngToIco {
     $fs.Close()
 }
 
-function Generate-VersionSplash {
+function New-VersionSplash {
     param(
         [string]$baseSplashPath,
         [string]$targetSplashPath,
@@ -123,6 +123,6 @@ Copy-Item "C:\Antigravity\SelectML-logo-dark.png" "c:\Antigravity\SelectML\docs\
 Copy-Item "C:\Antigravity\SelectML-logo-light.png" "c:\Antigravity\SelectML\docs\SelectML-logo-light.png" -Force
 
 # 4. Gerar Splash Screen com versão
-Generate-VersionSplash "C:\Antigravity\SelectML-splash-dark.png" "c:\Antigravity\SelectML\SelectML.Client\Resources\SelectML-splash.png" "$version"
+New-VersionSplash "C:\Antigravity\SelectML-splash-dark.png" "c:\Antigravity\SelectML\SelectML.Client\Resources\SelectML-splash.png" "$version"
 
 Write-Host "Processo concluído com sucesso!"
