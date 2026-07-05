@@ -1,10 +1,10 @@
 # Documentação de Arquitetura SelectML
 
-Este documento serve como a "Fonte da Verdade" técnica para o projeto SelectML. Destina-se à equipe de engenharia e manutenção, detalhando decisões críticas de arquitetura, fluxo de dados e integrações.
+Este documento serve como a "Fonte da Verdade" técnica para o projeto SelectML (rebrand Protequality). Destina-se à equipe de engenharia e manutenção, detalhando decisões críticas de arquitetura, fluxo de dados e integrações na versão V1.2.2.
 
 ## 1. Diagrama de Componentes (Híbrido)
 
-A arquitetura V1.1.0 suporta entrada dupla: Arquivos (Watcher) e Serial (PortService).
+A arquitetura V1.2.2 suporta entrada dupla (Arquivos via Watcher e Serial via PortService), com plugins para formatos CSV, JSON e PDF.
 
 ```mermaid
 graph TD
@@ -27,7 +27,7 @@ graph TD
 
     subgraph "Hardware & IO"
         RS232[Dispositivo Serial] -- Cabo --> SS
-        CMM[CMM/Vici] -- Arquivo --> DISK[Pasta Monitorada]
+        CMM[CMM/Vici/Zeiss] -- Arquivo --> DISK[Pasta Monitorada]
     end
 
     FSW -.->|Detecta| DISK
@@ -36,45 +36,52 @@ graph TD
 
 ## 2. Fluxo de Dados (Data Flow)
 
-O SelectML V1.1.0 opera em modo **Híbrido**, processando dados de duas fontes distintas com estratégias de buffer diferentes.
+O SelectML opera em modo **Híbrido**, processando dados de duas fontes distintas com estratégias de buffer e processamento adequadas.
 
 ### 2.1 Fluxo de Arquivo (Máquinas Automáticas)
-1.  **Entrada**: `FileSystemWatcher` detecta arquivo (TXT/CSV).
-2.  **Parsing**: Plugin converte para `MeasurementData` (contém Nome da Peça e Lote).
-3.  **Validação**: SQL Server valida se a peça existe.
-4.  **Buffer**: Dados vão direto para a UI.
+1.  **Entrada**: `FileSystemWatcher` detecta o arquivo (CSV, JSON ou PDF) no diretório monitorado.
+2.  **Parsing**: O plugin selecionado converte o arquivo para `MeasurementData`:
+    - **CSV (ViciVision)**: Lê a primeira e última linhas.
+    - **JSON (ViciVision X5)**: Lê a estrutura JSON do ciclo de medição e extrai limites de tolerância.
+    - **PDF (Zeiss Calypso)**: Executa análise espacial via `PdfPig` para agrupar palavras em linhas físicas (evitando quebras do layout PDF), limpa caracteres LaTeX e detecta o número de casas decimais dinamicamente.
+3.  **Modificação de Nome**: Se o `NameModifierMode` estiver em "Default", o sistema mescla os nomes das características com o nominal e tolerâncias (ex: `Ø10.00 ±0.05`).
+4.  **Validação**: Consulta o SQL Server (`DatabaseService`) para associar a corrida/peça a uma estação e rotina. Se a estação for desconhecida, a UI exibe o modal de Seleção de Estação.
+5.  **Roteamento**: Se `UseOutputDirectory` estiver ativo, o arquivo CSV final gerado é salvo na pasta `OutputDirectory`. Caso contrário, é gerado no destino padrão.
+6.  **Ciclo de Vida**: O arquivo original é movido para o diretório de Backup.
 
 ### 2.2 Fluxo Serial (Paquímetros/Micrômetros) - "Buffer Reverso"
-No fluxo serial, os dados chegam picados (medida a medida) e muitas vezes **antes** do operador definir qual peça está medindo.
+No fluxo serial, os dados chegam de forma incremental (medida por medida) e muitas vezes antes do operador selecionar a peça na UI.
 
-1.  **Entrada**: `SerialPortService` recebe bytes -> String.
+1.  **Entrada**: `SerialPortService` recebe os bytes do hardware serial.
 2.  **Parsing Imediato**: `ISerialDeviceStrategy` converte string bruta em valor numérico.
 3.  **Buffer de Espera**:
-    - Se o usuário **JÁ** selecionou uma peça na UI: A medida é adicionada à linha atual da tabela.
-    - Se **NÃO** há peça selecionada: A medida entra no **"Buffer Reverso"** (uma fila em memória).
-4.  **Flush**: Assim que o usuário seleciona/cria uma peça, o Buffer Reverso é descarregado na ordem de chegada, preenchendo as primeiras características.
+    - Se o usuário **JÁ** selecionou uma peça na UI: A medida é associada à característica atual.
+    - Se **NÃO** há peça selecionada: O valor entra no **"Buffer Reverso"** (fila em memória).
+4.  **Flush**: Quando a peça é selecionada, o buffer reverso preenche as características na ordem de chegada.
 
-## 3. Componentes Chave V1.1.0
+## 3. Componentes Chave V1.2.2
 
-### SerialService & Strategies
-- **SerialPortService**: Singleton. Mantém a porta aberta e o buffer de leitura de bytes.
-- **ISerialDeviceStrategy**: Define como interpretar o protocolo.
-    - *U-WAVE*: Protocolo Protequality (ex: `01A+123.456CR`).
-    - *Custom*: Regex configurável via JSON.
+### DatabaseService (SQL Server)
+- **Conectividade Resiliente**: A string de conexão usa `Encrypt=false` por padrão para evitar falhas de handshake TLS em servidores locais mais antigos.
+- **Consultas Otimizadas**: Busca de metadados da estação e rotinas baseada no `DbName` persistido, evitando varreduras globais no banco `master`.
+- **Log de Consultas**: Logs estruturados para depuração das requisições de consulta de características e validação de estações.
+
+### SerialPort & Strategies
+- **SerialPortService**: Gerencia a comunicação física. Mantém portas seriais e buffers.
+- **Name Modifier**: Lógica integrada na `MainViewModel` para formatar e padronizar o nome de exibição das características conforme as tolerâncias de engenharia.
 
 ### Design System
-A V1.1.0 introduziu um sistema de temas robusto (`Styles/Themes/`), separando paletas de cores (Dark/Light) dos templates de controles.
+- Temas claro/escuro persistidos no `appsettings.json`.
+- Melhorias na UI: Remoção de barras de rolagem desnecessárias em submenus e modal de seleção de estação otimizado.
 
 ## 4. Governança de Dados
-**(Mantido da V1.0)**
-- **Backup First**: Arquivos são copiados para `/Backup` antes do processamento.
-- **Safe I/O**: Checksum de tamanho antes de deletar a origem.
+- **Backup First**: Arquivos são copiados para a pasta `/Backup` antes de qualquer manipulação.
+- **Limpeza Automática**: Configuração `DataRetentionDays` (default 30 dias) gerencia a retenção de backups antigos e logs.
 
 ## 5. Estratégia de Codificação (Encoding)
-- **Arquivo**: `Encoding.Latin1` (Padrão para máquinas legadas).
-- **Serial**: ASCII/Latin1.
-- **Saída CSV**: `UTF8Encoding(true)` (BOM) para Excel.
+- **Serial/Arquivo Bruto**: Carregados usando `Encoding.Latin1` para garantir a integridade de caracteres como `Ø` e `µ`.
+- **Saída CSV**: Gravação com `UTF8Encoding(true)` (com BOM) para compatibilidade imediata com o Microsoft Excel.
 
-## 6. Extensibilidade
-- **Plugins de Arquivo**: DLLs externas (`SelectML.Parsers.*.dll`).
-- **Drivers Seriais**: Por enquanto, internos (`Strategies/`). Expansão futura para DLLs se necessário.
+## 6. Extensibilidade (Plugins)
+- Carregamento sob demanda via Reflection de arquivos `.dll` no diretório `/Plugins`.
+- Contrato baseado na interface `IMachineParser` do `SelectML.Core`.

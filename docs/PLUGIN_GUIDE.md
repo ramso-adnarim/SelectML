@@ -44,17 +44,28 @@ namespace SelectML.Core
 ```csharp
 public class MeasurementData
 {
-    public string PartName { get; set; }      // Obrigatório
-    public string BatchNumber { get; set; }   // Obrigatório (usado para roteamento)
+    public string PartName { get; set; }      // Obrigatório (ex: EFF9105.31A)
+    public string BatchNumber { get; set; }   // Obrigatório (usado para roteamento/estação)
     public DateTime MeasureDate { get; set; } // Data da medição
 
     // Dicionário de Características
     // Key: Nome da característica (ex: "Diametro_A")
     // Value: Valor medido (double)
-    public Dictionary<string, double> Results { get; set; }
+    public Dictionary<string, double> Results { get; set; } = new Dictionary<string, double>();
+
+    // Dicionário de Tolerâncias e Nominais
+    // Key: Nome da característica
+    public Dictionary<string, CharacteristicTolerance> Tolerances { get; set; } = new Dictionary<string, CharacteristicTolerance>();
 
     // Helper para verificar se o parsing foi mínimo
     public bool IsValid => !string.IsNullOrEmpty(PartName) && Results.Count > 0;
+}
+
+public class CharacteristicTolerance
+{
+    public double Nominal { get; set; }
+    public double LowerTolerance { get; set; }
+    public double UpperTolerance { get; set; }
 }
 ```
 

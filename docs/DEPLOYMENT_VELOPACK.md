@@ -12,12 +12,15 @@ Guia rápido para gerar releases da **SelectML (v1.2.2+)**.
 
 Abra o terminal na **raiz do repositório** e execute:
 
-### 1. Limpar e Publicar
+### 1. Compilar e Publicar
 ```powershell
 # Remove publish anterior para evitar lixo
 if (Test-Path .\publish) { Remove-Item -Recurse -Force .\publish }
 
-# Publica em Release (win-x64)
+# Compila toda a solução em Release para gerar os plugins e copiar suas dependências (como UglyToad.PdfPig)
+dotnet build SelectML.sln -c Release
+
+# Publica a aplicação WPF principal em Release (win-x64)
 dotnet publish SelectML.Client\SelectML.Client.csproj -c Release --self-contained -r win-x64 -o .\publish
 ```
 
@@ -28,10 +31,9 @@ Scripts manuais para copiar arquivos que não vão automaticamente:
 # Copia configuração de dispositivos customizados
 Copy-Item "SelectML.Client\custom_device_config.json" -Destination ".\publish\" -Force
 
-# Copia pasta de Plugins (Certifique-se que ela existe e contém as DLLs necessárias)
-# Exemplo se os plugins estiverem em SelectML.Client\Plugins ou na pasta bin
+# Copia pasta de Plugins (Certifique-se que ela foi populada no passo anterior)
+# NOTA: O build da solução já coloca ZeissPdf, ViciVision e ViciVisionJson com suas DLLs em net8.0-windows\Plugins
 $pluginSource = "SelectML.Client\bin\Release\net8.0-windows\Plugins" 
-# Ou se você mantém uma pasta raiz de plugins: $pluginSource = "SelectML.Client\Plugins"
 
 if (Test-Path $pluginSource) {
     Copy-Item $pluginSource -Destination ".\publish\Plugins" -Recurse -Force
@@ -44,6 +46,7 @@ if (Test-Path $pluginSource) {
 Gera o instalador e arquivos de update em `Releases`.
 
 ```powershell
+# NOTA: Altere "1.2.2" para a versão correspondente do SelectML.Client.csproj
 vpk pack --packId SelectML --packAuthors "Protequality" --packTitle "SelectML" --packVersion 1.2.2 --packDir .\publish --mainExe SelectML.Client.exe --icon "SelectML.Client\Resources\SelectML-logo-short-light.ico" --splashImage "SelectML.Client\Resources\SelectML-splash.png" --shortcuts Desktop,StartMenu,Startup
 ```
 

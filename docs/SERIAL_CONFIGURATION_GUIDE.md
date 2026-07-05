@@ -94,3 +94,14 @@ Formato padrão Protequality: `01A+123.456CR`
 - O comando de requisição de dados (DREQ) não é enviado pelo PC. O U-WAVE deve estar configurado para enviar dados ao pressionar o botão no paquímetro/micrômetro.
 - O SelectML faz o parsing automático e extrai o valor numérico, convertendo para Double independente da cultura (ponto ou vírgula).
 
+---
+
+## Persistência e Auto-Conexão (v1.2.2+)
+
+A partir da versão 1.2.2, o SelectML persiste as últimas configurações utilizadas para comunicação serial no arquivo `appsettings.json`.
+
+- **`LastSerialPort`**: Salva a última porta COM conectada.
+- **`LastSerialStrategy`**: Salva a estratégia de protocolo utilizada (ex: "Protequality U-WAVE" ou "Customizado").
+- **`LastSerialFeatureName`**: Salva o nome da última característica genérica selecionada.
+- **`AutoStartSerial`**: Se marcado na UI, o sistema tentará abrir a conexão serial automaticamente na inicialização do aplicativo usando as últimas configurações salvas.
+
