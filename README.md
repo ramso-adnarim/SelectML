@@ -2,11 +2,11 @@
   <picture>
     <source media="(prefers-color-scheme: dark)" srcset="docs/SelectML-logo-dark.png">
     <source media="(prefers-color-scheme: light)" srcset="docs/SelectML-logo-light.png">
-    <img alt="SelectML Logo" src="docs/SelectML-logo-light.png" width="200">
+    <img alt="SelectML Logo" src="docs/SelectML-logo-light.png" width="400">
   </picture>
 </p>
 
-# SelectML - Interface de monitoramento e entrega de arquivos de medição
+# Interface de monitoramento e entrega de arquivos de medição
 
 ![Version](https://img.shields.io/badge/Version-1.2.3-blue)
 ![Build](https://img.shields.io/badge/Build-Passing-brightgreen)
