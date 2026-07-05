@@ -19,18 +19,12 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <None Remove="SelectML-logo-light.ico" />
-    <None Remove="SelectML-logo-short-light.png" />
-  </ItemGroup>
-
-  <ItemGroup>
     <ProjectReference Include="..\SelectML.Core\SelectML.Core.csproj" />
   </ItemGroup>
 
   <ItemGroup>
-    <Resource Include="SelectML-logo-light.ico" />
-    <Resource Include="SelectML-logo-short-light.png" />
     <Resource Include="Resources\**\*.ico" />
+    <Resource Include="Resources\**\*.png" />
   </ItemGroup>
 
   <ItemGroup>

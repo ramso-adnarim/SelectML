@@ -11,7 +11,7 @@
         Title="SelectML" Height="650" Width="500"
         Background="{DynamicResource Brush.Background.Base}" 
         Foreground="{DynamicResource Brush.Text.Primary}" 
-        Icon="/SelectML-logo-short-light.png"
+        Icon="Resources/SelectML-logo-short-light.ico"
         FontFamily="Segoe UI, Inter, Sans-Serif"
         Style="{StaticResource ModernWindowStyle}">
 

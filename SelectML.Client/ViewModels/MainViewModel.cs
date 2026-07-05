@@ -49,8 +49,8 @@ namespace SelectML.Client.ViewModels
         private UpdateInfo _pendingUpdate;
 
         // Icons
-        private ImageSource _iconGreen;
-        private ImageSource _iconGrey;
+        private ImageSource _iconDarkBase;
+        private ImageSource _iconLightBase;
 
         // Timers
         private System.Windows.Threading.DispatcherTimer _iconTimer;
@@ -110,11 +110,11 @@ namespace SelectML.Client.ViewModels
             _velopackService = new VelopackService(initialConfig.UpdateUrl);
 
             // Pre-load Icons
-            _iconGrey = LoadIcon("Resources/icon_grey.ico");
-            _iconGreen = LoadIcon("Resources/icon_green.ico");
+            _iconDarkBase = LoadIcon("Resources/SelectML-logo-short-dark.ico");
+            _iconLightBase = LoadIcon("Resources/SelectML-logo-short-light.ico");
 
             // Set Initial Icon
-            TrayIconSource = _iconGrey;
+            UpdateTrayIconState(isGreen: false);
 
             // Comandos
             SelectDirectoryCommand = new RelayCommand(ExecuteSelectDirectory, CanChangeConfig);
@@ -211,6 +211,7 @@ namespace SelectML.Client.ViewModels
                         app.SetTheme(value);
                         Log.Information("Theme changed to {Theme}", value ? "Dark" : "Light");
                     }
+                    UpdateTrayIconState(_iconTimer != null && _iconToggle);
                 }
             }
         }
@@ -918,7 +919,7 @@ namespace SelectML.Client.ViewModels
                 _iconTimer = new System.Windows.Threading.DispatcherTimer { Interval = TimeSpan.FromMilliseconds(800) };
                 _iconTimer.Tick += (s, e) =>
                 {
-                    TrayIconSource = _iconToggle ? _iconGreen : _iconGrey;
+                    UpdateTrayIconState(_iconToggle);
                     _iconToggle = !_iconToggle;
                 };
                 _iconTimer.Start();
@@ -950,7 +951,7 @@ namespace SelectML.Client.ViewModels
                 _iconTimer.Stop();
                 _iconTimer = null;
             }
-            TrayIconSource = _iconGrey;
+            UpdateTrayIconState(false);
         }
 
         private void StartDbConnectionMonitoring()
@@ -1045,6 +1046,41 @@ namespace SelectML.Client.ViewModels
                 StatusMessage = $"Erro ao carregar ícone {resourcePath}: {ex.Message}";
                 return null;
             }
+        }
+
+        private void UpdateTrayIconState(bool isGreen)
+        {
+            var baseIcon = IsDarkMode ? _iconDarkBase : _iconLightBase;
+            if (baseIcon == null) return;
+
+            var width = baseIcon.Width;
+            var height = baseIcon.Height;
+            if (double.IsNaN(width) || width <= 0) width = 32;
+            if (double.IsNaN(height) || height <= 0) height = 32;
+
+            var drawingVisual = new System.Windows.Media.DrawingVisual();
+            using (var drawingContext = drawingVisual.RenderOpen())
+            {
+                drawingContext.DrawImage(baseIcon, new System.Windows.Rect(0, 0, width, height));
+
+                var radius = width * 0.18;
+                var centerX = width - radius - 1;
+                var centerY = height - radius - 1;
+
+                var brush = isGreen ? System.Windows.Media.Brushes.LimeGreen : System.Windows.Media.Brushes.DarkGray;
+                var pen = new System.Windows.Media.Pen(System.Windows.Media.Brushes.White, 1);
+
+                drawingContext.DrawEllipse(brush, pen, new System.Windows.Point(centerX, centerY), radius, radius);
+            }
+
+            var renderTargetBitmap = new System.Windows.Media.Imaging.RenderTargetBitmap(
+                (int)width, (int)height,
+                96, 96,
+                System.Windows.Media.PixelFormats.Pbgra32);
+            renderTargetBitmap.Render(drawingVisual);
+            renderTargetBitmap.Freeze();
+
+            TrayIconSource = renderTargetBitmap;
         }
 
         // --- Lógica de Negócio ---

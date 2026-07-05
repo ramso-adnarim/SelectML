@@ -1,22 +1,26 @@
 <p align="center">
-  <img src="docs/SelectML-logo-dark.png" alt="SelectML Logo" width="200"/>
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="docs/SelectML-logo-dark.png">
+    <source media="(prefers-color-scheme: light)" srcset="docs/SelectML-logo-light.png">
+    <img alt="SelectML Logo" src="docs/SelectML-logo-light.png" width="200">
+  </picture>
 </p>
 
 # SelectML - Monitoramento de Medições Industriais
 
-![Version](https://img.shields.io/badge/Version-1.2.2-blue)
+![Version](https://img.shields.io/badge/Version-1.2.3-blue)
 ![Build](https://img.shields.io/badge/Build-Passing-brightgreen)
 ![Platform](https://img.shields.io/badge/Platform-Windows_WPF-blueviolet)
 
-> **Versão 1.2.2 Released!**
-> Novidades V1.2.2:
-> - **Novo Parser Integrado:** Adicionado suporte total para exportação JSON de máquinas ViciVision X5.
-> - **Melhorias:** Correções pontuais e melhorias de segurança.
-> - **Roteamento Inteligente**: Novo suporte para escolha de Diretório de Saída (OutputDirectory).
-> - **Governança**: Modal Inteligente de Seleção de Estação para corridas desconhecidas (UI Modernizada).
-> - **Precisão de Dados**: Extração dinâmica do máximo de casas decimais do PDF para o arredondamento GMS.
+> **Versão 1.2.3 Released!**
+> Novidades V1.2.3:
+> - **Atualização Automática Silenciosa:** O sistema agora verifica e baixa atualizações em segundo plano de forma totalmente automática no startup do aplicativo.
+> - **Reinicialização Instantânea:** Inclusão da ação "Atualizar e Reiniciar" no modal de atualização que fecha o sistema, aplica o patch de atualização e o reabre na nova versão de maneira imediata.
+> - **Limpeza de Ativos (Otimização de Deploy):** Exclusão automática de assemblies satélites de idiomas estrangeiros na publicação (ex: es, fr, ja, ko), reduzindo o número de arquivos e mantendo suporte nativo em PT-BR.
+> - **Identidade Visual Renovada:** Logotipo dinâmico responsivo a tema no repositório, novos ícones de aplicação e splash screen com estampagem automática de versão.
+> - **System Tray Dinâmico:** Ícone de bandeja herda o tema ativo (claro/escuro) e desenha um indicador de status dinâmico (verde ativo / cinza inativo).
 > 
-> [Baixar Última Versão](https://github.com/ramso-adnarim/SelectML/releases/tag/1.2.2) 
+> [Baixar Última Versão](https://github.com/ramso-adnarim/SelectML/releases/tag/1.2.3) 
 
 ## 🗺️ Mapa do Repositório
 
