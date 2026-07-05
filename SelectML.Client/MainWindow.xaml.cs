@@ -25,6 +25,18 @@ namespace SelectML.Client
             var vm = new MainViewModel();
             this.DataContext = vm;
 
+            // Subscribe to VM PropertyChanged to update the tray icon
+            vm.PropertyChanged += (s, ev) =>
+            {
+                if (ev.PropertyName == nameof(vm.TrayIconSource))
+                {
+                    UpdateNotifyIcon(vm.TrayIconSource);
+                }
+            };
+
+            // Set initial tray icon
+            UpdateNotifyIcon(vm.TrayIconSource);
+
             // Subscribe to VM events
             vm.RequestShowBalloonTip += (title, msg, iconType) =>
             {
@@ -124,6 +136,10 @@ namespace SelectML.Client
         protected override void OnClosing(System.ComponentModel.CancelEventArgs e)
         {
             MyNotifyIcon.Dispose();
+            if (_currentIcon != null)
+            {
+                DestroyIcon(_currentIcon.Handle);
+            }
 
             try
             {
@@ -154,5 +170,45 @@ namespace SelectML.Client
 
             base.OnClosing(e);
         }
+
+        private System.Drawing.Icon? _currentIcon;
+
+        private void UpdateNotifyIcon(ImageSource imageSource)
+        {
+            if (imageSource is BitmapSource bitmapSource)
+            {
+                try
+                {
+                    using (var outStream = new System.IO.MemoryStream())
+                    {
+                        var encoder = new PngBitmapEncoder();
+                        encoder.Frames.Add(BitmapFrame.Create(bitmapSource));
+                        encoder.Save(outStream);
+                        outStream.Position = 0;
+                        using (var bitmap = new System.Drawing.Bitmap(outStream))
+                        {
+                            IntPtr hIcon = bitmap.GetHicon();
+                            var icon = System.Drawing.Icon.FromHandle(hIcon);
+
+                            var oldIcon = _currentIcon;
+                            MyNotifyIcon.Icon = icon;
+                            _currentIcon = icon;
+
+                            if (oldIcon != null)
+                            {
+                                DestroyIcon(oldIcon.Handle);
+                            }
+                        }
+                    }
+                }
+                catch (Exception ex)
+                {
+                    System.Diagnostics.Debug.WriteLine($"Error converting tray icon: {ex.Message}");
+                }
+            }
+        }
+
+        [System.Runtime.InteropServices.DllImport("user32.dll", CharSet = System.Runtime.InteropServices.CharSet.Auto)]
+        private static extern bool DestroyIcon(IntPtr handle);
     }
 }

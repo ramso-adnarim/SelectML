@@ -149,7 +149,6 @@
         </Grid.RowDefinitions>
 
         <tb:TaskbarIcon x:Name="MyNotifyIcon"
-                        IconSource="{Binding TrayIconSource}"
                         ToolTipText="{Binding StatusMessage}"
                         DoubleClickCommand="{Binding RestoreFromTrayCommand}" />
 
