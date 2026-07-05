@@ -82,7 +82,7 @@ function New-VersionSplash {
 
     # Configuração de Fonte dinâmica baseada no tamanho da imagem
     $fontSize = [int]($img.Height * 0.025) # 2.5% da altura da imagem
-    $font = New-Object System.Drawing.Font("Segoe UI", $fontSize, [System.Drawing.FontStyle]::Bold)
+    $font = New-Object System.Drawing.Font("Inter", $fontSize, [System.Drawing.FontStyle]::Bold)
     $brush = New-Object System.Drawing.SolidBrush([System.Drawing.Color]::FromArgb(180, 255, 255, 255)) # Branco semi-transparente
 
     $text = "V$version"

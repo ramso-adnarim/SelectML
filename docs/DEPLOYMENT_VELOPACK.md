@@ -1,67 +1,80 @@
-# Deploy Cheat Sheet (Velopack)
+# Guia de Deploy e Publicação Automatizada (Velopack)
 
-Guia rápido para gerar releases da **SelectML (v1.2.2+)**.
+Este documento serve como guia técnico e manual de referência para desenvolvedores e Agentes de IA realizarem o build, empacotamento e deploy automatizado da **SelectML**.
+
+---
 
 ## 📋 Checklist Pré-Build
-- [ ] **Versão**: `Version` incrementada em `SelectML.Client.csproj`.
-- [ ] **Ícone**: `Resources\SelectML-logo-short-light.ico` existe.
-- [ ] **Plugins**: Pasta `Plugins` populada (se houver parsers externos).
-- [ ] **Config**: `custom_device_config.json` atualizado.
+1. **Versão**: Garanta que o `<Version>` e as tags de versão de assembly estejam incrementadas no arquivo [SelectML.Client.csproj](file:///c:/Antigravity/SelectML/SelectML.Client/SelectML.Client.csproj).
+2. **Token do GitHub**: O processo de publicação automática depende da variável de ambiente `GH_TOKEN` configurada no escopo do Usuário no Windows.
 
-## 🚀 Comandos de Release
+---
 
-Abra o terminal na **raiz do repositório** e execute:
+## 🤖 Fluxo de Deploy Automatizado (Para Agentes de IA)
 
-### 1. Compilar e Publicar
+Sempre que uma nova versão precisar ser publicada, o Agente de IA pode executar todos os passos de forma 100% autônoma usando o console do PowerShell. O fluxo consiste em:
+
+### 1. Execução do Script de Preparação de Assets
+Antes do build, rode o script PowerShell para gerar os ícones `.ico` e aplicar a marca d'água da versão na Splash Screen (utilizando a fonte *Inter*):
 ```powershell
-# Remove publish anterior para evitar lixo
+powershell -ExecutionPolicy Bypass -File .\scripts\GenerateAssets.ps1
+```
+
+### 2. Compilação e Publicação
+Execute a compilação completa da solução e publique a aplicação WPF principal:
+```powershell
+# Limpa publicação anterior
 if (Test-Path .\publish) { Remove-Item -Recurse -Force .\publish }
 
-# Compila toda a solução em Release para gerar os plugins e copiar suas dependências (como UglyToad.PdfPig)
+# Compila toda a solução em Release (gera os plugins e suas dependências)
 dotnet build SelectML.sln -c Release
 
-# Publica a aplicação WPF principal em Release (win-x64)
+# Publica a aplicação WPF principal em Release (win-x64, self-contained)
 dotnet publish SelectML.Client\SelectML.Client.csproj -c Release --self-contained -r win-x64 -o .\publish
-```
 
-### 2. Copiar Ativos (Crucial v1.1.0)
-Scripts manuais para copiar arquivos que não vão automaticamente:
-
-```powershell
-# Copia configuração de dispositivos customizados
+# Copia configurações e os plugins compilados para a pasta de publicação
 Copy-Item "SelectML.Client\custom_device_config.json" -Destination ".\publish\" -Force
-
-# Copia pasta de Plugins (Certifique-se que ela foi populada no passo anterior)
-# NOTA: O build da solução já coloca ZeissPdf, ViciVision e ViciVisionJson com suas DLLs em net8.0-windows\Plugins
-$pluginSource = "SelectML.Client\bin\Release\net8.0-windows\Plugins" 
-
-if (Test-Path $pluginSource) {
-    Copy-Item $pluginSource -Destination ".\publish\Plugins" -Recurse -Force
-} else {
-    Write-Warning "Pasta Plugins não encontrada em $pluginSource. Verifique se os Parsers foram compilados."
-}
+Copy-Item "SelectML.Client\bin\Release\net8.0-windows\Plugins" -Destination ".\publish\Plugins" -Recurse -Force
 ```
 
-### 3. Criar Pacote (Velopack)
-Gera o instalador e arquivos de update em `Releases`.
-
+### 3. Empacotamento com o Velopack
+Gere o instalador (`SelectML-win-Setup.exe`), o zip portátil e os manifestos na pasta `Releases` usando o `vpk`:
 ```powershell
-# NOTA: Altere "1.2.2" para a versão correspondente do SelectML.Client.csproj
+# NOTA: Substitua '1.2.3' pela versão correspondente configurada no .csproj
 vpk pack --packId SelectML --packAuthors "Ramso Adnarim" --packTitle "SelectML" --packVersion 1.2.3 --packDir .\publish --mainExe SelectML.Client.exe --icon "SelectML.Client\Resources\SelectML-logo-short-light.ico" --splashImage "SelectML.Client\Resources\SelectML-splash.png" --shortcuts Desktop,StartMenu,Startup
+```
+
+### 4. Upload Automático para o GitHub Releases
+Para publicar o release e os assets diretamente no GitHub, o agente deve ler o token de acesso (PAT) da variável de ambiente do usuário do Windows e executar o comando de upload:
+```powershell
+# Carrega o token de usuário do Windows
+$token = [Environment]::GetEnvironmentVariable("GH_TOKEN", "User")
+
+# Publica os assets da pasta Releases no GitHub (Cria a tag e publica a release oficial)
+# NOTA: Altere a tag e o nome da release para corresponder à versão (ex: tag "1.2.3" e nome "V1.2.3")
+vpk upload github --repoUrl "https://github.com/ramso-adnarim/SelectML" --token $token --publish --tag "1.2.3" --releaseName "V1.2.3"
 ```
 
 ---
 
-## ☁️ Upload (GitHub Releases)
+## 🔑 Gerenciamento do Token do GitHub (`GH_TOKEN`)
 
-1. Vá para **GitHub > Releases > Draft a new release**.
-2. **Tag**: `v1.2.2` (Use o prefixo 'v' por convenção, correspondendo à versão do release).
-3. **Título**: `Versão 1.2.2` (ou a versão correspondente).
-4. **Anexar Arquivos**: Arraste os arquivos gerados pelo Velopack dentro da pasta `Releases`:
-   - `SelectML-win-Setup.exe` (Instalador completo do Windows)
-   - `SelectML-1.2.2-full.nupkg` (Pacote completo da versão atual)
-   - `SelectML-1.2.2-delta.nupkg` (Pacote delta/incremental, opcional mas recomendado para updates menores)
-   - `releases.win.json` (Manifesto de atualização de ativos do Velopack - **CRUCIAL**: Sobrescrever se já existir!)
-5. **Publish**.
+A publicação automática de releases depende de um **Personal Access Token (PAT)** com escopo de acesso a repositórios.
 
-> 💡 **Dica**: O arquivo **`releases.win.json`** é o cérebro do atualizador automático no Windows. Ele gerencia as somas de verificação SHA e os metadados dos pacotes. O `vpk pack` atualiza esse arquivo local automaticamente a cada geração de versão, portanto, certifique-se de sempre fazer o upload dele atualizado na release do GitHub.
+### Como o Token é Armazenado
+O token é armazenado permanentemente no Windows no escopo de variáveis de ambiente do usuário com o nome **`GH_TOKEN`**. O script/agente o lê em tempo de execução via:
+`[Environment]::GetEnvironmentVariable("GH_TOKEN", "User")`
+
+### Como Criar ou Atualizar o Token (Quando Vencer)
+Os tokens do GitHub expiram periodicamente por razões de segurança. Se o upload falhar por erro de autenticação (`401 Unauthorized`), siga estes passos:
+
+1. Acesse o GitHub e vá em **Settings > Developer Settings > Personal access tokens > Tokens (classic)**.
+2. Clique em **Generate new token > Generate new token (classic)**.
+3. Defina um nome descritivo (ex: `SelectML Deploy Token`) e uma data de validade.
+4. Selecione o escopo **`repo`** (concede permissão de escrita para criar releases e fazer upload de binários).
+5. Clique em **Generate token** e copie a chave gerada (começa com `ghp_`).
+6. Abra o console do PowerShell e registre a nova chave permanentemente no sistema executando:
+   ```powershell
+   [Environment]::SetEnvironmentVariable("GH_TOKEN", "ghp_SUA_NOVA_CHAVE_AQUI", "User")
+   ```
+7. **Importante**: Se estiver usando uma janela de terminal ou um IDE ativo, reinicie-o para que a nova variável de ambiente seja recarregada e detectada pelos próximos agentes de IA.
