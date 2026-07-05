@@ -361,3 +361,7 @@ MigrationBackup/
 
 # Fody - auto-generated XML schema
 FodyWeavers.xsd
+
+# Deployment and packaging (local only)
+docs/DEPLOYMENT_VELOPACK.md
+scripts/
