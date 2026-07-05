@@ -47,7 +47,7 @@ Gera o instalador e arquivos de update em `Releases`.
 
 ```powershell
 # NOTA: Altere "1.2.2" para a versão correspondente do SelectML.Client.csproj
-vpk pack --packId SelectML --packAuthors "Protequality" --packTitle "SelectML" --packVersion 1.2.2 --packDir .\publish --mainExe SelectML.Client.exe --icon "SelectML.Client\Resources\SelectML-logo-short-light.ico" --splashImage "SelectML.Client\Resources\SelectML-splash.png" --shortcuts Desktop,StartMenu,Startup
+vpk pack --packId SelectML --packAuthors "Ramso Adnarim" --packTitle "SelectML" --packVersion 1.2.3 --packDir .\publish --mainExe SelectML.Client.exe --icon "SelectML.Client\Resources\SelectML-logo-short-light.ico" --splashImage "SelectML.Client\Resources\SelectML-splash.png" --shortcuts Desktop,StartMenu,Startup
 ```
 
 ---

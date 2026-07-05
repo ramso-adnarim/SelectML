@@ -73,7 +73,7 @@ public class CharacteristicTolerance
 
 ### Passo 1: Criar o Projeto
 No Visual Studio, crie um novo projeto do tipo **Class Library** segmentado para **.NET 8**.
-Nome sugerido: `SelectML.Parsers.NomeDaMaquina` (ex: `SelectML.Parsers.Protequality`).
+Nome sugerido: `SelectML.Parsers.NomeDaMaquina` (ex: `SelectML.Parsers.RamsoAdnarim`).
 
 ### Passo 2: Referências
 Adicione uma dependência ao projeto `SelectML.Core`.
@@ -92,11 +92,11 @@ using System.Text;
 using System.Text.RegularExpressions;
 using SelectML.Core;
 
-namespace SelectML.Parsers.Protequality
+namespace SelectML.Parsers.RamsoAdnarim
 {
-    public class ProtequalityParser : IMachineParser
+    public class RamsoAdnarimParser : IMachineParser
     {
-        public string MachineName => "Protequality CMM";
+        public string MachineName => "Ramso Adnarim CMM";
 
         public bool CanParse(string filePath)
         {
@@ -135,7 +135,7 @@ namespace SelectML.Parsers.Protequality
 
 ### Passo 4: Compilação e Deploy
 1.  Compile o projeto em **Release**.
-2.  Copie a DLL gerada (ex: `SelectML.Parsers.Protequality.dll`) para a pasta `Plugins` dentro do diretório da aplicação principal (`SelectML.Client`).
+2.  Copie a DLL gerada (ex: `SelectML.Parsers.RamsoAdnarim.dll`) para a pasta `Plugins` dentro do diretório da aplicação principal (`SelectML.Client`).
 3.  Reinicie o SelectML. O novo parser deve aparecer na lista de configuração.
 
 ## 4. Dicas de Ouro e Boas Práticas

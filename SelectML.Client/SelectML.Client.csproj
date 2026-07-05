@@ -7,14 +7,14 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <UseWPF>true</UseWPF>
     <UseWindowsForms>true</UseWindowsForms>
-    <Authors>Protequality</Authors>
-    <Company>Protequality</Company>
+    <Authors>Ramso Adnarim</Authors>
+    <Company>Ramso Adnarim</Company>
     <Product>SelectML</Product>
     <Description>Monitoramento e integração de arquivos</Description>
     <ApplicationIcon>Resources\SelectML-logo-short-light.ico</ApplicationIcon>
-    <Version>1.2.2</Version>
-    <AssemblyVersion>1.2.2.0</AssemblyVersion>
-    <FileVersion>1.2.2.0</FileVersion>
+    <Version>1.2.3</Version>
+    <AssemblyVersion>1.2.3.0</AssemblyVersion>
+    <FileVersion>1.2.3.0</FileVersion>
     <SatelliteResourceLanguages>pt-BR</SatelliteResourceLanguages>
   </PropertyGroup>
 

@@ -11,7 +11,7 @@
 - **`IDatabaseService.cs`**: Contrato para acesso a bancos de dados externos (ex: SQL Server para consultar lotes, rotinas, estações e características).
 
 ### `SelectML.Client`
-> Aplicação WPF Principal (Rebrand parcial para Protequality nas tags de publicação/empacotamento).
+> Consiste na aplicação WPF Principal (Rebrand parcial para Ramso Adnarim nas tags de publicação/empacotamento).
 - **`App.xaml.cs`**: Entry point. Configura DI simples, temas, tratamento global de exceções e Velopack para atualização dinâmica.
 - **`MainWindow.xaml`**: View principal. Contém o DataGrid, dashboard de status de conexões, monitoramento de banco de dados e seleção de modo modificador de nomes.
 - **`ViewModels/MainViewModel.cs`**: "God Class" (por design MVVM simples). Orquestra:
@@ -61,7 +61,7 @@ graph TD
 | :--- | :--- |
 | **Buffer Reverso** | Lógica na `MainViewModel`. Quando medições seriais chegam e o usuário ainda não definiu o "Nome da Peça", elas entram numa fila (`_serialBuffer`). Ao definir o nome, a fila é processada. |
 | **Run / Corrida** | Uma sequência completa de medições para uma única peça. Geralmente mapeada para um arquivo de saída CSV único. |
-| **U-WAVE** | Sistema de transmissão sem fio da Protequality. No modo serial, envia dados no formato `01A+001.234CR`. |
+| **U-WAVE** | Sistema de transmissão sem fio da Ramso Adnarim. No modo serial, envia dados no formato `01A+001.234CR`. |
 | **Feature / Característica** | Uma única característica medida (ex: "Diâmetro Externo 1"). |
 | **Velopack** | Framework usado para empacotamento, instalação e atualização automática da aplicação. |
 | **NameModifierMode** | Modo que altera o nome das características adicionando dados geométricos e de tolerância (ex: adicionar sinal de diâmetro `Ø`, nominal e limites). |

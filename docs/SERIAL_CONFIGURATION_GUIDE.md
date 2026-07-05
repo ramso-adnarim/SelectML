@@ -17,8 +17,8 @@ O arquivo é dividido em duas seções: `PortConfig` (Hardware) e `DataProtocol`
         "DataBits": 8,          // Bits de dados (Geralmente 8)
         "Parity": "None",       // Paridade (None, Odd, Even, Mark, Space)
         "StopBits": "One",      // Bits de parada (One, Two, OnePointFive)
-        "DtrEnable": true,      // Sinal DTR (Obrigatório para alguns dispositivos Protequality)
-        "RtsEnable": true       // Sinal RTS (Obrigatório para alguns dispositivos Protequality)
+        "DtrEnable": true,      // Sinal DTR (Obrigatório para alguns dispositivos Ramso Adnarim)
+        "RtsEnable": true       // Sinal RTS (Obrigatório para alguns dispositivos Ramso Adnarim)
     },
     "DataProtocol": {
         "Terminator": "\r",     // Caractere que indica fim de linha. Use "\r" (CR) ou "\n" (LF).
@@ -78,12 +78,12 @@ Após salvar o arquivo `custom_device_config.json`:
 
 ---
 
-## Estratégia Nativa: Protequality U-WAVE
+## Estratégia Nativa: Ramso Adnarim U-WAVE
 
-O SelectML já possui suporte nativo para o sistema **Protequality U-WAVE**. Se você selecionar "Protequality U-WAVE" na tela de configuração serial, ele ignorará o arquivo `.json` e usará a lógica interna otimizada.
+O SelectML já possui suporte nativo para o sistema **Ramso Adnarim U-WAVE**. Se você selecionar "Ramso Adnarim U-WAVE" na tela de configuração serial, ele ignorará o arquivo `.json` e usará a lógica interna otimizada.
 
 **Protocolo Esperado:**
-Formato padrão Protequality: `01A+123.456CR`
+Formato padrão Ramso Adnarim: `01A+123.456CR`
 - `01`: ID do canal (ignorável para canal único)
 - `A`: Código de tipo de dado
 - `+` ou `-`: Sinal
@@ -101,7 +101,7 @@ Formato padrão Protequality: `01A+123.456CR`
 A partir da versão 1.2.2, o SelectML persiste as últimas configurações utilizadas para comunicação serial no arquivo `appsettings.json`.
 
 - **`LastSerialPort`**: Salva a última porta COM conectada.
-- **`LastSerialStrategy`**: Salva a estratégia de protocolo utilizada (ex: "Protequality U-WAVE" ou "Customizado").
+- **`LastSerialStrategy`**: Salva a estratégia de protocolo utilizada (ex: "Ramso Adnarim U-WAVE" ou "Customizado").
 - **`LastSerialFeatureName`**: Salva o nome da última característica genérica selecionada.
 - **`AutoStartSerial`**: Se marcado na UI, o sistema tentará abrir a conexão serial automaticamente na inicialização do aplicativo usando as últimas configurações salvas.
 

@@ -1,6 +1,6 @@
 # Documentação de Arquitetura SelectML
 
-Este documento serve como a "Fonte da Verdade" técnica para o projeto SelectML (rebrand Protequality). Destina-se à equipe de engenharia e manutenção, detalhando decisões críticas de arquitetura, fluxo de dados e integrações na versão V1.2.2.
+Este documento serve como a "Fonte da Verdade" técnica para o projeto SelectML (rebrand Ramso Adnarim). Destina-se à equipe de engenharia e manutenção, detalhando decisões críticas de arquitetura, fluxo de dados e integrações na versão V1.2.2.
 
 ## 1. Diagrama de Componentes (Híbrido)
 
