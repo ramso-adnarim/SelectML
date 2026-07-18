@@ -1,4 +1,4 @@
-# Mapa de Navegação da Base de Código (SelectML) - V1.2.2
+# Mapa de Navegação da Base de Código (SelectML) - V1.2.3
 
 > **Nota para IAs:** Este documento serve como um índice rápido ("Context Window Efficiency") para navegação no projeto. Consulte este mapa antes de perguntar "Onde está a lógica de X?".
 
@@ -63,7 +63,7 @@ graph TD
 | **Run / Corrida** | Uma sequência completa de medições para uma única peça. Geralmente mapeada para um arquivo de saída CSV único. |
 | **U-WAVE** | Sistema de transmissão sem fio da Ramso Adnarim. No modo serial, envia dados no formato `01A+001.234CR`. |
 | **Feature / Característica** | Uma única característica medida (ex: "Diâmetro Externo 1"). |
-| **Velopack** | Framework usado para empacotamento, instalação e atualização automática da aplicação. |
+| **Velopack** | Framework usado para empacotamento, instalação e atualização automática silenciosa no startup da aplicação. |
 | **NameModifierMode** | Modo que altera o nome das características adicionando dados geométricos e de tolerância (ex: adicionar sinal de diâmetro `Ø`, nominal e limites). |
 
 ---
