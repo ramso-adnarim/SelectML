@@ -8,17 +8,18 @@
 
 # Interface de monitoramento e entrega de arquivos de medição
 
-![Version](https://img.shields.io/badge/Version-1.2.3-blue)
+![Version](https://img.shields.io/badge/Version-1.2.4-blue)
 ![Build](https://img.shields.io/badge/Build-Passing-brightgreen)
 ![Platform](https://img.shields.io/badge/Platform-Windows_WPF-blueviolet)
 
-> **Versão 1.2.3**
+> **Versão 1.2.4**
 > Novidades:
-> - **Atualização automática silenciosa:** A aplicação agora verifica e baixa atualizações em segundo plano de forma totalmente automática na inicialização.
-> - **Reinicialização instantânea:** Inclusão da ação "Atualizar e Reiniciar" no modal de atualização que fecha o sistema, aplica o patch de atualização e o reabre na nova versão de maneira imediata.
-> - **Identidade visual renovada:** Logotipo dinâmico responsivo a tema no repositório, novos ícones de aplicação e splash screen com estampagem automática de versão.
+> - **Modificador de Nomes Parametrizado:** O sistema agora conta com um construtor de tags inteligente (ex: `{N,2,A}`) permitindo formatar valores nominais e tolerâncias com precisões independentes, além de inserir prefixos e sufixos de forma dinâmica, mantendo as simbologias (Ø, °) intactas ao valor numérico.
+> - **Syntax Highlighting e Proteção:** A interface de customização agora conta com validação em tempo real. Tags corretas ganham destaque visual (azul negrito), enquanto tags quebradas exibem alertas vermelhos bloqueando o salvamento.
+> - **Nova Identidade de Status:** Nova animação pulsante no menu indicando claramente o status de atividade da engine de modificação de nomes.
+> - **Atualização automática e Identidade:** A funcionalidade base da 1.2.X se mantém (Velopack background updates e splash screen com estampagem de versão).
 > 
-> [Baixar última versão](https://github.com/ramso-adnarim/SelectML/releases/tag/1.2.3) 
+> [Baixar última versão](https://github.com/ramso-adnarim/SelectML/releases/tag/v1.2.4) 
 
 ## 🗺️ Mapa do repositório
 

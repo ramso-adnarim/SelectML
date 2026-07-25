@@ -315,10 +315,28 @@
                         </StackPanel>
                     </MenuItem.Header>
                 </MenuItem>
-                <MenuItem Header="Modificador de nomes" Foreground="{DynamicResource Brush.Text.Primary}" FontWeight="SemiBold" VerticalAlignment="Center">
+                <MenuItem Foreground="{DynamicResource Brush.Text.Primary}" FontWeight="SemiBold" VerticalAlignment="Center">
+                    <MenuItem.Header>
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Text="Modificador de nomes" VerticalAlignment="Center"/>
+                            <Ellipse Width="8" Height="8" Fill="{DynamicResource Brush.Status.Success}" Visibility="{Binding IsNameModifierActive, Converter={StaticResource BooleanToVisibilityConverter}}" 
+                                     Margin="6,0,0,0" VerticalAlignment="Center" x:Name="ModifierIndicator"/>
+                            <StackPanel.Triggers>
+                                <EventTrigger RoutedEvent="Loaded">
+                                    <BeginStoryboard>
+                                        <Storyboard RepeatBehavior="Forever" AutoReverse="True">
+                                            <DoubleAnimation Storyboard.TargetName="ModifierIndicator"
+                                                             Storyboard.TargetProperty="Opacity"
+                                                             From="1.0" To="0.4" Duration="0:0:1"/>
+                                        </Storyboard>
+                                    </BeginStoryboard>
+                                </EventTrigger>
+                            </StackPanel.Triggers>
+                        </StackPanel>
+                    </MenuItem.Header>
                     <MenuItem Header="Ativar" ToolTip="Aplica a regra Default" IsCheckable="True" IsChecked="{Binding IsNameModifierDefaultActive}"/>
                     <MenuItem Header="Desativar" IsCheckable="True" IsChecked="{Binding IsNameModifierDisabled}"/>
-                    <MenuItem Header="Personalizar" IsEnabled="False" Foreground="{DynamicResource Brush.Text.Inactive}"/>
+                    <MenuItem Header="Personalizado" IsCheckable="True" IsChecked="{Binding IsNameModifierCustomActive}" Command="{Binding OpenNameModifierConfigCommand}" Foreground="{DynamicResource Brush.Text.Primary}"/>
                 </MenuItem>
             </Menu>
 

@@ -36,6 +36,7 @@ namespace SelectML.Client.Services
 
         // Name Modifier
         public string NameModifierMode { get; set; } = "Disabled";
+        public string CustomNameModifierFormat { get; set; } = "{N,2,A} {T,3,A}";
     }
 
     public class ConfigService

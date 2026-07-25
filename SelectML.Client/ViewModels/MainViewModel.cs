@@ -10,6 +10,7 @@ using System.IO;
 using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Text;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Input;
@@ -138,6 +139,7 @@ namespace SelectML.Client.ViewModels
             CancelUpdateCommand = new RelayCommand(ExecuteCancelUpdate);
             
             OpenSerialConfigCommand = new RelayCommand(ExecuteOpenSerialConfig);
+            OpenNameModifierConfigCommand = new RelayCommand(ExecuteOpenNameModifierConfig);
             ClearParserCommand = new RelayCommand(obj => SelectedParser = null, CanChangeConfig);
 
             LoadParsers();
@@ -318,20 +320,43 @@ namespace SelectML.Client.ViewModels
         public bool IsNameModifierDefaultActive
         {
             get => NameModifierMode == "Default";
-            set { if (value) NameModifierMode = "Default"; }
+            set
+            {
+                if (value)
+                {
+                    NameModifierMode = "Default";
+                    OnPropertyChanged(nameof(IsNameModifierActive));
+                }
+            }
         }
 
         public bool IsNameModifierDisabled
         {
             get => NameModifierMode == "Disabled";
-            set { if (value) NameModifierMode = "Disabled"; }
+            set
+            {
+                if (value)
+                {
+                    NameModifierMode = "Disabled";
+                    OnPropertyChanged(nameof(IsNameModifierActive));
+                }
+            }
         }
 
         public bool IsNameModifierCustomActive
         {
             get => NameModifierMode == "Custom";
-            set { if (value) NameModifierMode = "Custom"; }
+            set
+            {
+                if (value)
+                {
+                    NameModifierMode = "Custom";
+                    OnPropertyChanged(nameof(IsNameModifierActive));
+                }
+            }
         }
+
+        public bool IsNameModifierActive => NameModifierMode != "Disabled";
 
         public bool IsSqlCredentialsEnabled => !IsMonitoring && !DbUseWindowsAuth;
 
@@ -589,6 +614,7 @@ namespace SelectML.Client.ViewModels
         public RelayCommand CancelUpdateCommand { get; }
 
         public RelayCommand OpenSerialConfigCommand { get; }
+        public RelayCommand OpenNameModifierConfigCommand { get; }
         public RelayCommand ClearParserCommand { get; }
 
         // --- Métodos de Configuração e Watcher ---
@@ -685,6 +711,14 @@ namespace SelectML.Client.ViewModels
             _currentSerialFeatureName = config.LastSerialFeatureName;
         }
 
+        private void ExecuteOpenNameModifierConfig(object obj)
+        {
+            IsNameModifierCustomActive = true;
+            var win = new Views.NameModifierConfigWindow();
+            win.Owner = System.Windows.Application.Current.MainWindow;
+            win.ShowDialog();
+        }
+
         private void LoadParsers()
         {
             var path = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Plugins");
@@ -747,6 +781,7 @@ namespace SelectML.Client.ViewModels
             OnPropertyChanged(nameof(IsNameModifierDefaultActive));
             OnPropertyChanged(nameof(IsNameModifierDisabled));
             OnPropertyChanged(nameof(IsNameModifierCustomActive));
+            OnPropertyChanged(nameof(IsNameModifierActive));
         }
 
         private async void ExecuteSaveConfig(object obj)
@@ -1763,7 +1798,9 @@ namespace SelectML.Client.ViewModels
 
         private void ApplyNameModifier(MeasurementData data)
         {
-            if (NameModifierMode != "Default" || data == null) return;
+            if (NameModifierMode == "Disabled" || data == null) return;
+
+            var config = _configService.Load();
 
             var newResults = new Dictionary<string, double>();
             var newTolerances = new Dictionary<string, CharacteristicTolerance>();
@@ -1805,17 +1842,71 @@ namespace SelectML.Client.ViewModels
 
                     string nominalPart = FormatValue(tol.Nominal);
                     string modifiedName;
-                    if (string.IsNullOrEmpty(symbol))
+
+                    if (NameModifierMode == "Custom")
                     {
-                        modifiedName = string.IsNullOrEmpty(toleranceStr) ? nominalPart : $"{nominalPart} {toleranceStr}";
-                    }
-                    else if (isBefore)
-                    {
-                        modifiedName = string.IsNullOrEmpty(toleranceStr) ? $"{symbol}{nominalPart}" : $"{symbol}{nominalPart} {toleranceStr}";
+                        string customFormat = config.CustomNameModifierFormat ?? "{N,2,A} {T,3,A}";
+                        
+                        // Process Nominal
+                        customFormat = Regex.Replace(customFormat, @"\{N,(\d+),([AT])\}", match =>
+                        {
+                            int dec = int.Parse(match.Groups[1].Value);
+                            string mode = match.Groups[2].Value == "T" ? "Truncate" : "Round";
+                            string val = ApplyDecimals(tol.Nominal, dec, mode);
+                            if (string.IsNullOrEmpty(symbol))
+                                return val;
+                            else if (isBefore)
+                                return $"{symbol}{val}";
+                            else
+                                return $"{val}{symbol}";
+                        });
+
+                        // Process Tolerance
+                        customFormat = Regex.Replace(customFormat, @"\{T,(\d+),([AT])\}", match =>
+                        {
+                            int dec = int.Parse(match.Groups[1].Value);
+                            string mode = match.Groups[2].Value == "T" ? "Truncate" : "Round";
+                            
+                            string cToleranceStr;
+                            if (Math.Abs(tol.LowerTolerance) < 0.00001 && Math.Abs(tol.UpperTolerance) < 0.00001)
+                                cToleranceStr = "";
+                            else if (Math.Abs(Math.Abs(tol.LowerTolerance) - Math.Abs(tol.UpperTolerance)) < 0.00001)
+                                cToleranceStr = $"±{ApplyDecimals(Math.Abs(tol.UpperTolerance), dec, mode)}";
+                            else if (Math.Abs(tol.LowerTolerance) < 0.00001)
+                            {
+                                string sign = tol.UpperTolerance >= 0 ? "+" : "";
+                                cToleranceStr = $"{sign}{ApplyDecimals(tol.UpperTolerance, dec, mode)}";
+                            }
+                            else if (Math.Abs(tol.UpperTolerance) < 0.00001)
+                            {
+                                string sign = tol.LowerTolerance >= 0 ? "+" : "";
+                                cToleranceStr = $"{sign}{ApplyDecimals(tol.LowerTolerance, dec, mode)}";
+                            }
+                            else
+                            {
+                                string upperSign = tol.UpperTolerance >= 0 ? "+" : "";
+                                string lowerSign = tol.LowerTolerance >= 0 ? "+" : "";
+                                cToleranceStr = $"{upperSign}{ApplyDecimals(tol.UpperTolerance, dec, mode)} {lowerSign}{ApplyDecimals(tol.LowerTolerance, dec, mode)}";
+                            }
+                            return cToleranceStr;
+                        });
+
+                        modifiedName = customFormat.Trim();
                     }
                     else
                     {
-                        modifiedName = string.IsNullOrEmpty(toleranceStr) ? $"{nominalPart}{symbol}" : $"{nominalPart}{symbol} {toleranceStr}";
+                        if (string.IsNullOrEmpty(symbol))
+                        {
+                            modifiedName = string.IsNullOrEmpty(toleranceStr) ? nominalPart : $"{nominalPart} {toleranceStr}";
+                        }
+                        else if (isBefore)
+                        {
+                            modifiedName = string.IsNullOrEmpty(toleranceStr) ? $"{symbol}{nominalPart}" : $"{symbol}{nominalPart} {toleranceStr}";
+                        }
+                        else
+                        {
+                            modifiedName = string.IsNullOrEmpty(toleranceStr) ? $"{nominalPart}{symbol}" : $"{nominalPart}{symbol} {toleranceStr}";
+                        }
                     }
 
                     newResults[modifiedName] = value;
@@ -1829,6 +1920,20 @@ namespace SelectML.Client.ViewModels
 
             data.Results = newResults;
             data.Tolerances = newTolerances;
+        }
+
+        private string ApplyDecimals(double value, int decimals, string mode)
+        {
+            if (mode == "Truncate")
+            {
+                double multiplier = Math.Pow(10, decimals);
+                double truncated = Math.Truncate(value * multiplier) / multiplier;
+                return truncated.ToString($"F{decimals}", new System.Globalization.CultureInfo("pt-BR"));
+            }
+            else
+            {
+                return Math.Round(value, decimals).ToString($"F{decimals}", new System.Globalization.CultureInfo("pt-BR"));
+            }
         }
 
         private string GetCharacteristicSymbol(string name, out bool isBefore)
