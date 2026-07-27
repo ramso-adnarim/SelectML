@@ -204,9 +204,18 @@ namespace SelectML.Client.ViewModels
                 {
                     _isDarkMode = value;
                     OnPropertyChanged();
-                    // Update Settings
-                    Properties.Settings.Default.IsDarkMode = value;
-                    Properties.Settings.Default.Save();
+
+                    try
+                    {
+                        var config = _configService.Load();
+                        config.IsDarkMode = value;
+                        _configService.Save(config);
+                    }
+                    catch (Exception ex)
+                    {
+                        Log.Error(ex, "Failed to save IsDarkMode configuration");
+                    }
+
                     // Apply Theme
                     if (System.Windows.Application.Current is App app)
                     {
@@ -769,6 +778,9 @@ namespace SelectML.Client.ViewModels
 
             // Initialize Database Service
             _databaseService = new DatabaseService(config.ConnectionString);
+
+            _isDarkMode = config.IsDarkMode;
+            OnPropertyChanged(nameof(IsDarkMode));
 
             _currentSerialFeatureName = config.LastSerialFeatureName;
 

@@ -35,9 +35,10 @@ namespace SelectML.Client
             var mainWindow = new MainWindow();
             this.MainWindow = mainWindow;
 
-            // Restore theme from settings
-            bool isDark = SelectML.Client.Properties.Settings.Default.IsDarkMode;
-            SetTheme(isDark);
+            // Restore theme from AppConfig
+            var configService = new SelectML.Client.Services.ConfigService();
+            var config = configService.Load();
+            SetTheme(config.IsDarkMode);
 
             mainWindow.Show();
         }

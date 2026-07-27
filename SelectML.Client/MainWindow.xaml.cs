@@ -109,23 +109,34 @@ namespace SelectML.Client
         {
             try
             {
-                var settings = Properties.Settings.Default;
+                var configService = new SelectML.Client.Services.ConfigService();
+                var config = configService.Load();
 
-                // Only restore if valid values exist (e.g. not defaults if default is 0 or -1, but here defaults are set in .settings)
-                // We check if values are within virtual screen bounds to avoid off-screen window
-                if (settings.WindowTop >= SystemParameters.VirtualScreenTop &&
-                    settings.WindowLeft >= SystemParameters.VirtualScreenLeft)
+                if (!double.IsNaN(config.WindowTop) && !double.IsNaN(config.WindowLeft) &&
+                    config.WindowTop >= SystemParameters.VirtualScreenTop &&
+                    config.WindowLeft >= SystemParameters.VirtualScreenLeft &&
+                    config.WindowTop + 50 <= SystemParameters.VirtualScreenTop + SystemParameters.VirtualScreenHeight &&
+                    config.WindowLeft + 50 <= SystemParameters.VirtualScreenLeft + SystemParameters.VirtualScreenWidth)
                 {
-                    this.Top = settings.WindowTop;
-                    this.Left = settings.WindowLeft;
-                    this.Height = settings.WindowHeight;
-                    this.Width = settings.WindowWidth;
-                    this.WindowState = settings.WindowState;
+                    this.Top = config.WindowTop;
+                    this.Left = config.WindowLeft;
+                }
+
+                if (config.WindowHeight > 200) this.Height = config.WindowHeight;
+                if (config.WindowWidth > 300) this.Width = config.WindowWidth;
+
+                if (config.WindowState == (int)WindowState.Maximized)
+                {
+                    this.WindowState = WindowState.Maximized;
+                }
+                else
+                {
+                    this.WindowState = WindowState.Normal;
                 }
             }
-            catch
+            catch (Exception ex)
             {
-                // Fallback to default center screen (configured in XAML usually, or let OS decide)
+                System.Diagnostics.Debug.WriteLine($"Error restoring window placement: {ex.Message}");
             }
         }
 
@@ -148,29 +159,30 @@ namespace SelectML.Client
 
             try
             {
-                var settings = Properties.Settings.Default;
+                var configService = new SelectML.Client.Services.ConfigService();
+                var config = configService.Load();
 
                 if (this.WindowState == WindowState.Normal)
                 {
-                    settings.WindowTop = this.Top;
-                    settings.WindowLeft = this.Left;
-                    settings.WindowHeight = this.Height;
-                    settings.WindowWidth = this.Width;
+                    config.WindowTop = this.Top;
+                    config.WindowLeft = this.Left;
+                    config.WindowHeight = this.Height;
+                    config.WindowWidth = this.Width;
                 }
-                else
+                else if (this.RestoreBounds != Rect.Empty)
                 {
-                    settings.WindowTop = this.RestoreBounds.Top;
-                    settings.WindowLeft = this.RestoreBounds.Left;
-                    settings.WindowHeight = this.RestoreBounds.Height;
-                    settings.WindowWidth = this.RestoreBounds.Width;
+                    config.WindowTop = this.RestoreBounds.Top;
+                    config.WindowLeft = this.RestoreBounds.Left;
+                    config.WindowHeight = this.RestoreBounds.Height;
+                    config.WindowWidth = this.RestoreBounds.Width;
                 }
 
-                settings.WindowState = this.WindowState;
-                settings.Save();
+                config.WindowState = (int)this.WindowState;
+                configService.Save(config);
             }
-            catch
+            catch (Exception ex)
             {
-                // Ignore errors during save on exit
+                System.Diagnostics.Debug.WriteLine($"Error saving window placement: {ex.Message}");
             }
 
             base.OnClosing(e);
