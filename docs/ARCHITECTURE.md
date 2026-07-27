@@ -1,10 +1,10 @@
 # Documentação de Arquitetura SelectML
 
-Este documento serve como a "Fonte da Verdade" técnica para o projeto SelectML. Destina-se à equipe de engenharia e manutenção, detalhando decisões de arquitetura, fluxo de dados e integrações na versão V1.2.4.
+Este documento serve como a "Fonte da Verdade" técnica para o projeto SelectML. Destina-se à equipe de engenharia e manutenção, detalhando decisões de arquitetura, fluxo de dados e integrações na versão V1.2.4.1.
 
 ## 1. Diagrama de Componentes (Híbrido)
 
-A arquitetura V1.2.4 suporta entrada dupla (Arquivos via Watcher e Serial via PortService), com plugins para formatos CSV, JSON e PDF.
+A arquitetura V1.2.4.1 suporta entrada dupla (Arquivos via Watcher e Serial via PortService), com plugins para formatos CSV, JSON e PDF.
 
 ```mermaid
 graph TD

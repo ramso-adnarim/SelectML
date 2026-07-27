@@ -313,6 +313,8 @@ namespace SelectML.Client.ViewModels
                     {
                         Log.Error(ex, "Failed to save NameModifierMode configuration");
                     }
+
+                    ReapplyNameModifierToCurrentResults();
                 }
             }
         }
@@ -717,6 +719,7 @@ namespace SelectML.Client.ViewModels
             var win = new Views.NameModifierConfigWindow();
             win.Owner = System.Windows.Application.Current.MainWindow;
             win.ShowDialog();
+            ReapplyNameModifierToCurrentResults();
         }
 
         private void LoadParsers()
@@ -864,7 +867,7 @@ namespace SelectML.Client.ViewModels
                 // Build a connection string to master or the typed DB
                 var builder = new Microsoft.Data.SqlClient.SqlConnectionStringBuilder();
                 builder.DataSource = !string.IsNullOrEmpty(DbServer) ? DbServer : @"localhost\MLSQLExpress";
-                builder.InitialCatalog = !string.IsNullOrEmpty(DbName) ? DbName : "master";
+                builder.InitialCatalog = "master";
                 builder.TrustServerCertificate = true;
                 builder.Encrypt = false;
 
@@ -1154,8 +1157,6 @@ namespace SelectML.Client.ViewModels
 
                  if (data != null && data.IsValid)
                  {
-                     ApplyNameModifier(data);
-
                      // Fase 6: Arquivar Imediatamente (Bypass de segurança)
                      try
                      {
@@ -1186,8 +1187,6 @@ namespace SelectML.Client.ViewModels
                          
                          // Manually set validation state since we suppressed the automatic check
                          IsBatchNumberValid = !string.IsNullOrEmpty(DetectedStationName) || !string.IsNullOrEmpty(_expectedPartName);
-                         // If no batch number in file (empty), we might consider it valid initially or invalid? 
-                         // Logic says: if empty, valid (until typed).
                          if (string.IsNullOrWhiteSpace(data.BatchNumber)) IsBatchNumberValid = true;
 
                          var expectedFeatures = await _databaseService.GetFeaturesForRunAsync(data.BatchNumber);
@@ -1203,32 +1202,30 @@ namespace SelectML.Client.ViewModels
 
                           MeasuredResults.Clear();
                           bool hasUnrecognized = false;
+                          var config = _configService.Load();
+                          string customFormat = config.CustomNameModifierFormat ?? "{N,2,A} {T,3,A}";
+
                           foreach (var item in data.Results)
                           {
-                              // Initial Check: If KnownFeatures has items, check existence. 
-                              // If KnownFeatures is empty (no features defined for this run in DB), decide policy.
-                              // STRICT policy: If DB returns empty rules, maybe everything is unrecognized? 
-                              // OR if DB returns "No Rules", maybe everything is valid?
-                              // Usually if there are NO Expected Features, the CSV might be creating new ones?
-                              // But prompt implies we validate against DB.
-                              // Let's assume: If expectedFeatures is EMPTY, we cannot validate, so IsRecognized = true?
-                              // User complaint: "received file with characteristic NOT IN DB... line should be red".
-                              // This implies Strict.
-                              
+                              string originalName = item.Key;
+                              data.Tolerances.TryGetValue(originalName, out var tol);
+                              string displayName = FormatModifiedName(originalName, tol, NameModifierMode, customFormat);
+
                               bool isRecognized = true;
                               if (expectedFeatures != null && expectedFeatures.Any())
                               {
-                                  isRecognized = expectedFeatures.Contains(item.Key, StringComparer.OrdinalIgnoreCase);
+                                  isRecognized = expectedFeatures.Contains(displayName, StringComparer.OrdinalIgnoreCase) ||
+                                                 expectedFeatures.Contains(originalName, StringComparer.OrdinalIgnoreCase);
                               }
-                              // If expectedFeatures is null/empty, we default to True (valid) unless logic dictates otherwise.
                              
                               if (!isRecognized) hasUnrecognized = true;
 
                               var newItem = new ResultItem
                               {
-                                  Characteristic = item.Key,
+                                  OriginalCharacteristic = originalName,
+                                  Characteristic = displayName,
                                   Value = item.Value,
-                                  IsRecognized = isRecognized, // Set initial state
+                                  IsRecognized = isRecognized,
                                   IsEditable = true
                               };
                               newItem.PropertyChanged += ResultItem_PropertyChanged;
@@ -1796,130 +1793,135 @@ namespace SelectML.Client.ViewModels
              }
         }
 
-        private void ApplyNameModifier(MeasurementData data)
+        private void ReapplyNameModifierToCurrentResults()
         {
-            if (NameModifierMode == "Disabled" || data == null) return;
+            if (MeasuredResults == null || MeasuredResults.Count == 0) return;
 
             var config = _configService.Load();
+            string customFormat = config.CustomNameModifierFormat ?? "{N,2,A} {T,3,A}";
 
-            var newResults = new Dictionary<string, double>();
-            var newTolerances = new Dictionary<string, CharacteristicTolerance>();
-
-            foreach (var kv in data.Results)
+            foreach (var item in MeasuredResults)
             {
-                string originalName = kv.Key;
-                double value = kv.Value;
+                string originalName = item.OriginalCharacteristic ?? item.Characteristic;
 
-                if (data.Tolerances.TryGetValue(originalName, out var tol))
+                CharacteristicTolerance tol = null;
+                if (_currentData != null && _currentData.Tolerances != null)
                 {
-                    string symbol = GetCharacteristicSymbol(originalName, out bool isBefore);
+                    _currentData.Tolerances.TryGetValue(originalName, out tol);
+                }
 
-                    string toleranceStr;
+                string newName = FormatModifiedName(originalName, tol, NameModifierMode, customFormat);
+                if (item.Characteristic != newName)
+                {
+                    item.Characteristic = newName;
+                }
+            }
+
+            TriggerValidation();
+        }
+
+        private string FormatModifiedName(string originalName, CharacteristicTolerance tol, string mode, string customFormatPattern)
+        {
+            if (mode == "Disabled" || tol == null || string.IsNullOrEmpty(originalName))
+            {
+                return originalName;
+            }
+
+            string symbol = GetCharacteristicSymbol(originalName, out bool isBefore);
+
+            string toleranceStr;
+            if (Math.Abs(tol.LowerTolerance) < 0.00001 && Math.Abs(tol.UpperTolerance) < 0.00001)
+            {
+                toleranceStr = "";
+            }
+            else if (Math.Abs(Math.Abs(tol.LowerTolerance) - Math.Abs(tol.UpperTolerance)) < 0.00001)
+            {
+                toleranceStr = $"±{FormatToleranceValue(Math.Abs(tol.UpperTolerance))}";
+            }
+            else if (Math.Abs(tol.LowerTolerance) < 0.00001)
+            {
+                string sign = tol.UpperTolerance >= 0 ? "+" : "";
+                toleranceStr = $"{sign}{FormatToleranceValue(tol.UpperTolerance)}";
+            }
+            else if (Math.Abs(tol.UpperTolerance) < 0.00001)
+            {
+                string sign = tol.LowerTolerance >= 0 ? "+" : "";
+                toleranceStr = $"{sign}{FormatToleranceValue(tol.LowerTolerance)}";
+            }
+            else
+            {
+                string upperSign = tol.UpperTolerance >= 0 ? "+" : "";
+                string lowerSign = tol.LowerTolerance >= 0 ? "+" : "";
+                toleranceStr = $"{upperSign}{FormatToleranceValue(tol.UpperTolerance)} {lowerSign}{FormatToleranceValue(tol.LowerTolerance)}";
+            }
+
+            string nominalPart = FormatValue(tol.Nominal);
+
+            if (mode == "Custom")
+            {
+                string pattern = !string.IsNullOrWhiteSpace(customFormatPattern) ? customFormatPattern : "{N,2,A} {T,3,A}";
+
+                // Process Nominal
+                pattern = Regex.Replace(pattern, @"\{N,(\d+),([AT])\}", match =>
+                {
+                    int dec = int.Parse(match.Groups[1].Value);
+                    string m = match.Groups[2].Value == "T" ? "Truncate" : "Round";
+                    string val = ApplyDecimals(tol.Nominal, dec, m);
+                    if (string.IsNullOrEmpty(symbol))
+                        return val;
+                    else if (isBefore)
+                        return $"{symbol}{val}";
+                    else
+                        return $"{val}{symbol}";
+                });
+
+                // Process Tolerance
+                pattern = Regex.Replace(pattern, @"\{T,(\d+),([AT])\}", match =>
+                {
+                    int dec = int.Parse(match.Groups[1].Value);
+                    string m = match.Groups[2].Value == "T" ? "Truncate" : "Round";
+
+                    string cToleranceStr;
                     if (Math.Abs(tol.LowerTolerance) < 0.00001 && Math.Abs(tol.UpperTolerance) < 0.00001)
-                    {
-                        toleranceStr = "";
-                    }
+                        cToleranceStr = "";
                     else if (Math.Abs(Math.Abs(tol.LowerTolerance) - Math.Abs(tol.UpperTolerance)) < 0.00001)
-                    {
-                        toleranceStr = $"±{FormatToleranceValue(Math.Abs(tol.UpperTolerance))}";
-                    }
+                        cToleranceStr = $"±{ApplyDecimals(Math.Abs(tol.UpperTolerance), dec, m)}";
                     else if (Math.Abs(tol.LowerTolerance) < 0.00001)
                     {
                         string sign = tol.UpperTolerance >= 0 ? "+" : "";
-                        toleranceStr = $"{sign}{FormatToleranceValue(tol.UpperTolerance)}";
+                        cToleranceStr = $"{sign}{ApplyDecimals(tol.UpperTolerance, dec, m)}";
                     }
                     else if (Math.Abs(tol.UpperTolerance) < 0.00001)
                     {
                         string sign = tol.LowerTolerance >= 0 ? "+" : "";
-                        toleranceStr = $"{sign}{FormatToleranceValue(tol.LowerTolerance)}";
+                        cToleranceStr = $"{sign}{ApplyDecimals(tol.LowerTolerance, dec, m)}";
                     }
                     else
                     {
                         string upperSign = tol.UpperTolerance >= 0 ? "+" : "";
                         string lowerSign = tol.LowerTolerance >= 0 ? "+" : "";
-                        toleranceStr = $"{upperSign}{FormatToleranceValue(tol.UpperTolerance)} {lowerSign}{FormatToleranceValue(tol.LowerTolerance)}";
+                        cToleranceStr = $"{upperSign}{ApplyDecimals(tol.UpperTolerance, dec, m)} {lowerSign}{ApplyDecimals(tol.LowerTolerance, dec, m)}";
                     }
+                    return cToleranceStr;
+                });
 
-                    string nominalPart = FormatValue(tol.Nominal);
-                    string modifiedName;
-
-                    if (NameModifierMode == "Custom")
-                    {
-                        string customFormat = config.CustomNameModifierFormat ?? "{N,2,A} {T,3,A}";
-                        
-                        // Process Nominal
-                        customFormat = Regex.Replace(customFormat, @"\{N,(\d+),([AT])\}", match =>
-                        {
-                            int dec = int.Parse(match.Groups[1].Value);
-                            string mode = match.Groups[2].Value == "T" ? "Truncate" : "Round";
-                            string val = ApplyDecimals(tol.Nominal, dec, mode);
-                            if (string.IsNullOrEmpty(symbol))
-                                return val;
-                            else if (isBefore)
-                                return $"{symbol}{val}";
-                            else
-                                return $"{val}{symbol}";
-                        });
-
-                        // Process Tolerance
-                        customFormat = Regex.Replace(customFormat, @"\{T,(\d+),([AT])\}", match =>
-                        {
-                            int dec = int.Parse(match.Groups[1].Value);
-                            string mode = match.Groups[2].Value == "T" ? "Truncate" : "Round";
-                            
-                            string cToleranceStr;
-                            if (Math.Abs(tol.LowerTolerance) < 0.00001 && Math.Abs(tol.UpperTolerance) < 0.00001)
-                                cToleranceStr = "";
-                            else if (Math.Abs(Math.Abs(tol.LowerTolerance) - Math.Abs(tol.UpperTolerance)) < 0.00001)
-                                cToleranceStr = $"±{ApplyDecimals(Math.Abs(tol.UpperTolerance), dec, mode)}";
-                            else if (Math.Abs(tol.LowerTolerance) < 0.00001)
-                            {
-                                string sign = tol.UpperTolerance >= 0 ? "+" : "";
-                                cToleranceStr = $"{sign}{ApplyDecimals(tol.UpperTolerance, dec, mode)}";
-                            }
-                            else if (Math.Abs(tol.UpperTolerance) < 0.00001)
-                            {
-                                string sign = tol.LowerTolerance >= 0 ? "+" : "";
-                                cToleranceStr = $"{sign}{ApplyDecimals(tol.LowerTolerance, dec, mode)}";
-                            }
-                            else
-                            {
-                                string upperSign = tol.UpperTolerance >= 0 ? "+" : "";
-                                string lowerSign = tol.LowerTolerance >= 0 ? "+" : "";
-                                cToleranceStr = $"{upperSign}{ApplyDecimals(tol.UpperTolerance, dec, mode)} {lowerSign}{ApplyDecimals(tol.LowerTolerance, dec, mode)}";
-                            }
-                            return cToleranceStr;
-                        });
-
-                        modifiedName = customFormat.Trim();
-                    }
-                    else
-                    {
-                        if (string.IsNullOrEmpty(symbol))
-                        {
-                            modifiedName = string.IsNullOrEmpty(toleranceStr) ? nominalPart : $"{nominalPart} {toleranceStr}";
-                        }
-                        else if (isBefore)
-                        {
-                            modifiedName = string.IsNullOrEmpty(toleranceStr) ? $"{symbol}{nominalPart}" : $"{symbol}{nominalPart} {toleranceStr}";
-                        }
-                        else
-                        {
-                            modifiedName = string.IsNullOrEmpty(toleranceStr) ? $"{nominalPart}{symbol}" : $"{nominalPart}{symbol} {toleranceStr}";
-                        }
-                    }
-
-                    newResults[modifiedName] = value;
-                    newTolerances[modifiedName] = tol;
+                return pattern.Trim();
+            }
+            else
+            {
+                if (string.IsNullOrEmpty(symbol))
+                {
+                    return string.IsNullOrEmpty(toleranceStr) ? nominalPart : $"{nominalPart} {toleranceStr}";
+                }
+                else if (isBefore)
+                {
+                    return string.IsNullOrEmpty(toleranceStr) ? $"{symbol}{nominalPart}" : $"{symbol}{nominalPart} {toleranceStr}";
                 }
                 else
                 {
-                    newResults[originalName] = value;
+                    return string.IsNullOrEmpty(toleranceStr) ? $"{nominalPart}{symbol}" : $"{nominalPart}{symbol} {toleranceStr}";
                 }
             }
-
-            data.Results = newResults;
-            data.Tolerances = newTolerances;
         }
 
         private string ApplyDecimals(double value, int decimals, string mode)

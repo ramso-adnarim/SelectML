@@ -8,11 +8,11 @@
 
 # Interface de monitoramento e entrega de arquivos de medição
 
-![Version](https://img.shields.io/badge/Version-1.2.4-blue)
+![Version](https://img.shields.io/badge/Version-1.2.4.1-blue)
 ![Build](https://img.shields.io/badge/Build-Passing-brightgreen)
 ![Platform](https://img.shields.io/badge/Platform-Windows_WPF-blueviolet)
 
-> **Versão 1.2.4**
+> **Versão 1.2.4.1**
 > Novidades:
 > - **Modificador de Nomes Parametrizado:** O sistema agora conta com um construtor de tags inteligente (ex: `{N,2,A}`) permitindo formatar valores nominais e tolerâncias com precisões independentes, além de inserir prefixos e sufixos de forma dinâmica, mantendo as simbologias (Ø, °) intactas ao valor numérico.
 > - **Syntax Highlighting e Proteção:** A interface de customização agora conta com validação em tempo real. Tags corretas ganham destaque visual (azul negrito), enquanto tags quebradas exibem alertas vermelhos bloqueando o salvamento.

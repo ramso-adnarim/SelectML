@@ -5,10 +5,17 @@ namespace SelectML.Client
 {
     public class ResultItem : INotifyPropertyChanged
     {
+        private string _originalCharacteristic;
         private string _characteristic;
         private double _value;
         private bool _isRecognized = true;
         private bool _isEditable = false;
+
+        public string OriginalCharacteristic
+        {
+            get => _originalCharacteristic ?? _characteristic;
+            set { _originalCharacteristic = value; OnPropertyChanged(); }
+        }
 
         public string Characteristic
         {
