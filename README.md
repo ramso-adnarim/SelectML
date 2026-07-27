@@ -8,19 +8,20 @@
 
 # Interface de monitoramento e entrega de arquivos de medição
 
-![Version](https://img.shields.io/badge/Version-1.2.6-blue)
+![Version](https://img.shields.io/badge/Version-1.2.7-blue)
 ![Build](https://img.shields.io/badge/Build-Passing-brightgreen)
 ![Platform](https://img.shields.io/badge/Platform-Windows_WPF-blueviolet)
 
-> **Versão 1.2.6**
+> **Versão 1.2.7**
 > Novidades:
-> - **Persistência Global de Configurações (%AppData%):** Armazenamento de configurações, credenciais e estados em diretório do usuário independente de versão, prevenindo perdas de dados em updates do Velopack.
-> - **Migração Automática de Dados Legados:** Algoritmo automático que detecta e resgata configurações de versões anteriores (`app-1.2.X`) na primeira inicialização da nova versão.
-> - **Persistência de Tema e Geometria da Janela:** Preservação contínua do tema selecionado (Claro/Escuro), dimensões, posição na tela e estado maximizado da janela.
-> - **Atualização Dinâmica do Modificador de Nomes:** Recálculo e atualização instantânea de todas as características exibidas na tabela ao alternar entre os modos (*Desativar*, *Ativar*, *Personalizado*) em tempo de execução.
-> - **Correção de Listagem SQL Server:** Conexão no catálogo `master` durante a listagem de bancos para prevenir erros de autenticação por banco inicial preenchido.
+> - **Persistência da Regra de Confirmação:** O estado da opção "Não perguntar novamente" (Enviar apenas reconhecidas / Enviar todas / Sempre perguntar) é salvo no `%AppData%` e mantido entre reinicializações.
+> - **Menu de Contexto no Botão Enviar:** Clique com o botão direito no botão "Enviar" para checar ou alterar a regra de envio direto pela interface.
+> - **Estilização Temática dos ContextMenus:** Padronização visual dos menus de contexto (DataGrid e Botão Enviar) respeitando dinamicamente as cores e contrastes do Modo Escuro e Modo Claro.
+> - **Foco Automático e Elevação de Janela:** Sobreposição temporária da janela sobre todos os programas do Windows ao receber e processar um novo arquivo.
+> - **Retorno Automático ao System Tray:** O aplicativo retorna automaticamente para a bandeja do sistema pós-envio caso tenha iniciado o processamento a partir do System Tray.
+> - **Geração de CSV Baseada na UI:** O arquivo CSV final é exportado estritamente baseado no que o usuário vê e edita na tela.
 > 
-> [Baixar última versão](https://github.com/ramso-adnarim/SelectML/releases/tag/v1.2.6) 
+> [Baixar última versão](https://github.com/ramso-adnarim/SelectML/releases/tag/v1.2.7) 
 
 ## 🗺️ Mapa do repositório
 

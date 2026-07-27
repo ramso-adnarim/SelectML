@@ -45,6 +45,9 @@ namespace SelectML.Client.Services
         public double WindowTop { get; set; } = double.NaN;
         public double WindowLeft { get; set; } = double.NaN;
         public int WindowState { get; set; } = 0; // 0 = Normal, 2 = Maximized
+
+        // Confirmation Action Persistence
+        public string SessionConfirmationAction { get; set; } = "None";
     }
 
     public class ConfigService
