@@ -8,16 +8,19 @@
 
 # Interface de monitoramento e entrega de arquivos de medição
 
-![Version](https://img.shields.io/badge/Version-1.2.5-blue)
+![Version](https://img.shields.io/badge/Version-1.2.6-blue)
 ![Build](https://img.shields.io/badge/Build-Passing-brightgreen)
 ![Platform](https://img.shields.io/badge/Platform-Windows_WPF-blueviolet)
 
-> **Versão 1.2.5**
+> **Versão 1.2.6**
 > Novidades:
-> - **Atualização Dinâmica do Modificador de Nomes:** Recálculo e atualização instantânea de todas as características exibidas na tabela principal ao alternar o modo do modificador no menu superior (*Desativar*, *Ativar*, *Personalizado*) em tempo de execução sem perda de dados.
-> - **Correção de Listagem SQL Server:** Forçado o catálogo `master` no barramento de busca de bancos de dados para prevenir falhas de login por divergência de base preenchida.
+> - **Persistência Global de Configurações (%AppData%):** Armazenamento de configurações, credenciais e estados em diretório do usuário independente de versão, prevenindo perdas de dados em updates do Velopack.
+> - **Migração Automática de Dados Legados:** Algoritmo automático que detecta e resgata configurações de versões anteriores (`app-1.2.X`) na primeira inicialização da nova versão.
+> - **Persistência de Tema e Geometria da Janela:** Preservação contínua do tema selecionado (Claro/Escuro), dimensões, posição na tela e estado maximizado da janela.
+> - **Atualização Dinâmica do Modificador de Nomes:** Recálculo e atualização instantânea de todas as características exibidas na tabela ao alternar entre os modos (*Desativar*, *Ativar*, *Personalizado*) em tempo de execução.
+> - **Correção de Listagem SQL Server:** Conexão no catálogo `master` durante a listagem de bancos para prevenir erros de autenticação por banco inicial preenchido.
 > 
-> [Baixar última versão](https://github.com/ramso-adnarim/SelectML/releases/tag/v1.2.5) 
+> [Baixar última versão](https://github.com/ramso-adnarim/SelectML/releases/tag/v1.2.6) 
 
 ## 🗺️ Mapa do repositório
 

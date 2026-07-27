@@ -1,4 +1,4 @@
-# Mapa de Navegação da Base de Código (SelectML) - V1.2.4.1
+# Mapa de Navegação da Base de Código (SelectML) - V1.2.6
 
 > **Nota para IAs:** Este documento serve como um índice rápido ("Context Window Efficiency") para navegação no projeto. Consulte este mapa antes de perguntar "Onde está a lógica de X?".
 
