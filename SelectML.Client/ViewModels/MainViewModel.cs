@@ -1658,6 +1658,12 @@ namespace SelectML.Client.ViewModels
             IsPendingAction = false;
             UpdateStatus("Operação cancelada. Monitoramento retomado.");
             ResetUI();
+
+            if (WasInTrayBeforeProcessing)
+            {
+                WasInTrayBeforeProcessing = false;
+                RequestMinimizeToTray?.Invoke();
+            }
         }
 
         private void ExecuteRemoveRow(object obj)
