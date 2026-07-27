@@ -145,9 +145,6 @@ namespace SelectML.Client.ViewModels
             LoadParsers();
             LoadConfiguration();
 
-            // Initialize Theme
-            IsDarkMode = Properties.Settings.Default.IsDarkMode;
-
             // Trigger Cleanup on Startup
             PerformCleanup();
 

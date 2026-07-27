@@ -31,15 +31,13 @@ namespace SelectML.Client
 
             base.OnStartup(e);
 
-            // Instantiate MainWindow manually to ensure theme is applied before Show
-            var mainWindow = new MainWindow();
-            this.MainWindow = mainWindow;
-
-            // Restore theme from AppConfig
+            // Restore theme from AppConfig BEFORE creating MainWindow
             var configService = new SelectML.Client.Services.ConfigService();
             var config = configService.Load();
             SetTheme(config.IsDarkMode);
 
+            var mainWindow = new MainWindow();
+            this.MainWindow = mainWindow;
             mainWindow.Show();
         }
 
