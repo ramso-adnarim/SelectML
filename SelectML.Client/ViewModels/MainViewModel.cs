@@ -1254,12 +1254,11 @@ namespace SelectML.Client.ViewModels
                               {
                                  if (_sessionConfirmationAction == ConfirmationAction.SendAll)
                                  {
-                                     await GenerateOutputCsv(data);
+                                     await GenerateOutputCsv(BuildMeasurementDataFromUI(recognizedOnly: false));
                                  }
                                  else if (_sessionConfirmationAction == ConfirmationAction.SendRecognized)
                                  {
-                                     var filtered = GetFilteredData(data);
-                                     await GenerateOutputCsv(filtered);
+                                     await GenerateOutputCsv(BuildMeasurementDataFromUI(recognizedOnly: true));
                                  }
                                  else
                                  {
@@ -1271,7 +1270,7 @@ namespace SelectML.Client.ViewModels
                              }
                              else
                              {
-                                 await GenerateOutputCsv(data);
+                                 await GenerateOutputCsv(BuildMeasurementDataFromUI(recognizedOnly: false));
                              }
                          }
                          else
@@ -1428,40 +1427,48 @@ namespace SelectML.Client.ViewModels
             return IsPendingAction && !string.IsNullOrWhiteSpace(PartName) && !string.IsNullOrWhiteSpace(BatchNumber);
         }
 
+        private MeasurementData BuildMeasurementDataFromUI(bool recognizedOnly = false)
+        {
+            var items = MeasuredResults.AsEnumerable();
+            if (recognizedOnly)
+            {
+                items = items.Where(r => r.IsRecognized);
+            }
+
+            var dict = new Dictionary<string, double>();
+            foreach (var item in items)
+            {
+                string key = item.Characteristic?.Trim() ?? string.Empty;
+                if (!string.IsNullOrEmpty(key) && !dict.ContainsKey(key))
+                {
+                    dict[key] = item.Value;
+                }
+            }
+
+            return new MeasurementData
+            {
+                PartName = PartName?.Trim() ?? string.Empty,
+                BatchNumber = BatchNumber?.Trim() ?? string.Empty,
+                MeasureDate = _currentData?.MeasureDate ?? DateTime.Now,
+                Results = dict
+            };
+        }
+
         private async void ExecuteSend(object obj)
         {
-            // Always construct data from UI (MeasuredResults) to ensure manual edits/removals are respected.
-            // If _currentData exists (File Mode), we preserve its metadata but override results.
-            
             if (string.IsNullOrWhiteSpace(PartName) || string.IsNullOrWhiteSpace(BatchNumber)) return;
 
-            MeasurementData dataToSend = new MeasurementData
-            {
-                PartName = PartName,
-                BatchNumber = BatchNumber,
-                // Inherit date from file if available, else Now
-                MeasureDate = _currentData?.MeasureDate ?? DateTime.Now
-            };
-
-            try
-            {
-                dataToSend.Results = MeasuredResults.ToDictionary(k => k.Characteristic, v => v.Value);
-            }
-            catch (ArgumentException)
+            // Check for duplicates in UI
+            if (MeasuredResults.Any(r => r.HasDuplicateName))
             {
                 StatusMessage = "Erro: Nomes de características duplicados detectados.";
                 System.Windows.MessageBox.Show("Existem características com o mesmo nome na lista. Corrija antes de enviar.", "Erro de Validação", MessageBoxButton.OK, MessageBoxImage.Warning);
                 return;
             }
-            catch (Exception ex)
-            {
-                StatusMessage = $"Erro ao preparar dados: {ex.Message}";
-                Log.Error(ex, "Error creating dictionary for send");
-                return;
-            }
 
+            bool recognizedOnly = false;
 
-            // Phase 5: Validation Check
+            // Validation Check for unrecognized items
             if (MeasuredResults.Any(r => !r.IsRecognized))
             {
                 var action = _sessionConfirmationAction;
@@ -1487,10 +1494,11 @@ namespace SelectML.Client.ViewModels
 
                 if (action == ConfirmationAction.SendRecognized)
                 {
-                    dataToSend = GetFilteredData(_currentData);
+                    recognizedOnly = true;
                 }
-                // If action is SendAll, use original _currentData
             }
+
+            MeasurementData dataToSend = BuildMeasurementDataFromUI(recognizedOnly);
 
             if (string.IsNullOrEmpty(DetectedStationName) || DetectedStationName == "Não identificada")
             {
@@ -1523,20 +1531,6 @@ namespace SelectML.Client.ViewModels
             IsPendingAction = false;
             Log.Information("User manually approved data for Batch {Batch}", dataToSend.BatchNumber);
             await GenerateOutputCsv(dataToSend);
-        }
-
-        private MeasurementData GetFilteredData(MeasurementData source)
-        {
-            var recognizedKeys = MeasuredResults.Where(r => r.IsRecognized).Select(r => r.Characteristic).ToHashSet();
-            var filteredResults = source.Results.Where(kv => recognizedKeys.Contains(kv.Key)).ToDictionary(kv => kv.Key, kv => kv.Value);
-
-            return new MeasurementData
-            {
-                PartName = source.PartName,
-                BatchNumber = source.BatchNumber,
-                MeasureDate = source.MeasureDate,
-                Results = filteredResults
-            };
         }
 
         private async Task GenerateOutputCsv(MeasurementData data)
