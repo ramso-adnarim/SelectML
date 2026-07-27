@@ -365,3 +365,4 @@ FodyWeavers.xsd
 # Deployment and packaging (local only)
 docs/DEPLOYMENT_VELOPACK.md
 scripts/
+!scripts/Test-SqlServerConnection.ps1
