@@ -61,6 +61,9 @@ namespace SelectML.Client.ViewModels
         public event Action<string, string, string> RequestShowBalloonTip;
         public event Action RequestRestoreWindow;
         public event Action RequestMinimizeWindow;
+        public event Action RequestMinimizeToTray;
+
+        public bool WasInTrayBeforeProcessing { get; set; }
 
         // DB connection monitoring
         private string _dbConnectionStatus = "Inactive";
@@ -128,6 +131,13 @@ namespace SelectML.Client.ViewModels
             SendCommand = new RelayCommand(ExecuteSend, CanExecuteAction);
             CancelCommand = new RelayCommand(ExecuteCancel, CanExecuteAction);
             RemoveRowCommand = new RelayCommand(ExecuteRemoveRow);
+            SetConfirmationActionCommand = new RelayCommand(obj =>
+            {
+                if (obj is string s && Enum.TryParse<ConfirmationAction>(s, out var action))
+                {
+                    SetConfirmationAction(action);
+                }
+            });
 
             // Window Commands
             MinimizeToTrayCommand = new RelayCommand(o => RequestMinimizeWindow?.Invoke());
@@ -264,6 +274,33 @@ namespace SelectML.Client.ViewModels
         {
             get => _isAutoMode;
             set { _isAutoMode = value; OnPropertyChanged(); }
+        }
+
+        // --- Confirmation Action Persistence & Context Menu Properties ---
+        public bool IsConfirmationRecognizedOnly => _sessionConfirmationAction == ConfirmationAction.SendRecognized;
+        public bool IsConfirmationSendAll => _sessionConfirmationAction == ConfirmationAction.SendAll;
+        public bool IsConfirmationAskAlways => _sessionConfirmationAction == ConfirmationAction.None;
+
+        public RelayCommand SetConfirmationActionCommand { get; }
+
+        public void SetConfirmationAction(ConfirmationAction action)
+        {
+            _sessionConfirmationAction = action;
+            OnPropertyChanged(nameof(IsConfirmationRecognizedOnly));
+            OnPropertyChanged(nameof(IsConfirmationSendAll));
+            OnPropertyChanged(nameof(IsConfirmationAskAlways));
+
+            try
+            {
+                var config = _configService.Load();
+                config.SessionConfirmationAction = action.ToString();
+                _configService.Save(config);
+                Log.Information("SessionConfirmationAction updated and saved as {Action}", action);
+            }
+            catch (Exception ex)
+            {
+                Log.Error(ex, "Failed to save SessionConfirmationAction");
+            }
         }
 
         private bool _isSerialConnected;
@@ -779,6 +816,18 @@ namespace SelectML.Client.ViewModels
             _isDarkMode = config.IsDarkMode;
             OnPropertyChanged(nameof(IsDarkMode));
 
+            if (Enum.TryParse<ConfirmationAction>(config.SessionConfirmationAction, out var parsedAction))
+            {
+                _sessionConfirmationAction = parsedAction;
+            }
+            else
+            {
+                _sessionConfirmationAction = ConfirmationAction.None;
+            }
+            OnPropertyChanged(nameof(IsConfirmationRecognizedOnly));
+            OnPropertyChanged(nameof(IsConfirmationSendAll));
+            OnPropertyChanged(nameof(IsConfirmationAskAlways));
+
             _currentSerialFeatureName = config.LastSerialFeatureName;
 
             if (!string.IsNullOrEmpty(config.NameModifierMode))
@@ -1180,6 +1229,14 @@ namespace SelectML.Client.ViewModels
 
                      await System.Windows.Application.Current.Dispatcher.InvokeAsync(async () =>
                      {
+                         bool wasInTray = false;
+                         if (System.Windows.Application.Current != null && System.Windows.Application.Current.MainWindow != null)
+                         {
+                             var win = System.Windows.Application.Current.MainWindow;
+                             wasInTray = !win.IsVisible || win.WindowState == System.Windows.WindowState.Minimized;
+                         }
+                         WasInTrayBeforeProcessing = wasInTray;
+
                          _isProcessingFile = true; // Protege contra perda de dados Seriais durante processamento (Modo Exclusivo)
                          IsPendingAction = true; // Garante travamento da UI
                          _currentData = data;
@@ -1483,7 +1540,7 @@ namespace SelectML.Client.ViewModels
 
                     if (dlg.IsDontAskAgainChecked && action != ConfirmationAction.Cancel)
                     {
-                        _sessionConfirmationAction = action;
+                        SetConfirmationAction(action);
                     }
                 }
 
@@ -1531,6 +1588,12 @@ namespace SelectML.Client.ViewModels
             IsPendingAction = false;
             Log.Information("User manually approved data for Batch {Batch}", dataToSend.BatchNumber);
             await GenerateOutputCsv(dataToSend);
+
+            if (WasInTrayBeforeProcessing)
+            {
+                WasInTrayBeforeProcessing = false;
+                RequestMinimizeToTray?.Invoke();
+            }
         }
 
         private async Task GenerateOutputCsv(MeasurementData data)

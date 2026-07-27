@@ -53,12 +53,23 @@ namespace SelectML.Client
             vm.RequestRestoreWindow += () =>
             {
                 Show();
-                WindowState = WindowState.Normal;
+                if (WindowState == WindowState.Minimized)
+                {
+                    WindowState = WindowState.Normal;
+                }
+                Topmost = true;
                 Activate();
+                Focus();
+                Topmost = false;
             };
             vm.RequestMinimizeWindow += () =>
             {
                 WindowState = WindowState.Minimized;
+            };
+            vm.RequestMinimizeToTray += () =>
+            {
+                WindowState = WindowState.Minimized;
+                Hide();
             };
 
             // Load window placement from settings

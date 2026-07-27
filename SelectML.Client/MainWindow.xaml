@@ -791,7 +791,29 @@
                     Style="{StaticResource DangerButton}" Margin="0,0,10,0"/>
             
             <Button Command="{Binding SendCommand}" Content="Enviar" 
-                    Style="{StaticResource PrimaryButton}"/>
+                    Style="{StaticResource PrimaryButton}"
+                    ToolTip="Clique esquerdo para Enviar. Clique direito para opções de preferências de envio.">
+                <Button.ContextMenu>
+                    <ContextMenu>
+                        <MenuItem Header="Enviar apenas reconhecidas (Sempre)" 
+                                  IsCheckable="True" 
+                                  IsChecked="{Binding IsConfirmationRecognizedOnly, Mode=OneWay}"
+                                  Command="{Binding SetConfirmationActionCommand}"
+                                  CommandParameter="SendRecognized"/>
+                        <MenuItem Header="Enviar todas as características (Sempre)" 
+                                  IsCheckable="True" 
+                                  IsChecked="{Binding IsConfirmationSendAll, Mode=OneWay}"
+                                  Command="{Binding SetConfirmationActionCommand}"
+                                  CommandParameter="SendAll"/>
+                        <Separator/>
+                        <MenuItem Header="Sempre perguntar ao enviar" 
+                                  IsCheckable="True" 
+                                  IsChecked="{Binding IsConfirmationAskAlways, Mode=OneWay}"
+                                  Command="{Binding SetConfirmationActionCommand}"
+                                  CommandParameter="None"/>
+                    </ContextMenu>
+                </Button.ContextMenu>
+            </Button>
         </StackPanel>
 
         <!-- 5. Status Bar -->

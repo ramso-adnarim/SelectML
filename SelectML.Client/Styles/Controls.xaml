@@ -550,6 +550,109 @@
         </Setter>
     </Style>
 
+    <!-- =================================================================== -->
+    <!-- CONTEXT MENU & MENU ITEMS -->
+    <!-- =================================================================== -->
+    <Style TargetType="ContextMenu">
+        <Setter Property="Background" Value="{DynamicResource Brush.Surface.Card}"/>
+        <Setter Property="Foreground" Value="{DynamicResource Brush.Text.Primary}"/>
+        <Setter Property="BorderBrush" Value="{DynamicResource Brush.Border}"/>
+        <Setter Property="BorderThickness" Value="1"/>
+        <Setter Property="Padding" Value="4"/>
+        <Setter Property="Grid.IsSharedSizeScope" Value="True"/>
+        <Setter Property="HasDropShadow" Value="True"/>
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="ContextMenu">
+                    <Border Background="{TemplateBinding Background}"
+                            BorderBrush="{TemplateBinding BorderBrush}"
+                            BorderThickness="{TemplateBinding BorderThickness}"
+                            CornerRadius="6"
+                            Padding="{TemplateBinding Padding}"
+                            SnapsToDevicePixels="True">
+                        <Border.Effect>
+                            <DropShadowEffect BlurRadius="8" ShadowDepth="2" Opacity="0.3" Color="Black"/>
+                        </Border.Effect>
+                        <ItemsPresenter KeyboardNavigation.DirectionalNavigation="Cycle"
+                                        SnapsToDevicePixels="{TemplateBinding SnapsToDevicePixels}"/>
+                    </Border>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
 
+    <Style TargetType="MenuItem">
+        <Setter Property="Background" Value="Transparent"/>
+        <Setter Property="Foreground" Value="{DynamicResource Brush.Text.Primary}"/>
+        <Setter Property="Padding" Value="10,6"/>
+        <Setter Property="FontSize" Value="13"/>
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="MenuItem">
+                    <Border x:Name="templateRoot"
+                            Background="{TemplateBinding Background}"
+                            BorderBrush="{TemplateBinding BorderBrush}"
+                            BorderThickness="{TemplateBinding BorderThickness}"
+                            CornerRadius="4"
+                            Padding="{TemplateBinding Padding}"
+                            SnapsToDevicePixels="True">
+                        <Grid VerticalAlignment="Center">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto" SharedSizeGroup="MenuItemIconColumnGroup"/>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto" SharedSizeGroup="MenuItemIGTColumnGroup"/>
+                            </Grid.ColumnDefinitions>
+
+                            <!-- Checkmark / Icon -->
+                            <ContentPresenter x:Name="Icon"
+                                              ContentSource="Icon"
+                                              HorizontalAlignment="Center"
+                                              VerticalAlignment="Center"
+                                              Width="16" Height="16"
+                                              Margin="0,0,8,0"
+                                              SnapsToDevicePixels="{TemplateBinding SnapsToDevicePixels}"/>
+
+                            <!-- Glyph for IsChecked -->
+                            <Path x:Name="GlyphPanel"
+                                  Data="M 0,4 L 3,7 L 9,1"
+                                  Stroke="{DynamicResource Brush.Action.Primary}"
+                                  StrokeThickness="2"
+                                  Margin="0,0,8,0"
+                                  VerticalAlignment="Center"
+                                  HorizontalAlignment="Center"
+                                  Visibility="Collapsed"/>
+
+                            <!-- Header Content -->
+                            <ContentPresenter Grid.Column="1"
+                                              ContentSource="Header"
+                                              RecognizesAccessKey="True"
+                                              SnapsToDevicePixels="{TemplateBinding SnapsToDevicePixels}"
+                                              VerticalAlignment="Center"/>
+
+                            <!-- Shortcut / InputGestureText -->
+                            <TextBlock Grid.Column="2"
+                                       Text="{TemplateBinding InputGestureText}"
+                                       Margin="12,0,0,0"
+                                       Foreground="{DynamicResource Brush.Text.Secondary}"
+                                       VerticalAlignment="Center"/>
+                        </Grid>
+                    </Border>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsChecked" Value="True">
+                            <Setter TargetName="GlyphPanel" Property="Visibility" Value="Visible"/>
+                        </Trigger>
+                        <Trigger Property="IsHighlighted" Value="True">
+                            <Setter TargetName="templateRoot" Property="Background" Value="{DynamicResource Brush.Surface.Hover}"/>
+                            <Setter Property="Foreground" Value="{DynamicResource Brush.Text.Primary}"/>
+                        </Trigger>
+                        <Trigger Property="IsEnabled" Value="False">
+                            <Setter Property="Foreground" Value="{DynamicResource Brush.Text.Secondary}"/>
+                            <Setter Property="Opacity" Value="0.5"/>
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
 
 </ResourceDictionary>
