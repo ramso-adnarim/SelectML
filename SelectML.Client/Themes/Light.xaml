@@ -7,6 +7,7 @@
     <SolidColorBrush x:Key="Brush.Background.Base" Color="#F3F4F6"/>
     <SolidColorBrush x:Key="Brush.Surface.Card" Color="#FFFFFF"/>
     <SolidColorBrush x:Key="Brush.Surface.Popup" Color="#FFFFFF"/>
+    <SolidColorBrush x:Key="Brush.Surface.Hover" Color="#E2E8F0"/>
 
     <!-- Borders -->
     <SolidColorBrush x:Key="Brush.Border.Base" Color="#E5E7EB"/>
