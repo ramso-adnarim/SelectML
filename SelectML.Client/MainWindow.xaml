@@ -792,6 +792,8 @@
             
             <Button Command="{Binding SendCommand}" Content="Enviar" 
                     Style="{StaticResource PrimaryButton}"
+                    ContextMenuService.ShowOnDisabled="True"
+                    ToolTipService.ShowOnDisabled="True"
                     ToolTip="Clique esquerdo para Enviar. Clique direito para opções de preferências de envio.">
                 <Button.ContextMenu>
                     <ContextMenu>
