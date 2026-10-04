@@ -96,6 +96,20 @@ namespace SelectML.Client.ViewModels
         private Queue<SerialMeasurement> _serialBuffer = new Queue<SerialMeasurement>();
         private string _currentSerialFeatureName;
         private bool _enqueueSerialInput = true;
+        private bool EnqueueSerialInput
+        {
+            get
+            {
+                try
+                {
+                    return _configService.Load().EnqueueSerialInput;
+                }
+                catch
+                {
+                    return _enqueueSerialInput;
+                }
+            }
+        }
         private Queue<string> _fileBuffer = new Queue<string>();
         // _isProcessingFile is effectively tracked by IsPendingAction, but we'll add explicit tracking if needed or use IsPendingAction.
         // Prompt requested _isProcessingFile flag.
@@ -1199,7 +1213,18 @@ namespace SelectML.Client.ViewModels
         private async void OnFileCreated(object sender, FileSystemEventArgs e)
         {
             // Lógica de Buffer Reverso (Priority Queue)
-            if (IsPendingAction)
+            // Se o enfileiramento serial estiver desativado (Modo Híbrido):
+            // Só deve enfileirar se já houver um arquivo carregado nesta sessão (_currentData != null)
+            // ou se já houver um arquivo sendo processado (_isProcessingFile).
+            // Caso contrário (apenas medições seriais prévias na tela aguardando arquivo complementar),
+            // o arquivo deve ser processado imediatamente.
+            // Se o enfileiramento estiver ativado (Modo Legado):
+            // Qualquer ação pendente (IsPendingAction) enfileira o arquivo no buffer.
+            bool shouldQueue = !EnqueueSerialInput
+                ? (_isProcessingFile || _currentData != null)
+                : IsPendingAction;
+
+            if (shouldQueue)
             {
                 _fileBuffer.Enqueue(e.FullPath);
                 UpdateStatus($"Arquivo em espera ({_fileBuffer.Count}): {e.Name}");
@@ -1223,6 +1248,7 @@ namespace SelectML.Client.ViewModels
 
              try
              {
+                 _isProcessingFile = true;
                  UpdateStatus($"Lendo arquivo: {fileName}...");
                  Log.Information("Processing file: {File}", fileName);
 
@@ -1282,7 +1308,7 @@ namespace SelectML.Client.ViewModels
                           });
 
                           // Se o enfileiramento estiver desativado e já houver medições seriais na tela, preservá-las
-                          var priorSerialItems = (!_enqueueSerialInput && MeasuredResults.Count > 0)
+                          var priorSerialItems = (!EnqueueSerialInput && MeasuredResults.Count > 0)
                                                  ? MeasuredResults.ToList()
                                                  : new List<ResultItem>();
 
@@ -1336,7 +1362,7 @@ namespace SelectML.Client.ViewModels
 
                           if (IsAutoMode)
                           {
-                              if (!_enqueueSerialInput)
+                              if (!EnqueueSerialInput)
                               {
                                   // Modo direto/híbrido: suspende auto-envio para permitir medições adicionais ou revisão
                                   IsPendingAction = true;
@@ -1380,12 +1406,14 @@ namespace SelectML.Client.ViewModels
                  }
                  else
                  {
+                     _isProcessingFile = false;
                      UpdateStatus($"Aviso: Arquivo {fileName} não contem dados válidos.");
                      Log.Warning("File {File} does not contain valid data", fileName);
                  }
              }
              catch (Exception ex)
              {
+                 _isProcessingFile = false;
                  UpdateStatus($"Erro ao processar {fileName}: {ex.Message}");
                  Log.Error(ex, "Error processing file: {File}", fileName);
              }
@@ -1800,7 +1828,7 @@ namespace SelectML.Client.ViewModels
         {
             System.Windows.Application.Current.Dispatcher.Invoke(() =>
             {
-                if (!_enqueueSerialInput)
+                if (!EnqueueSerialInput)
                 {
                     // Modo Direto / Híbrido: adiciona diretamente à lista de resultados em exibição
                     var newItem = new ResultItem 
