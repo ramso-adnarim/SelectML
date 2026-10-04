@@ -745,15 +745,27 @@ namespace SelectML.Client.ViewModels
 
         private void ExecuteOpenSerialConfig(object obj)
         {
-            var vm = new SerialConfigViewModel();
-            var win = new Views.SerialConfigWindow();
-            win.DataContext = vm;
-            win.Owner = System.Windows.Application.Current.MainWindow;
-            win.ShowDialog();
-            
-            // Reload Main Config settings relative to serial (Default Feature Name)
-            var config = _configService.Load();
-            _currentSerialFeatureName = config.LastSerialFeatureName;
+            try
+            {
+                var vm = new SerialConfigViewModel();
+                var win = new Views.SerialConfigWindow();
+                win.DataContext = vm;
+                win.Owner = System.Windows.Application.Current.MainWindow;
+                win.ShowDialog();
+                
+                // Reload Main Config settings relative to serial (Default Feature Name)
+                var config = _configService.Load();
+                _currentSerialFeatureName = config.LastSerialFeatureName;
+            }
+            catch (Exception ex)
+            {
+                Log.Error(ex, "Falha ao abrir a tela de Configuração Serial");
+                System.Windows.MessageBox.Show(
+                    $"Não foi possível abrir a tela de Conexão Serial:\n\n{ex.Message}",
+                    "Conexão Serial",
+                    System.Windows.MessageBoxButton.OK,
+                    System.Windows.MessageBoxImage.Warning);
+            }
         }
 
         private void ExecuteOpenNameModifierConfig(object obj)

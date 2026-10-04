@@ -27,6 +27,32 @@ namespace SelectML.Client
                 .WriteTo.File("logs/log-.txt", rollingInterval: RollingInterval.Day)
                 .CreateLogger();
 
+            // Configuração de Handlers Globais para captura e log de Exceções não tratadas
+            DispatcherUnhandledException += (s, args) =>
+            {
+                Log.Fatal(args.Exception, "Exceção não tratada capturada na thread de UI (Dispatcher)");
+                System.Windows.MessageBox.Show(
+                    $"Ocorreu um erro inesperado na aplicação:\n\n{args.Exception.Message}\n\nConsulte o arquivo de log para mais detalhes.",
+                    "Erro Inesperado - SelectML",
+                    System.Windows.MessageBoxButton.OK,
+                    System.Windows.MessageBoxImage.Error);
+                args.Handled = true; // Impede que o processo feche abruptamente se for recuperável
+            };
+
+            AppDomain.CurrentDomain.UnhandledException += (s, args) =>
+            {
+                if (args.ExceptionObject is Exception ex)
+                {
+                    Log.Fatal(ex, "Exceção fatal não tratada no AppDomain");
+                }
+            };
+
+            System.Threading.Tasks.TaskScheduler.UnobservedTaskException += (s, args) =>
+            {
+                Log.Error(args.Exception, "Exceção não observada em tarefa assíncrona (TaskScheduler)");
+                args.SetObserved();
+            };
+
             Log.Information("Application Starting Up");
 
             base.OnStartup(e);

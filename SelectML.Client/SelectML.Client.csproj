@@ -34,7 +34,7 @@
     <PackageReference Include="Serilog.Sinks.Console" Version="6.0.0" />
     <PackageReference Include="Serilog.Sinks.File" Version="6.0.0" />
     <PackageReference Include="Velopack" Version="0.0.1298" />
-    <PackageReference Include="System.IO.Ports" Version="10.0.2" />
+    <PackageReference Include="System.IO.Ports" Version="10.0.2" GeneratePathProperty="true" />
   </ItemGroup>
 
   <ItemGroup>
@@ -42,5 +42,16 @@
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
   </ItemGroup>
+
+  <Target Name="EnsureWindowsSerialPortDll" AfterTargets="Build;Publish">
+    <Copy SourceFiles="$(PkgSystem_IO_Ports)\runtimes\win\lib\net8.0\System.IO.Ports.dll"
+          DestinationFolder="$(TargetDir)"
+          Condition="Exists('$(PkgSystem_IO_Ports)\runtimes\win\lib\net8.0\System.IO.Ports.dll')"
+          OverwriteReadOnlyFiles="true" />
+    <Copy SourceFiles="$(PkgSystem_IO_Ports)\runtimes\win\lib\net8.0\System.IO.Ports.dll"
+          DestinationFolder="$(PublishDir)"
+          Condition="'$(PublishDir)' != '' and Exists('$(PkgSystem_IO_Ports)\runtimes\win\lib\net8.0\System.IO.Ports.dll')"
+          OverwriteReadOnlyFiles="true" />
+  </Target>
 
 </Project>

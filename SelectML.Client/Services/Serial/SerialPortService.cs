@@ -29,7 +29,50 @@ namespace SelectML.Client.Services.Serial
         /// </summary>
         public string[] GetAvailablePorts()
         {
-            return SerialPort.GetPortNames();
+            try
+            {
+                var ports = SerialPort.GetPortNames();
+                if (ports != null && ports.Length > 0)
+                {
+                    return ports.OrderBy(p => p).ToArray();
+                }
+            }
+            catch (Exception ex)
+            {
+                ErrorReceived?.Invoke(this, $"Aviso ao consultar portas seriais: {ex.Message}");
+            }
+
+            // Fallback via Registro do Windows caso o driver ou a API System.IO.Ports falhe
+            try
+            {
+                if (OperatingSystem.IsWindows())
+                {
+                    using var subKey = Microsoft.Win32.Registry.LocalMachine.OpenSubKey(@"HARDWARE\DEVICEMAP\SERIALCOMM");
+                    if (subKey != null)
+                    {
+                        var names = subKey.GetValueNames();
+                        var portList = new System.Collections.Generic.List<string>();
+                        foreach (var name in names)
+                        {
+                            var val = subKey.GetValue(name)?.ToString();
+                            if (!string.IsNullOrWhiteSpace(val))
+                            {
+                                portList.Add(val);
+                            }
+                        }
+                        if (portList.Count > 0)
+                        {
+                            return portList.OrderBy(p => p).ToArray();
+                        }
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                ErrorReceived?.Invoke(this, $"Aviso ao consultar portas seriais pelo Registro: {ex.Message}");
+            }
+
+            return Array.Empty<string>();
         }
 
         /// <summary>
@@ -68,6 +111,7 @@ namespace SelectML.Client.Services.Serial
             }
             catch (Exception ex)
             {
+                Disconnect();
                 throw new Exception($"Falha ao conectar na porta {portName}: {ex.Message}", ex);
             }
         }
@@ -81,6 +125,7 @@ namespace SelectML.Client.Services.Serial
             {
                 try
                 {
+                    _serialPort.DataReceived -= OnDataReceived;
                     if (_serialPort.IsOpen)
                     {
                         _serialPort.Close();

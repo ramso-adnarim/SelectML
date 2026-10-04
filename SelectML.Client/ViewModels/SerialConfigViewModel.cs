@@ -69,11 +69,18 @@ namespace SelectML.Client.ViewModels
 
         public void LoadPorts()
         {
-            AvailablePorts.Clear();
-            var ports = SerialPortService.Instance.GetAvailablePorts();
-            foreach (var p in ports) AvailablePorts.Add(p);
+            try
+            {
+                AvailablePorts.Clear();
+                var ports = SerialPortService.Instance.GetAvailablePorts();
+                foreach (var p in ports) AvailablePorts.Add(p);
 
-            if (AvailablePorts.Count > 0) SelectedPort = AvailablePorts[0];
+                if (AvailablePorts.Count > 0) SelectedPort = AvailablePorts[0];
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"[SerialConfigViewModel] Erro ao carregar portas: {ex.Message}");
+            }
         }
 
         public string SelectedPort
@@ -128,14 +135,6 @@ namespace SelectML.Client.ViewModels
 
             try
             {
-                // Persistence
-                var config = _configService.Load();
-                config.LastSerialPort = SelectedPort;
-                config.LastSerialStrategy = SelectedStrategy.GetType().Name;
-                config.LastSerialFeatureName = DefaultFeatureName;
-                config.AutoStartSerial = true; // Habilita início automático se conectar com sucesso
-                _configService.Save(config);
-
                 // Check for Hot-Reload if Custom
                 if (SelectedStrategy is CustomSerialStrategy custom)
                 {
@@ -145,10 +144,23 @@ namespace SelectML.Client.ViewModels
 
                 SerialPortService.Instance.Connect(SelectedPort, SelectedStrategy);
                 UpdateStatus();
+
+                // Salva persistência e auto-start apenas após a conexão ser bem-sucedida
+                var config = _configService.Load();
+                config.LastSerialPort = SelectedPort;
+                config.LastSerialStrategy = SelectedStrategy.GetType().Name;
+                config.LastSerialFeatureName = DefaultFeatureName;
+                config.AutoStartSerial = true;
+                _configService.Save(config);
             }
             catch (Exception ex)
             {
-                System.Windows.MessageBox.Show($"Erro ao conectar: {ex.Message}");
+                UpdateStatus();
+                System.Windows.MessageBox.Show(
+                    $"Erro ao conectar na porta {SelectedPort}:\n\n{ex.Message}",
+                    "Conexão Serial",
+                    System.Windows.MessageBoxButton.OK,
+                    System.Windows.MessageBoxImage.Error);
             }
         }
 
