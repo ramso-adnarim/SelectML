@@ -29,6 +29,7 @@ namespace SelectML.Client.Services
         public string LastSerialPort { get; set; }
         public string LastSerialStrategy { get; set; }
         public string LastSerialFeatureName { get; set; }
+        public bool EnqueueSerialInput { get; set; } = true;
 
         // Auto-Start Persistence
         public bool AutoStartDatabase { get; set; } = false;

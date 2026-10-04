@@ -32,9 +32,9 @@ Cada sprint possui escopo delimitado, critérios de aceitação objetivos e vali
 * **Arquivos Afetados:**
   * `SelectML.Client/Services/AppConfig.cs`
 * **Tarefas Técnicas:**
-  - [ ] Adicionar propriedade `public bool EnqueueSerialInput { get; set; } = true;` à classe `AppConfig`.
-  - [ ] Garantir que o valor padrão seja rigorosamente `true` (mantendo o comportamento padrão/enfileirado por omissão).
-  - [ ] Verificar a rotina `ConfigService.Load()` e `ConfigService.Save()` para assegurar que instalações existentes recebam o valor padrão sem corrupção do JSON.
+  - [x] Adicionar propriedade `public bool EnqueueSerialInput { get; set; } = true;` à classe `AppConfig`.
+  - [x] Garantir que o valor padrão seja rigorosamente `true` (mantendo o comportamento padrão/enfileirado por omissão).
+  - [x] Verificar a rotina `ConfigService.Load()` e `ConfigService.Save()` para assegurar que instalações existentes recebam o valor padrão sem corrupção do JSON.
 * **Critério de Aceitação:**
   * Instâncias sem a chave `EnqueueSerialInput` no `appsettings.json` iniciam com valor `true`.
   * Ao chamar `_configService.Save(config)`, a chave é persistida corretamente formatada no JSON em `%AppData%/SelectML/appsettings.json`.
