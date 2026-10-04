@@ -16,6 +16,7 @@ namespace SelectML.Client.ViewModels
         private string _selectedPort;
         private ISerialDeviceStrategy _selectedStrategy;
         private string _defaultFeatureName;
+        private bool _enqueueSerialInput = true;
         private string _connectionStatus = "Desconectado";
         private System.Windows.Media.Brush _connectionStatusBrush = System.Windows.Media.Brushes.Gray;
         private readonly ConfigService _configService;
@@ -50,6 +51,8 @@ namespace SelectML.Client.ViewModels
             {
                 DefaultFeatureName = config.LastSerialFeatureName;
             }
+
+            EnqueueSerialInput = config.EnqueueSerialInput;
 
             ConnectCommand = new RelayCommand(ExecuteConnect, CanConnect);
             DisconnectCommand = new RelayCommand(ExecuteDisconnect, CanDisconnect);
@@ -114,6 +117,26 @@ namespace SelectML.Client.ViewModels
             set { _defaultFeatureName = value; OnPropertyChanged(); }
         }
 
+        public bool EnqueueSerialInput
+        {
+            get => _enqueueSerialInput;
+            set
+            {
+                if (_enqueueSerialInput != value)
+                {
+                    _enqueueSerialInput = value;
+                    OnPropertyChanged();
+                    OnPropertyChanged(nameof(IsDefaultFeatureNameEnabled));
+
+                    var config = _configService.Load();
+                    config.EnqueueSerialInput = _enqueueSerialInput;
+                    _configService.Save(config);
+                }
+            }
+        }
+
+        public bool IsDefaultFeatureNameEnabled => IsDisconnected && EnqueueSerialInput;
+
         public bool IsConnected => SerialPortService.Instance.IsConnected;
         public bool IsDisconnected => !IsConnected;
 
@@ -150,6 +173,7 @@ namespace SelectML.Client.ViewModels
                 config.LastSerialPort = SelectedPort;
                 config.LastSerialStrategy = SelectedStrategy.GetType().Name;
                 config.LastSerialFeatureName = DefaultFeatureName;
+                config.EnqueueSerialInput = EnqueueSerialInput;
                 config.AutoStartSerial = true;
                 _configService.Save(config);
             }
@@ -206,6 +230,7 @@ namespace SelectML.Client.ViewModels
         {
             OnPropertyChanged(nameof(IsConnected));
             OnPropertyChanged(nameof(IsDisconnected));
+            OnPropertyChanged(nameof(IsDefaultFeatureNameEnabled));
             
             if (IsConnected)
             {

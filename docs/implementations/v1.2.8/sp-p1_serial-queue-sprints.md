@@ -48,16 +48,16 @@ Cada sprint possui escopo delimitado, critérios de aceitação objetivos e vali
   * `SelectML.Client/ViewModels/SerialConfigViewModel.cs`
   * `SelectML.Client/Views/SerialConfigWindow.xaml`
 * **Tarefas Técnicas:**
-  - [ ] No `SerialConfigViewModel.cs`:
-    - [ ] Adicionar a propriedade `EnqueueSerialInput` com notificação de property change para si e para `IsDefaultFeatureNameEnabled`.
-    - [ ] Implementar a propriedade computada `public bool IsDefaultFeatureNameEnabled => IsDisconnected && EnqueueSerialInput;`.
-    - [ ] No método `ExecuteConnect()`, salvar `config.EnqueueSerialInput = EnqueueSerialInput;` no `appsettings.json`.
-    - [ ] No construtor, carregar o valor persistido de `config.EnqueueSerialInput`.
-  - [ ] No `SerialConfigWindow.xaml`:
-    - [ ] Aumentar a propriedade `Height` da janela de `320` para `370` para evitar compressão dos botões de rodapé.
-    - [ ] Inserir o container com o controle ToggleSwitch / ToggleButton abaixo de *"Nome padrão de característica"*.
-    - [ ] Vincular `IsChecked` bidirecionalmente a `EnqueueSerialInput`.
-    - [ ] Atualizar o campo `TextBox` de `DefaultFeatureName` para utilizar `IsEnabled="{Binding IsDefaultFeatureNameEnabled}"`.
+  - [x] No `SerialConfigViewModel.cs`:
+    - [x] Adicionar a propriedade `EnqueueSerialInput` com notificação de property change para si e para `IsDefaultFeatureNameEnabled`.
+    - [x] Implementar a propriedade computada `public bool IsDefaultFeatureNameEnabled => IsDisconnected && EnqueueSerialInput;`.
+    - [x] No método `ExecuteConnect()`, salvar `config.EnqueueSerialInput = EnqueueSerialInput;` no `appsettings.json`.
+    - [x] No construtor, carregar o valor persistido de `config.EnqueueSerialInput`.
+  - [x] No `SerialConfigWindow.xaml`:
+    - [x] Aumentar a propriedade `Height` da janela (ajustada para `395` x `340`) para evitar compressão dos botões de rodapé.
+    - [x] Inserir o container com o controle ToggleSwitch / ToggleButton abaixo de *"Nome padrão de característica"*.
+    - [x] Vincular `IsChecked` bidirecionalmente a `EnqueueSerialInput`.
+    - [x] Atualizar o campo `TextBox` de `DefaultFeatureName` para utilizar `IsEnabled="{Binding IsDefaultFeatureNameEnabled}"`.
 * **Critério de Aceitação:**
   * Ao abrir a janela, o toggle inicia **Ativado** por padrão e o campo de texto do nome padrão está editável.
   * Ao desativar o toggle, o campo de texto do nome padrão fica cinza/desabilitado instantaneamente.
