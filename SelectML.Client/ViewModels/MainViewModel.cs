@@ -178,6 +178,7 @@ namespace SelectML.Client.ViewModels
             
             // Subscribe to Serial Events
             SerialPortService.Instance.MeasurementReceived += OnSerialMeasurementReceived;
+            SerialPortService.Instance.UndoRequested += OnSerialUndoRequested;
             SerialPortService.Instance.ConnectionStatusChanged += (s, connected) => IsSerialConnected = connected;
             IsSerialConnected = SerialPortService.Instance.IsConnected;
 
@@ -1338,7 +1339,8 @@ namespace SelectML.Client.ViewModels
                                   Characteristic = displayName,
                                   Value = item.Value,
                                   IsRecognized = isRecognized,
-                                  IsEditable = true
+                                  IsEditable = true,
+                                  IsFromSerial = false
                               };
                               newItem.PropertyChanged += ResultItem_PropertyChanged;
                               MeasuredResults.Add(newItem);
@@ -1813,7 +1815,8 @@ namespace SelectML.Client.ViewModels
                         Characteristic = !string.IsNullOrWhiteSpace(_currentSerialFeatureName) ? _currentSerialFeatureName : item.FeatureName, 
                         Value = item.Value, 
                         IsRecognized = !item.IsGeneric,
-                        IsEditable = true // Always editable for Serial
+                        IsEditable = true, // Always editable for Serial
+                        IsFromSerial = true
                     });
                 }
                 
@@ -1836,7 +1839,8 @@ namespace SelectML.Client.ViewModels
                         Characteristic = string.Empty, // Nenhum nome pré-atribuído
                         Value = e.Value, 
                         IsRecognized = false,          // Força validação / seleção pelo usuário
-                        IsEditable = true              // Permite seleção/digitação
+                        IsEditable = true,             // Permite seleção/digitação
+                        IsFromSerial = true
                     };
                     
                     newItem.PropertyChanged += ResultItem_PropertyChanged;
@@ -1871,7 +1875,8 @@ namespace SelectML.Client.ViewModels
                             Characteristic = featureName, 
                             Value = e.Value, 
                             IsRecognized = !e.IsGeneric,
-                            IsEditable = true // Always editable for Serial
+                            IsEditable = true, // Always editable for Serial
+                            IsFromSerial = true
                         };
                         
                         if (newItem.IsEditable)
@@ -1892,6 +1897,55 @@ namespace SelectML.Client.ViewModels
                     }
                 }
             });
+        }
+
+        private void OnSerialUndoRequested(object sender, EventArgs e)
+        {
+            System.Windows.Application.Current.Dispatcher.Invoke(() =>
+            {
+                ExecuteSerialUndo();
+            });
+        }
+
+        private void ExecuteSerialUndo()
+        {
+            // 1. Se houver dados no buffer serial (Modo Legado Enfileirado):
+            if (_serialBuffer.Count > 0)
+            {
+                var list = _serialBuffer.ToList();
+                list.RemoveAt(list.Count - 1);
+                _serialBuffer = new Queue<SerialMeasurement>(list);
+                UpdateStatus(_serialBuffer.Count > 0 
+                    ? $"Dado serial em buffer desfeito ({_serialBuffer.Count} restantes)..."
+                    : "Dados seriais em buffer desfeitos.");
+                Log.Information("Serial buffer item undone via hardware trigger");
+                return;
+            }
+
+            // 2. Procura a medição serial mais recente na tela (exclui itens originados de arquivos)
+            var lastSerialItem = MeasuredResults.LastOrDefault(x => x.IsFromSerial);
+            if (lastSerialItem != null)
+            {
+                lastSerialItem.PropertyChanged -= ResultItem_PropertyChanged;
+                MeasuredResults.Remove(lastSerialItem);
+                TriggerValidation();
+                Log.Information("Serial measurement item removed via U-WAVE undo command");
+
+                if (MeasuredResults.Count == 0)
+                {
+                    // Se não houver mais itens na tela e nenhum arquivo de texto foi carregado, reseta o estado
+                    ExecuteCancel(null);
+                    UpdateStatus("Medição serial desfeita. Aguardando...");
+                }
+                else
+                {
+                    UpdateStatus("Última medição serial desfeita.");
+                }
+            }
+            else
+            {
+                Log.Information("U-WAVE undo command received, but no serial measurement found to undo.");
+            }
         }
 
 

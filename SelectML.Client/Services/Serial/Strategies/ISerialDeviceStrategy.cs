@@ -7,5 +7,6 @@ namespace SelectML.Client.Services.Serial.Strategies
         string Name { get; }
         SerialPortConfig GetConfiguration();
         SerialMeasurement? Parse(string rawData);
+        bool IsUndoCommand(string rawData) => false;
     }
 }

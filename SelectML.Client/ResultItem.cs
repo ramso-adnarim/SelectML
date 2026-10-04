@@ -48,6 +48,13 @@ namespace SelectML.Client
             set { _hasDuplicateName = value; OnPropertyChanged(); }
         }
 
+        private bool _isFromSerial;
+        public bool IsFromSerial
+        {
+            get => _isFromSerial;
+            set { _isFromSerial = value; OnPropertyChanged(); }
+        }
+
         public event PropertyChangedEventHandler PropertyChanged;
         protected void OnPropertyChanged([CallerMemberName] string name = null)
         {
