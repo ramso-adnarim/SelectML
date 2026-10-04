@@ -280,3 +280,13 @@ graph TD
 ### Teste 5: Bloqueio Universal de Características em Branco
 1. Tentar enviar a lista mantendo uma cota serial com o nome em branco (mesmo com o banco de dados desconectado).
 2. **Resultado esperado:** O sistema impede o envio e exibe alerta de validação.
+
+### Teste 6: Mecanismo de Desfazer via Comando Serial U-WAVE
+1. Conectar dispositivo serial configurado como U-WAVE.
+2. Inserir medições seriais (em modo híbrido ou após carregar arquivo).
+3. Transmitir o comando de cancelamento U-WAVE (ex: `ST10001000000041899`).
+4. **Resultado esperado:**
+   * A medição serial mais recente é removida imediatamente da tabela.
+   * Os dados processados de arquivo de texto nunca são afetados ou excluídos.
+   * Ao enviar comandos sucessivos, as medições seriais são excluídas do mais recente ao mais antigo, um por vez.
+

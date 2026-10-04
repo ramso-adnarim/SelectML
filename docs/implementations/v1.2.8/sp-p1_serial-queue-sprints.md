@@ -105,10 +105,15 @@ Cada sprint possui escopo delimitado, critérios de aceitação objetivos e vali
     - [x] Em `ProcessFile()`, verificar se já existem itens na `MeasuredResults` provenientes da serial:
       - [x] Em vez de `MeasuredResults.Clear()`, preservar as medições seriais existentes e inserir os itens do arquivo de texto acima delas.
       - [x] Fazer com que o cabeçalho do arquivo (`data.PartName` e `data.BatchNumber`) sobrescreva quaisquer valores prévios na UI.
+  - [x] **Mecanismo de "Desfazer" Serial (Comando U-WAVE):**
+    - [x] Identificar comando de cancelamento Mitutoyo U-WAVE (`ST1...41899`) em `UWaveStrategy.IsUndoCommand()`.
+    - [x] Disparar evento `UndoRequested` em `SerialPortService`.
+    - [x] Executar exclusão sequencial do item serial mais recente (`IsFromSerial == true`), sem jamais afetar cotas de arquivo de texto.
 * **Critério de Aceitação:**
   * Com o toggle desativado, dados seriais entram como novas linhas no final da tabela.
   * No Modo Automático, a tela não fecha sozinha, aguardando intervenção do usuário.
   * Medições seriais tomadas antes da chegada do arquivo são preservadas e complementadas pelos dados do arquivo.
+  * O envio de string de cancelamento U-WAVE exclui do mais recente ao mais antigo exclusivamente as medições seriais.
 
 ---
 
@@ -116,15 +121,17 @@ Cada sprint possui escopo delimitado, critérios de aceitação objetivos e vali
 > **Objetivo:** Executar a bateria de testes operacionais e de regressão para assegurar robustez, estabilidade e conformidade com as diretrizes do projeto.
 
 * **Tarefas Técnicas:**
-  - [ ] **Bateria de Regressão:**
-    - [ ] Testar fluxo normal de arquivos CSV/PDF/JSON com toggle ativado.
-    - [ ] Testar buffer serial clássico (chegada serial durante arquivo -> dreno posterior em nova tela).
-  - [ ] **Bateria do Novo Modo Híbrido:**
-    - [ ] Testar arquivo com 5 cotas + 2 medições seriais adicionadas -> seleção de nomes no ComboBox -> geração do CSV unificado com 7 colunas.
-    - [ ] Testar colisão de nomes duplicados (mesmo nome na CMM e na serial) -> validação deve impedir envio.
-    - [ ] Testar botão "Cancelar" -> reset completo de todas as cotas (arquivo + serial) e reativação do FileWatcher.
-  - [ ] **Verificação de Compilação e Empacotamento:**
-    - [ ] Compilar em modo `Release` (garantindo que o target `EnsureWindowsSerialPortDll` copie a DLL nativa Win32 de 88 KB).
+  - [x] **Bateria de Regressão:**
+    - [x] Testar fluxo normal de arquivos CSV/PDF/JSON com toggle ativado.
+    - [x] Testar buffer serial clássico (chegada serial durante arquivo -> dreno posterior em nova tela).
+  - [x] **Bateria do Novo Modo Híbrido:**
+    - [x] Testar arquivo com cotas + medições seriais adicionadas -> seleção de nomes no ComboBox -> geração do CSV unificado.
+    - [x] Testar chegada serial anterior ao arquivo de texto (C2) com prevalência de cabeçalho do arquivo.
+    - [x] Testar barreira de validação para cotas vazias ou duplicadas (C3/C4).
+  - [ ] **Mecanismo de Desfazer Serial (U-WAVE):**
+    - [ ] Enviar medições seriais e disparar comando de cancelamento U-WAVE -> conferir remoção LIFO apenas das cotas seriais.
+  - [x] **Verificação de Compilação e Empacotamento:**
+    - [x] Compilar em modo `Release` (garantindo que o target `EnsureWindowsSerialPortDll` copie a DLL nativa Win32 de 88 KB).
 * **Critério de Aceitação:**
   * 100% dos testes manuais e de regressão executados com sucesso sem crashes ou exceções não tratadas nos logs.
 
