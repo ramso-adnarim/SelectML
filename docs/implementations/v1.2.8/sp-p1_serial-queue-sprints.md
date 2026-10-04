@@ -89,22 +89,22 @@ Cada sprint possui escopo delimitado, critérios de aceitação objetivos e vali
 * **Arquivos Afetados:**
   * `SelectML.Client/ViewModels/MainViewModel.cs`
 * **Tarefas Técnicas:**
-  - [ ] Adicionar campo/propriedade local `_enqueueSerialInput` sincronizado com `AppConfig`.
-  - [ ] Refatorar o método `OnSerialMeasurementReceived`:
-    - [ ] **Ramo `!EnqueueSerialInput` (Modo Direto/Híbrido):**
-      - [ ] Criar `ResultItem` com `Characteristic = string.Empty`, `Value = e.Value`, `IsRecognized = false`, `IsEditable = true`.
-      - [ ] Assinar evento `newItem.PropertyChanged += ResultItem_PropertyChanged`.
-      - [ ] Adicionar sequencialmente à `MeasuredResults`.
-      - [ ] Executar `TriggerValidation()`.
-      - [ ] Ativar `IsPendingAction = true` para reter o foco na UI e sinalizar estado ocupado.
-    - [ ] **Ramo `EnqueueSerialInput == true` (Modo Enfileirado):**
-      - [ ] Manter o fluxo legado intacto (`_serialBuffer.Enqueue(e)` se arquivo ativo; sessão serial direta se ocioso).
-  - [ ] **Tratamento do Conflito C1 (Modo Automático):**
-    - [ ] Em `ProcessFile()`, se `!_enqueueSerialInput`, inibir o envio automático assíncrono imediato de `IsAutoMode`, exibindo a mensagem de status usual: *"Dados carregados. Verifique e clique em Enviar."*.
-  - [ ] **Tratamento do Conflito C2 (Serial Pré-Arquivo):**
-    - [ ] Em `ProcessFile()`, verificar se já existem itens na `MeasuredResults` provenientes da serial:
-      - [ ] Em vez de `MeasuredResults.Clear()`, preservar as medições seriais existentes e inserir os itens do arquivo de texto acima delas.
-      - [ ] Fazer com que o cabeçalho do arquivo (`data.PartName` e `data.BatchNumber`) sobrescreva quaisquer valores prévios na UI.
+  - [x] Adicionar campo/propriedade local `_enqueueSerialInput` sincronizado com `AppConfig`.
+  - [x] Refatorar o método `OnSerialMeasurementReceived`:
+    - [x] **Ramo `!EnqueueSerialInput` (Modo Direto/Híbrido):**
+      - [x] Criar `ResultItem` com `Characteristic = string.Empty`, `Value = e.Value`, `IsRecognized = false`, `IsEditable = true`.
+      - [x] Assinar evento `newItem.PropertyChanged += ResultItem_PropertyChanged`.
+      - [x] Adicionar sequencialmente à `MeasuredResults`.
+      - [x] Executar `TriggerValidation()`.
+      - [x] Ativar `IsPendingAction = true` para reter o foco na UI e sinalizar estado ocupado.
+    - [x] **Ramo `EnqueueSerialInput == true` (Modo Enfileirado):**
+      - [x] Manter o fluxo legado intacto (`_serialBuffer.Enqueue(e)` se arquivo ativo; sessão serial direta se ocioso).
+  - [x] **Tratamento do Conflito C1 (Modo Automático):**
+    - [x] Em `ProcessFile()`, se `!_enqueueSerialInput`, inibir o envio automático assíncrono imediato de `IsAutoMode`, exibindo a mensagem de status usual: *"Dados carregados. Verifique e clique em Enviar."*.
+  - [x] **Tratamento do Conflito C2 (Serial Pré-Arquivo):**
+    - [x] Em `ProcessFile()`, verificar se já existem itens na `MeasuredResults` provenientes da serial:
+      - [x] Em vez de `MeasuredResults.Clear()`, preservar as medições seriais existentes e inserir os itens do arquivo de texto acima delas.
+      - [x] Fazer com que o cabeçalho do arquivo (`data.PartName` e `data.BatchNumber`) sobrescreva quaisquer valores prévios na UI.
 * **Critério de Aceitação:**
   * Com o toggle desativado, dados seriais entram como novas linhas no final da tabela.
   * No Modo Automático, a tela não fecha sozinha, aguardando intervenção do usuário.

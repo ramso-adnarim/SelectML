@@ -95,6 +95,7 @@ namespace SelectML.Client.ViewModels
         // Serial Buffer
         private Queue<SerialMeasurement> _serialBuffer = new Queue<SerialMeasurement>();
         private string _currentSerialFeatureName;
+        private bool _enqueueSerialInput = true;
         private Queue<string> _fileBuffer = new Queue<string>();
         // _isProcessingFile is effectively tracked by IsPendingAction, but we'll add explicit tracking if needed or use IsPendingAction.
         // Prompt requested _isProcessingFile flag.
@@ -753,9 +754,10 @@ namespace SelectML.Client.ViewModels
                 win.Owner = System.Windows.Application.Current.MainWindow;
                 win.ShowDialog();
                 
-                // Reload Main Config settings relative to serial (Default Feature Name)
+                // Reload Main Config settings relative to serial (Default Feature Name e Modo de Enfileiramento)
                 var config = _configService.Load();
                 _currentSerialFeatureName = config.LastSerialFeatureName;
+                _enqueueSerialInput = config.EnqueueSerialInput;
             }
             catch (Exception ex)
             {
@@ -841,6 +843,7 @@ namespace SelectML.Client.ViewModels
             OnPropertyChanged(nameof(IsConfirmationAskAlways));
 
             _currentSerialFeatureName = config.LastSerialFeatureName;
+            _enqueueSerialInput = config.EnqueueSerialInput;
 
             if (!string.IsNullOrEmpty(config.NameModifierMode))
             {
@@ -1278,6 +1281,11 @@ namespace SelectML.Client.ViewModels
                               }
                           });
 
+                          // Se o enfileiramento estiver desativado e já houver medições seriais na tela, preservá-las
+                          var priorSerialItems = (!_enqueueSerialInput && MeasuredResults.Count > 0)
+                                                 ? MeasuredResults.ToList()
+                                                 : new List<ResultItem>();
+
                           MeasuredResults.Clear();
                           bool hasUnrecognized = false;
                           var config = _configService.Load();
@@ -1309,6 +1317,15 @@ namespace SelectML.Client.ViewModels
                               newItem.PropertyChanged += ResultItem_PropertyChanged;
                               MeasuredResults.Add(newItem);
                           }
+
+                          // Reanexa medições seriais prévias no final da lista
+                          if (priorSerialItems.Count > 0)
+                          {
+                              foreach (var prior in priorSerialItems)
+                              {
+                                  MeasuredResults.Add(prior);
+                              }
+                          }
                           
                           // Central Validation Trigger 
                           // (Must NOT overwrite IsRecognized with False if KnownFeatures is empty, unless we want to)
@@ -1319,7 +1336,17 @@ namespace SelectML.Client.ViewModels
 
                           if (IsAutoMode)
                           {
-                              if (hasUnrecognized)
+                              if (!_enqueueSerialInput)
+                              {
+                                  // Modo direto/híbrido: suspende auto-envio para permitir medições adicionais ou revisão
+                                  IsPendingAction = true;
+                                  _isProcessingFile = true;
+                                  StatusMessage = hasUnrecognized
+                                      ? "Validação necessária. Verifique e envie."
+                                      : "Dados carregados. Verifique e clique em Enviar.";
+                                  RequestRestoreWindow?.Invoke();
+                              }
+                              else if (hasUnrecognized)
                               {
                                  if (_sessionConfirmationAction == ConfirmationAction.SendAll)
                                  {
@@ -1773,41 +1800,67 @@ namespace SelectML.Client.ViewModels
         {
             System.Windows.Application.Current.Dispatcher.Invoke(() =>
             {
-                if (_isProcessingFile)
+                if (!_enqueueSerialInput)
                 {
-                    // Cenário A: Colisão. Enfileirar no Buffer Reverso.
-                    _serialBuffer.Enqueue(e);
-                    StatusMessage = $"Dado serial em buffer ({_serialBuffer.Count})...";
-                }
-                else
-                {
-                    // Cenário B: Adicionar direto (Sem arquivo sendo processado)
-                    string featureName = !string.IsNullOrWhiteSpace(_currentSerialFeatureName) 
-                                         ? _currentSerialFeatureName 
-                                         : e.FeatureName;
-
+                    // Modo Direto / Híbrido: adiciona diretamente à lista de resultados em exibição
                     var newItem = new ResultItem 
                     { 
-                        Characteristic = featureName, 
+                        Characteristic = string.Empty, // Nenhum nome pré-atribuído
                         Value = e.Value, 
-                        IsRecognized = !e.IsGeneric,
-                        IsEditable = true // Always editable for Serial
+                        IsRecognized = false,          // Força validação / seleção pelo usuário
+                        IsEditable = true              // Permite seleção/digitação
                     };
                     
-                    if (newItem.IsEditable)
-                    {
-                        newItem.PropertyChanged += ResultItem_PropertyChanged;
-                    }
-
+                    newItem.PropertyChanged += ResultItem_PropertyChanged;
                     MeasuredResults.Add(newItem);
                     TriggerValidation();
-                    
-                    // Ensure we lock out the File Watcher
+
                     if (!IsPendingAction)
                     {
                         IsPendingAction = true;
                         StatusMessage = "Recebendo dados seriais...";
                         RequestRestoreWindow?.Invoke();
+                    }
+                }
+                else
+                {
+                    // Modo Enfileirado (Comportamento legado mantido)
+                    if (_isProcessingFile)
+                    {
+                        // Cenário A: Colisão. Enfileirar no Buffer Reverso.
+                        _serialBuffer.Enqueue(e);
+                        StatusMessage = $"Dado serial em buffer ({_serialBuffer.Count})...";
+                    }
+                    else
+                    {
+                        // Cenário B: Adicionar direto (Sem arquivo sendo processado)
+                        string featureName = !string.IsNullOrWhiteSpace(_currentSerialFeatureName) 
+                                             ? _currentSerialFeatureName 
+                                             : e.FeatureName;
+
+                        var newItem = new ResultItem 
+                        { 
+                            Characteristic = featureName, 
+                            Value = e.Value, 
+                            IsRecognized = !e.IsGeneric,
+                            IsEditable = true // Always editable for Serial
+                        };
+                        
+                        if (newItem.IsEditable)
+                        {
+                            newItem.PropertyChanged += ResultItem_PropertyChanged;
+                        }
+
+                        MeasuredResults.Add(newItem);
+                        TriggerValidation();
+                        
+                        // Ensure we lock out the File Watcher
+                        if (!IsPendingAction)
+                        {
+                            IsPendingAction = true;
+                            StatusMessage = "Recebendo dados seriais...";
+                            RequestRestoreWindow?.Invoke();
+                        }
                     }
                 }
             });
