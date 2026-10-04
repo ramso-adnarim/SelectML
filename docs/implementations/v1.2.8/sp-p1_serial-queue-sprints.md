@@ -71,12 +71,12 @@ Cada sprint possui escopo delimitado, critérios de aceitação objetivos e vali
 * **Arquivos Afetados:**
   * `SelectML.Client/ViewModels/MainViewModel.cs`
 * **Tarefas Técnicas:**
-  - [ ] Refatorar o método `ValidateItem(ResultItem item)`:
-    - [ ] Adicionar cláusula de barreira: se `string.IsNullOrWhiteSpace(item.Characteristic)`, atribuir **obrigatoriamente** `item.IsRecognized = false`, mesmo que o banco de dados não esteja conectado ou `KnownFeatures` esteja vazio.
-  - [ ] No método `ExecuteSend()`:
-    - [ ] Garantir validação explícita impedindo envio caso qualquer item possua nome em branco ou nulo.
-  - [ ] No método `BuildMeasurementDataFromUI()`:
-    - [ ] Garantir que chaves vazias ou apenas com espaços não sejam inseridas no dicionário final de saída.
+  - [x] Refatorar o método `ValidateItem(ResultItem item)`:
+    - [x] Adicionar cláusula de barreira: se `string.IsNullOrWhiteSpace(item.Characteristic)`, atribuir **obrigatoriamente** `item.IsRecognized = false`, mesmo que o banco de dados não esteja conectado ou `KnownFeatures` esteja vazio.
+  - [x] No método `CanExecuteAction()` e `ExecuteSend()`:
+    - [x] Garantir validação explícita impedindo envio caso qualquer item possua nome em branco ou nulo.
+  - [x] No método `BuildMeasurementDataFromUI()`:
+    - [x] Garantir que chaves vazias ou apenas com espaços não sejam inseridas no dicionário final de saída.
 * **Critério de Aceitação:**
   * Linhas com campo de característica vazio são destacadas como inválidas na interface (borda vermelha/alerta).
   * O botão "Enviar" é barrado caso haja ao menos uma característica sem preenchimento, exibindo mensagem amigável ao usuário.

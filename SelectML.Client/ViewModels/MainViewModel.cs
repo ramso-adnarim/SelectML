@@ -1418,22 +1418,22 @@ namespace SelectML.Client.ViewModels
         {
              if (item == null) return;
              
+             var input = item.Characteristic?.Trim();
+             if (string.IsNullOrWhiteSpace(input))
+             {
+                 // Característica vazia ou em branco é categoricamente NÃO reconhecida/inválida
+                 item.IsRecognized = false;
+                 return;
+             }
+
              // If we have known features, it MUST be one of them
              if (KnownFeatures != null && KnownFeatures.Any())
              {
-                 var input = item.Characteristic?.Trim();
-                 item.IsRecognized = !string.IsNullOrWhiteSpace(input) && 
-                                     KnownFeatures.Any(f => f.Equals(input, StringComparison.OrdinalIgnoreCase));
+                 item.IsRecognized = KnownFeatures.Any(f => f.Equals(input, StringComparison.OrdinalIgnoreCase));
              }
              else
              {
-                 // No features loaded/defined. 
-                 // If this was a manual entry with no DB connection, valid.
-                 // If this was a file load with empty DB features, it remains as initialized (Valid).
-                 // We only force FALSE if we HAVE a list and the item is NOT in it.
-                 // So we do nothing here, preserving the initialization from ProcessFile.
-                 // BUT, if user edits it? 
-                 // If KnownFeatures is empty, we assume valid for now (Flexible mode).
+                 // Sem banco conectado / sem features cadastradas: assume válido desde que não esteja em branco
                  item.IsRecognized = true;
              }
         }
@@ -1493,6 +1493,9 @@ namespace SelectML.Client.ViewModels
             // Cannot send if there are duplicates
             if (MeasuredResults.Any(r => r.HasDuplicateName)) return false;
 
+            // Cannot send if any characteristic name is empty or whitespace
+            if (MeasuredResults.Any(r => string.IsNullOrWhiteSpace(r.Characteristic))) return false;
+
             return IsPendingAction && !string.IsNullOrWhiteSpace(PartName) && !string.IsNullOrWhiteSpace(BatchNumber);
         }
 
@@ -1508,7 +1511,7 @@ namespace SelectML.Client.ViewModels
             foreach (var item in items)
             {
                 string key = item.Characteristic?.Trim() ?? string.Empty;
-                if (!string.IsNullOrEmpty(key) && !dict.ContainsKey(key))
+                if (!string.IsNullOrWhiteSpace(key) && !dict.ContainsKey(key))
                 {
                     dict[key] = item.Value;
                 }
@@ -1526,6 +1529,14 @@ namespace SelectML.Client.ViewModels
         private async void ExecuteSend(object obj)
         {
             if (string.IsNullOrWhiteSpace(PartName) || string.IsNullOrWhiteSpace(BatchNumber)) return;
+
+            // Check for empty/whitespace characteristic names
+            if (MeasuredResults.Any(r => string.IsNullOrWhiteSpace(r.Characteristic)))
+            {
+                StatusMessage = "Erro: Existem características sem nome na lista.";
+                System.Windows.MessageBox.Show("Todas as características devem possuir um nome válido antes do envio. Preencha os campos vazios.", "Erro de Validação", MessageBoxButton.OK, MessageBoxImage.Warning);
+                return;
+            }
 
             // Check for duplicates in UI
             if (MeasuredResults.Any(r => r.HasDuplicateName))
