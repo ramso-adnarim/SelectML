@@ -95,6 +95,21 @@ namespace SelectML.Client.ViewModels
         // Serial Buffer
         private Queue<SerialMeasurement> _serialBuffer = new Queue<SerialMeasurement>();
         private string _currentSerialFeatureName;
+        private bool _enqueueSerialInput = true;
+        private bool EnqueueSerialInput
+        {
+            get
+            {
+                try
+                {
+                    return _configService.Load().EnqueueSerialInput;
+                }
+                catch
+                {
+                    return _enqueueSerialInput;
+                }
+            }
+        }
         private Queue<string> _fileBuffer = new Queue<string>();
         // _isProcessingFile is effectively tracked by IsPendingAction, but we'll add explicit tracking if needed or use IsPendingAction.
         // Prompt requested _isProcessingFile flag.
@@ -163,6 +178,7 @@ namespace SelectML.Client.ViewModels
             
             // Subscribe to Serial Events
             SerialPortService.Instance.MeasurementReceived += OnSerialMeasurementReceived;
+            SerialPortService.Instance.UndoRequested += OnSerialUndoRequested;
             SerialPortService.Instance.ConnectionStatusChanged += (s, connected) => IsSerialConnected = connected;
             IsSerialConnected = SerialPortService.Instance.IsConnected;
 
@@ -753,9 +769,10 @@ namespace SelectML.Client.ViewModels
                 win.Owner = System.Windows.Application.Current.MainWindow;
                 win.ShowDialog();
                 
-                // Reload Main Config settings relative to serial (Default Feature Name)
+                // Reload Main Config settings relative to serial (Default Feature Name e Modo de Enfileiramento)
                 var config = _configService.Load();
                 _currentSerialFeatureName = config.LastSerialFeatureName;
+                _enqueueSerialInput = config.EnqueueSerialInput;
             }
             catch (Exception ex)
             {
@@ -841,6 +858,7 @@ namespace SelectML.Client.ViewModels
             OnPropertyChanged(nameof(IsConfirmationAskAlways));
 
             _currentSerialFeatureName = config.LastSerialFeatureName;
+            _enqueueSerialInput = config.EnqueueSerialInput;
 
             if (!string.IsNullOrEmpty(config.NameModifierMode))
             {
@@ -1196,7 +1214,18 @@ namespace SelectML.Client.ViewModels
         private async void OnFileCreated(object sender, FileSystemEventArgs e)
         {
             // Lógica de Buffer Reverso (Priority Queue)
-            if (IsPendingAction)
+            // Se o enfileiramento serial estiver desativado (Modo Híbrido):
+            // Só deve enfileirar se já houver um arquivo carregado nesta sessão (_currentData != null)
+            // ou se já houver um arquivo sendo processado (_isProcessingFile).
+            // Caso contrário (apenas medições seriais prévias na tela aguardando arquivo complementar),
+            // o arquivo deve ser processado imediatamente.
+            // Se o enfileiramento estiver ativado (Modo Legado):
+            // Qualquer ação pendente (IsPendingAction) enfileira o arquivo no buffer.
+            bool shouldQueue = !EnqueueSerialInput
+                ? (_isProcessingFile || _currentData != null)
+                : IsPendingAction;
+
+            if (shouldQueue)
             {
                 _fileBuffer.Enqueue(e.FullPath);
                 UpdateStatus($"Arquivo em espera ({_fileBuffer.Count}): {e.Name}");
@@ -1220,6 +1249,7 @@ namespace SelectML.Client.ViewModels
 
              try
              {
+                 _isProcessingFile = true;
                  UpdateStatus($"Lendo arquivo: {fileName}...");
                  Log.Information("Processing file: {File}", fileName);
 
@@ -1278,6 +1308,11 @@ namespace SelectML.Client.ViewModels
                               }
                           });
 
+                          // Se o enfileiramento estiver desativado e já houver medições seriais na tela, preservá-las
+                          var priorSerialItems = (!EnqueueSerialInput && MeasuredResults.Count > 0)
+                                                 ? MeasuredResults.ToList()
+                                                 : new List<ResultItem>();
+
                           MeasuredResults.Clear();
                           bool hasUnrecognized = false;
                           var config = _configService.Load();
@@ -1304,10 +1339,20 @@ namespace SelectML.Client.ViewModels
                                   Characteristic = displayName,
                                   Value = item.Value,
                                   IsRecognized = isRecognized,
-                                  IsEditable = true
+                                  IsEditable = true,
+                                  IsFromSerial = false
                               };
                               newItem.PropertyChanged += ResultItem_PropertyChanged;
                               MeasuredResults.Add(newItem);
+                          }
+
+                          // Reanexa medições seriais prévias no final da lista
+                          if (priorSerialItems.Count > 0)
+                          {
+                              foreach (var prior in priorSerialItems)
+                              {
+                                  MeasuredResults.Add(prior);
+                              }
                           }
                           
                           // Central Validation Trigger 
@@ -1319,7 +1364,17 @@ namespace SelectML.Client.ViewModels
 
                           if (IsAutoMode)
                           {
-                              if (hasUnrecognized)
+                              if (!EnqueueSerialInput)
+                              {
+                                  // Modo direto/híbrido: suspende auto-envio para permitir medições adicionais ou revisão
+                                  IsPendingAction = true;
+                                  _isProcessingFile = true;
+                                  StatusMessage = hasUnrecognized
+                                      ? "Validação necessária. Verifique e envie."
+                                      : "Dados carregados. Verifique e clique em Enviar.";
+                                  RequestRestoreWindow?.Invoke();
+                              }
+                              else if (hasUnrecognized)
                               {
                                  if (_sessionConfirmationAction == ConfirmationAction.SendAll)
                                  {
@@ -1353,12 +1408,14 @@ namespace SelectML.Client.ViewModels
                  }
                  else
                  {
+                     _isProcessingFile = false;
                      UpdateStatus($"Aviso: Arquivo {fileName} não contem dados válidos.");
                      Log.Warning("File {File} does not contain valid data", fileName);
                  }
              }
              catch (Exception ex)
              {
+                 _isProcessingFile = false;
                  UpdateStatus($"Erro ao processar {fileName}: {ex.Message}");
                  Log.Error(ex, "Error processing file: {File}", fileName);
              }
@@ -1418,22 +1475,22 @@ namespace SelectML.Client.ViewModels
         {
              if (item == null) return;
              
+             var input = item.Characteristic?.Trim();
+             if (string.IsNullOrWhiteSpace(input))
+             {
+                 // Característica vazia ou em branco é categoricamente NÃO reconhecida/inválida
+                 item.IsRecognized = false;
+                 return;
+             }
+
              // If we have known features, it MUST be one of them
              if (KnownFeatures != null && KnownFeatures.Any())
              {
-                 var input = item.Characteristic?.Trim();
-                 item.IsRecognized = !string.IsNullOrWhiteSpace(input) && 
-                                     KnownFeatures.Any(f => f.Equals(input, StringComparison.OrdinalIgnoreCase));
+                 item.IsRecognized = KnownFeatures.Any(f => f.Equals(input, StringComparison.OrdinalIgnoreCase));
              }
              else
              {
-                 // No features loaded/defined. 
-                 // If this was a manual entry with no DB connection, valid.
-                 // If this was a file load with empty DB features, it remains as initialized (Valid).
-                 // We only force FALSE if we HAVE a list and the item is NOT in it.
-                 // So we do nothing here, preserving the initialization from ProcessFile.
-                 // BUT, if user edits it? 
-                 // If KnownFeatures is empty, we assume valid for now (Flexible mode).
+                 // Sem banco conectado / sem features cadastradas: assume válido desde que não esteja em branco
                  item.IsRecognized = true;
              }
         }
@@ -1493,6 +1550,9 @@ namespace SelectML.Client.ViewModels
             // Cannot send if there are duplicates
             if (MeasuredResults.Any(r => r.HasDuplicateName)) return false;
 
+            // Cannot send if any characteristic name is empty or whitespace
+            if (MeasuredResults.Any(r => string.IsNullOrWhiteSpace(r.Characteristic))) return false;
+
             return IsPendingAction && !string.IsNullOrWhiteSpace(PartName) && !string.IsNullOrWhiteSpace(BatchNumber);
         }
 
@@ -1508,7 +1568,7 @@ namespace SelectML.Client.ViewModels
             foreach (var item in items)
             {
                 string key = item.Characteristic?.Trim() ?? string.Empty;
-                if (!string.IsNullOrEmpty(key) && !dict.ContainsKey(key))
+                if (!string.IsNullOrWhiteSpace(key) && !dict.ContainsKey(key))
                 {
                     dict[key] = item.Value;
                 }
@@ -1526,6 +1586,14 @@ namespace SelectML.Client.ViewModels
         private async void ExecuteSend(object obj)
         {
             if (string.IsNullOrWhiteSpace(PartName) || string.IsNullOrWhiteSpace(BatchNumber)) return;
+
+            // Check for empty/whitespace characteristic names
+            if (MeasuredResults.Any(r => string.IsNullOrWhiteSpace(r.Characteristic)))
+            {
+                StatusMessage = "Erro: Existem características sem nome na lista.";
+                System.Windows.MessageBox.Show("Todas as características devem possuir um nome válido antes do envio. Preencha os campos vazios.", "Erro de Validação", MessageBoxButton.OK, MessageBoxImage.Warning);
+                return;
+            }
 
             // Check for duplicates in UI
             if (MeasuredResults.Any(r => r.HasDuplicateName))
@@ -1682,6 +1750,7 @@ namespace SelectML.Client.ViewModels
         {
             if (obj is ResultItem item && MeasuredResults.Contains(item))
             {
+                item.PropertyChanged -= ResultItem_PropertyChanged;
                 MeasuredResults.Remove(item);
                 TriggerValidation();
 
@@ -1747,7 +1816,8 @@ namespace SelectML.Client.ViewModels
                         Characteristic = !string.IsNullOrWhiteSpace(_currentSerialFeatureName) ? _currentSerialFeatureName : item.FeatureName, 
                         Value = item.Value, 
                         IsRecognized = !item.IsGeneric,
-                        IsEditable = true // Always editable for Serial
+                        IsEditable = true, // Always editable for Serial
+                        IsFromSerial = true
                     });
                 }
                 
@@ -1762,36 +1832,22 @@ namespace SelectML.Client.ViewModels
         {
             System.Windows.Application.Current.Dispatcher.Invoke(() =>
             {
-                if (_isProcessingFile)
+                if (!EnqueueSerialInput)
                 {
-                    // Cenário A: Colisão. Enfileirar no Buffer Reverso.
-                    _serialBuffer.Enqueue(e);
-                    StatusMessage = $"Dado serial em buffer ({_serialBuffer.Count})...";
-                }
-                else
-                {
-                    // Cenário B: Adicionar direto (Sem arquivo sendo processado)
-                    string featureName = !string.IsNullOrWhiteSpace(_currentSerialFeatureName) 
-                                         ? _currentSerialFeatureName 
-                                         : e.FeatureName;
-
+                    // Modo Direto / Híbrido: adiciona diretamente à lista de resultados em exibição
                     var newItem = new ResultItem 
                     { 
-                        Characteristic = featureName, 
+                        Characteristic = string.Empty, // Nenhum nome pré-atribuído
                         Value = e.Value, 
-                        IsRecognized = !e.IsGeneric,
-                        IsEditable = true // Always editable for Serial
+                        IsRecognized = false,          // Força validação / seleção pelo usuário
+                        IsEditable = true,             // Permite seleção/digitação
+                        IsFromSerial = true
                     };
                     
-                    if (newItem.IsEditable)
-                    {
-                        newItem.PropertyChanged += ResultItem_PropertyChanged;
-                    }
-
+                    newItem.PropertyChanged += ResultItem_PropertyChanged;
                     MeasuredResults.Add(newItem);
                     TriggerValidation();
-                    
-                    // Ensure we lock out the File Watcher
+
                     if (!IsPendingAction)
                     {
                         IsPendingAction = true;
@@ -1799,7 +1855,98 @@ namespace SelectML.Client.ViewModels
                         RequestRestoreWindow?.Invoke();
                     }
                 }
+                else
+                {
+                    // Modo Enfileirado (Comportamento legado mantido)
+                    if (_isProcessingFile)
+                    {
+                        // Cenário A: Colisão. Enfileirar no Buffer Reverso.
+                        _serialBuffer.Enqueue(e);
+                        StatusMessage = $"Dado serial em buffer ({_serialBuffer.Count})...";
+                    }
+                    else
+                    {
+                        // Cenário B: Adicionar direto (Sem arquivo sendo processado)
+                        string featureName = !string.IsNullOrWhiteSpace(_currentSerialFeatureName) 
+                                             ? _currentSerialFeatureName 
+                                             : e.FeatureName;
+
+                        var newItem = new ResultItem 
+                        { 
+                            Characteristic = featureName, 
+                            Value = e.Value, 
+                            IsRecognized = !e.IsGeneric,
+                            IsEditable = true, // Always editable for Serial
+                            IsFromSerial = true
+                        };
+                        
+                        if (newItem.IsEditable)
+                        {
+                            newItem.PropertyChanged += ResultItem_PropertyChanged;
+                        }
+
+                        MeasuredResults.Add(newItem);
+                        TriggerValidation();
+                        
+                        // Ensure we lock out the File Watcher
+                        if (!IsPendingAction)
+                        {
+                            IsPendingAction = true;
+                            StatusMessage = "Recebendo dados seriais...";
+                            RequestRestoreWindow?.Invoke();
+                        }
+                    }
+                }
             });
+        }
+
+        private void OnSerialUndoRequested(object sender, EventArgs e)
+        {
+            System.Windows.Application.Current.Dispatcher.Invoke(() =>
+            {
+                ExecuteSerialUndo();
+            });
+        }
+
+        private void ExecuteSerialUndo()
+        {
+            // 1. Se houver dados no buffer serial (Modo Legado Enfileirado):
+            if (_serialBuffer.Count > 0)
+            {
+                var list = _serialBuffer.ToList();
+                list.RemoveAt(list.Count - 1);
+                _serialBuffer = new Queue<SerialMeasurement>(list);
+                UpdateStatus(_serialBuffer.Count > 0 
+                    ? $"Dado serial em buffer desfeito ({_serialBuffer.Count} restantes)..."
+                    : "Dados seriais em buffer desfeitos.");
+                Log.Information("Serial buffer item undone via hardware trigger");
+                return;
+            }
+
+            // 2. Procura a medição serial mais recente na tela (exclui itens originados de arquivos)
+            var lastSerialItem = MeasuredResults.LastOrDefault(x => x.IsFromSerial);
+            if (lastSerialItem != null)
+            {
+                lastSerialItem.PropertyChanged -= ResultItem_PropertyChanged;
+                MeasuredResults.Remove(lastSerialItem);
+                TriggerValidation();
+                Log.Information("Serial measurement item removed via U-WAVE undo command");
+
+                if (MeasuredResults.Count == 0)
+                {
+                    // Se não houver mais itens na tela e nenhum arquivo de texto foi carregado, reseta o estado
+                    ExecuteCancel(null);
+                    UpdateStatus("Medição serial desfeita. Aguardando...");
+                }
+                else
+                {
+                    UpdateStatus("Última medição serial desfeita.");
+                }
+            }
+            else
+            {
+                Log.Information("U-WAVE undo command received, but no serial measurement found to undo.");
+            }
         }
 
 

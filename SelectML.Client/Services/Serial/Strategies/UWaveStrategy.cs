@@ -22,6 +22,20 @@ namespace SelectML.Client.Services.Serial.Strategies
             };
         }
 
+        public bool IsUndoCommand(string rawData)
+        {
+            if (string.IsNullOrWhiteSpace(rawData)) return false;
+
+            // Remove espaços em branco
+            string clean = Regex.Replace(rawData.Trim(), @"\s+", "");
+
+            // Padrão Mitutoyo U-WAVE Cancel/Undo:
+            // Começa com ST1, seguido do canal/identificador e finalizado com código de cancelamento 41899
+            // Exemplo fornecido: "ST10001000000041899" (onde "01" é o canal do transmissor e pode variar)
+            return clean.StartsWith("ST1", StringComparison.OrdinalIgnoreCase) 
+                && clean.Contains("41899");
+        }
+
         public SerialMeasurement? Parse(string rawData)
         {
             if (string.IsNullOrWhiteSpace(rawData)) return null;
