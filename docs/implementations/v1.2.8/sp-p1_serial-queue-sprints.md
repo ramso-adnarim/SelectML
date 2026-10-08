@@ -128,8 +128,8 @@ Cada sprint possui escopo delimitado, critérios de aceitação objetivos e vali
     - [x] Testar arquivo com cotas + medições seriais adicionadas -> seleção de nomes no ComboBox -> geração do CSV unificado.
     - [x] Testar chegada serial anterior ao arquivo de texto (C2) com prevalência de cabeçalho do arquivo.
     - [x] Testar barreira de validação para cotas vazias ou duplicadas (C3/C4).
-  - [ ] **Mecanismo de Desfazer Serial (U-WAVE):**
-    - [ ] Enviar medições seriais e disparar comando de cancelamento U-WAVE -> conferir remoção LIFO apenas das cotas seriais.
+  - [x] **Mecanismo de Desfazer Serial (U-WAVE):**
+    - [x] Enviar medições seriais e disparar comando de cancelamento U-WAVE -> conferir remoção LIFO apenas das cotas seriais.
   - [x] **Verificação de Compilação e Empacotamento:**
     - [x] Compilar em modo `Release` (garantindo que o target `EnsureWindowsSerialPortDll` copie a DLL nativa Win32 de 88 KB).
 * **Critério de Aceitação:**
