@@ -1750,6 +1750,7 @@ namespace SelectML.Client.ViewModels
         {
             if (obj is ResultItem item && MeasuredResults.Contains(item))
             {
+                item.PropertyChanged -= ResultItem_PropertyChanged;
                 MeasuredResults.Remove(item);
                 TriggerValidation();
 
