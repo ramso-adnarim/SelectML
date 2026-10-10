@@ -39,6 +39,9 @@ namespace SelectML.Client.Services
         public string NameModifierMode { get; set; } = "Disabled";
         public string CustomNameModifierFormat { get; set; } = "{N,2,A} {T,3,A}";
 
+        // Inspection Routine Feature Listing
+        public bool ListAllFeatures { get; set; } = false;
+
         // UI, Theme & Window Geometry Persistence
         public bool IsDarkMode { get; set; } = true;
         public double WindowWidth { get; set; } = 1100;

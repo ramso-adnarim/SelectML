@@ -37,14 +37,14 @@ Cada sprint possui escopo bem delimitado, tarefas técnicas com caixas de seleç
   * `SelectML.Client/Services/DatabaseService.cs`
   * `SelectML.Client/Services/AppConfig.cs`
 * **Tarefas Técnicas:**
-  - [ ] Criar a classe `InspectionFeatureInfo` em `SelectML.Core` contendo:
+  - [x] Criar a classe `InspectionFeatureInfo` em `SelectML.Core` contendo:
     - `OrderNo`, `FeatureID`, `FeatureName`, `FeatureType`, `TipoDescricao`, `Nominal`, `LSL`, `USL`, `DecimalLength` e propriedade booleana `IsAttribute`.
-  - [ ] Adicionar à `AppConfig.cs` a propriedade `public bool ListAllFeatures { get; set; } = false;`.
-  - [ ] Atualizar `IDatabaseService.cs` com a assinatura:
+  - [x] Adicionar à `AppConfig.cs` a propriedade `public bool ListAllFeatures { get; set; } = false;`.
+  - [x] Atualizar `IDatabaseService.cs` com a assinatura:
     - `Task<List<InspectionFeatureInfo>> GetInspectionRoutineFeaturesAsync(string runName);`
-  - [ ] Implementar em `DatabaseService.cs` a consulta otimizada `GetInspectionRoutineFeaturesAsync` utilizando `WITH (NOLOCK)` em `FeatureRun`, `Feature` e `FeatureProperties`, ordenando nativamente por `fr.OrderNo ASC`, com resolução interna do `@TargetRunID` por `@RunName` em `ActiveRun` e `Run`.
+  - [x] Implementar em `DatabaseService.cs` a consulta otimizada `GetInspectionRoutineFeaturesAsync` utilizando `WITH (NOLOCK)` em `FeatureRun`, `Feature` e `FeatureProperties`, ordenando nativamente por `fr.OrderNo ASC`, com resolução interna do `@TargetRunID` por `@RunName` em `ActiveRun` e `Run`.
 * **Critério de Aceitação:**
-  * Teste unitário/integrado executando contra a base local `MeasurLink10` para `RunName = '067931-102026'` retorna a listagem completa na ordem correta em menos de 30ms.
+  * Teste unitário/integrado executando contra a base local `MeasurLink10` para `RunName = '067931-102026'` retorna a listagem completa na ordem correta em menos de 30ms. [Validado com êxito: 14 ms em média]
 
 ---
 
