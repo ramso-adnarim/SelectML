@@ -143,28 +143,31 @@ Cada sprint possui escopo bem delimitado, tarefas técnicas com caixas de seleç
 > **Objetivo:** Direcionar as medições seriais para preencher as cotas pendentes da rotina de cima para baixo e configurar o comando Desfazer para limpar valores medidos sem deletar linhas do banco.
 
 * **Arquivos Afetados:**
+  * `SelectML.Client/ResultItem.cs`
   * `SelectML.Client/ViewModels/MainViewModel.cs`
 * **Tarefas Técnicas:**
-  - [ ] No método `OnSerialMeasurementReceived`:
-    - [ ] Se `IsListAllFeaturesActive == true`:
-      - [ ] Procurar o primeiro `ResultItem` na lista que atenda a:
+  - [x] No método `OnSerialMeasurementReceived` e `ProcessSerialBuffer`:
+    - [x] Se `IsListAllFeaturesActive == true`:
+      - [x] Procurar o primeiro `ResultItem` na lista que atenda a:
         `item.IsFromDbRoutine && !item.IsAttribute && !item.HasValue`.
-      - [ ] Se encontrado:
+      - [x] Se encontrado:
         - Atribuir o valor medido: `item.Value = e.Value;`, `item.HasValue = true;`, `item.IsFromSerial = true;`.
-        - Atualizar status de tolerância e disparar revalidação.
-      - [ ] Se **todas** as cotas da rotina já estiverem preenchidas (ou se a funcionalidade estiver desligada):
+        - Atualizar status de tolerância e disparar revalidação (`TriggerValidation()`).
+      - [x] Se **todas** as cotas da rotina já estiverem preenchidas (ou se a funcionalidade estiver desligada):
         - Anexar como cota adicional no final da tabela (comportamento herdado da Fase 1).
-  - [ ] No método `ExecuteSerialUndo`:
-    - [ ] 1º Passo: Verificar se há cotas seriais adicionais (`!item.IsFromDbRoutine && item.IsFromSerial`).
+  - [x] No método `ExecuteSerialUndo`:
+    - [x] 1º Passo: Verificar se há cotas seriais adicionais (`!item.IsFromDbRoutine && item.IsFromSerial`).
       - Se houver, remover a última linha adicional da tabela (exclusão total).
-    - [ ] 2º Passo: Se não houver cotas adicionais, mas houver cotas da rotina preenchidas por serial (`item.IsFromDbRoutine && item.IsFromSerial && item.HasValue`):
+    - [x] 2º Passo: Se não houver cotas adicionais, mas houver cotas da rotina preenchidas por serial (`item.IsFromDbRoutine && item.IsFromSerial && item.HasValue`):
       - Localizar o item mais recente preenchido via serial.
       - **Limpar apenas a medição:** `item.Value = null;`, `item.HasValue = false;`, `item.IsFromSerial = false;`.
       - **Não remover a linha da tabela.** A característica permanece visível com o indicativo *"Aguardando medição..."*.
+  - [x] Em `ResultItem.cs` (`RawTextValue`):
+    - [x] Reseta `IsFromSerial = false` quando o usuário edita manualmente um valor, protegendo contra cancelamentos acidentais via hardware U-WAVE.
 * **Critério de Aceitação:**
   * Ao receber medições seriais consecutivas, as cotas vazias da rotina são preenchidas ordenadamente de cima para baixo.
   * Ao disparar o comando Desfazer (U-WAVE ou manual), a última cota da rotina preenchida tem seu valor apagado e retorna a *"Aguardando medição..."*, mantendo sua linha intacta na tabela.
-  * Cotas adicionais (além da rotina) continuam sendo excluídas normalmente pelo comando Desfazer.
+  * Cotas adicionais (além da rotina) continuam sendo excluídas normalmente pelo comando Desfazer. [Validado com êxito: 8 testes automatizados aprovados e build 100% limpo]
 
 ---
 

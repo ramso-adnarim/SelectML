@@ -1667,6 +1667,7 @@ namespace SelectML.Client.ViewModels
                      e.PropertyName == nameof(ResultItem.HasValue) || 
                      e.PropertyName == nameof(ResultItem.IsApproved))
             {
+                TriggerValidation();
                 CommandManager.InvalidateRequerySuggested();
             }
         }
@@ -2113,16 +2114,33 @@ namespace SelectML.Client.ViewModels
                 while (_serialBuffer.Count > 0)
                 {
                     var item = _serialBuffer.Dequeue();
-                    MeasuredResults.Add(new ResultItem 
+                    if (IsListAllFeaturesActive)
+                    {
+                        var target = MeasuredResults.FirstOrDefault(x => x.IsFromDbRoutine && !x.IsAttribute && !x.HasValue);
+                        if (target != null)
+                        {
+                            target.Value = item.Value;
+                            target.IsFromSerial = true;
+                            continue;
+                        }
+                    }
+
+                    var newItem = new ResultItem 
                     { 
                         Characteristic = !string.IsNullOrWhiteSpace(_currentSerialFeatureName) ? _currentSerialFeatureName : item.FeatureName, 
                         Value = item.Value, 
                         IsRecognized = !item.IsGeneric,
                         IsEditable = true, // Always editable for Serial
                         IsFromSerial = true
-                    });
+                    };
+                    if (newItem.IsEditable)
+                    {
+                        newItem.PropertyChanged += ResultItem_PropertyChanged;
+                    }
+                    MeasuredResults.Add(newItem);
                 }
                 
+                TriggerValidation();
                 // Lock UI for the new serial data
                 IsPendingAction = true;
                 StatusMessage = "Dados seriais recuperados do buffer.";
@@ -2134,6 +2152,35 @@ namespace SelectML.Client.ViewModels
         {
             System.Windows.Application.Current.Dispatcher.Invoke(() =>
             {
+                // Top-Down Fill quando "Listar todas as características" está ativo:
+                if (IsListAllFeaturesActive)
+                {
+                    if (_isProcessingFile && EnqueueSerialInput)
+                    {
+                        // Cenário de colisão com arquivo sendo processado
+                        _serialBuffer.Enqueue(e);
+                        StatusMessage = $"Dado serial em buffer ({_serialBuffer.Count})...";
+                        return;
+                    }
+
+                    var targetRoutineItem = MeasuredResults.FirstOrDefault(x => x.IsFromDbRoutine && !x.IsAttribute && !x.HasValue);
+                    if (targetRoutineItem != null)
+                    {
+                        targetRoutineItem.Value = e.Value;
+                        targetRoutineItem.IsFromSerial = true;
+                        TriggerValidation();
+
+                        if (!IsPendingAction)
+                        {
+                            IsPendingAction = true;
+                        }
+                        StatusMessage = $"Medição serial recebida para {targetRoutineItem.Characteristic}: {e.Value}";
+                        RequestRestoreWindow?.Invoke();
+                        return;
+                    }
+                    // Se todas as cotas da rotina já estiverem preenchidas, segue para o comportamento de cota adicional abaixo
+                }
+
                 if (!EnqueueSerialInput)
                 {
                     // Modo Direto / Híbrido: adiciona diretamente à lista de resultados em exibição
@@ -2225,30 +2272,40 @@ namespace SelectML.Client.ViewModels
                 return;
             }
 
-            // 2. Procura a medição serial mais recente na tela (exclui itens originados de arquivos)
-            var lastSerialItem = MeasuredResults.LastOrDefault(x => x.IsFromSerial);
-            if (lastSerialItem != null)
+            // 2. 1º Passo: Verificar se há cotas seriais adicionais (!item.IsFromDbRoutine && item.IsFromSerial)
+            var extraSerialItem = MeasuredResults.LastOrDefault(x => !x.IsFromDbRoutine && x.IsFromSerial);
+            if (extraSerialItem != null)
             {
-                lastSerialItem.PropertyChanged -= ResultItem_PropertyChanged;
-                MeasuredResults.Remove(lastSerialItem);
+                extraSerialItem.PropertyChanged -= ResultItem_PropertyChanged;
+                MeasuredResults.Remove(extraSerialItem);
                 TriggerValidation();
-                Log.Information("Serial measurement item removed via U-WAVE undo command");
+                Log.Information("Additional serial measurement item removed via U-WAVE undo command: {Feature}", extraSerialItem.Characteristic);
 
                 if (MeasuredResults.Count == 0)
                 {
-                    // Se não houver mais itens na tela e nenhum arquivo de texto foi carregado, reseta o estado
                     ExecuteCancel(null);
                     UpdateStatus("Medição serial desfeita. Aguardando...");
                 }
                 else
                 {
-                    UpdateStatus("Última medição serial desfeita.");
+                    UpdateStatus($"Cota serial adicional '{extraSerialItem.Characteristic}' desfeita.");
                 }
+                return;
             }
-            else
+
+            // 3. 2º Passo: Se não houver cotas adicionais, verificar cotas da rotina preenchidas por serial (item.IsFromDbRoutine && item.IsFromSerial && item.HasValue)
+            var routineSerialItem = MeasuredResults.LastOrDefault(x => x.IsFromDbRoutine && x.IsFromSerial && x.HasValue);
+            if (routineSerialItem != null)
             {
-                Log.Information("U-WAVE undo command received, but no serial measurement found to undo.");
+                routineSerialItem.Value = null;
+                routineSerialItem.IsFromSerial = false;
+                TriggerValidation();
+                Log.Information("Routine measurement value cleared via U-WAVE undo command for {Feature}", routineSerialItem.Characteristic);
+                UpdateStatus($"Medição serial de '{routineSerialItem.Characteristic}' desfeita (aguardando nova medição).");
+                return;
             }
+
+            Log.Information("U-WAVE undo command received, but no serial measurement found to undo.");
         }
 
 

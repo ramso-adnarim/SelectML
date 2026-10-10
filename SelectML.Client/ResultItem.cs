@@ -198,6 +198,7 @@ namespace SelectML.Client
                 if (string.IsNullOrWhiteSpace(value))
                 {
                     Value = null;
+                    IsFromSerial = false;
                 }
                 else
                 {
@@ -205,6 +206,7 @@ namespace SelectML.Client
                     if (double.TryParse(normalized, NumberStyles.Any, CultureInfo.InvariantCulture, out double parsed))
                     {
                         Value = parsed;
+                        IsFromSerial = false;
                     }
                     else
                     {
