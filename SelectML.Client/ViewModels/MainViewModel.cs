@@ -419,6 +419,32 @@ namespace SelectML.Client.ViewModels
 
         public bool IsNameModifierActive => NameModifierMode != "Disabled";
 
+        private bool _isListAllFeaturesActive;
+        public bool IsListAllFeaturesActive
+        {
+            get => _isListAllFeaturesActive;
+            set
+            {
+                if (_isListAllFeaturesActive != value)
+                {
+                    _isListAllFeaturesActive = value;
+                    OnPropertyChanged();
+
+                    try
+                    {
+                        var config = _configService.Load();
+                        config.ListAllFeatures = _isListAllFeaturesActive;
+                        _configService.Save(config);
+                        Log.Information("ListAllFeatures changed and saved: {Active}", _isListAllFeaturesActive);
+                    }
+                    catch (Exception ex)
+                    {
+                        Log.Error(ex, "Failed to save ListAllFeatures configuration");
+                    }
+                }
+            }
+        }
+
         public bool IsSqlCredentialsEnabled => !IsMonitoring && !DbUseWindowsAuth;
 
         public string ConfigButtonText
@@ -873,6 +899,9 @@ namespace SelectML.Client.ViewModels
             OnPropertyChanged(nameof(IsNameModifierDisabled));
             OnPropertyChanged(nameof(IsNameModifierCustomActive));
             OnPropertyChanged(nameof(IsNameModifierActive));
+
+            _isListAllFeaturesActive = config.ListAllFeatures;
+            OnPropertyChanged(nameof(IsListAllFeaturesActive));
         }
 
         private async void ExecuteSaveConfig(object obj)

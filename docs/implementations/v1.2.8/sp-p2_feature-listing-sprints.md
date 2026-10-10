@@ -55,18 +55,18 @@ Cada sprint possui escopo bem delimitado, tarefas técnicas com caixas de seleç
   * `SelectML.Client/MainWindow.xaml`
   * `SelectML.Client/ViewModels/MainViewModel.cs`
 * **Tarefas Técnicas:**
-  - [ ] Em `MainViewModel.cs`:
-    - [ ] Adicionar propriedade bindável `IsListAllFeaturesActive` com notificação de alteração.
-    - [ ] Carregar o valor inicial a partir de `config.ListAllFeatures` no construtor.
-    - [ ] Salvar o valor no `appsettings.json` através do `_configService` ao alterar a opção.
-  - [ ] Em `MainWindow.xaml`:
-    - [ ] Inserir um novo `MenuItem` imediatamente à direita do menu *"Modificador de nomes"*:
+  - [x] Em `MainViewModel.cs`:
+    - [x] Adicionar propriedade bindável `IsListAllFeaturesActive` com notificação de alteração.
+    - [x] Carregar o valor inicial a partir de `config.ListAllFeatures` no construtor.
+    - [x] Salvar o valor no `appsettings.json` através do `_configService` ao alterar a opção.
+  - [x] Em `MainWindow.xaml`:
+    - [x] Inserir um novo `MenuItem` imediatamente à direita do menu *"Modificador de nomes"*:
       - Cabeçalho: *"Configuração"* (sem círculo pulsante).
       - Sub-item: *"Listar todas as características"* com `IsCheckable="True"` e binding bidirecional com `IsListAllFeaturesActive`.
 * **Critério de Aceitação:**
   * O menu "Configuração" aparece alinhado na barra superior com o mesmo estilo visual e tipografia dos menus vizinhos.
   * Ao clicar para marcar/desmarcar a opção, o estado é atualizado instantaneamente.
-  * Ao fechar e reabrir o aplicativo, o estado selecionado é restaurado com perfeição a partir de `appsettings.json`.
+  * Ao fechar e reabrir o aplicativo, o estado selecionado é restaurado com perfeição a partir de `appsettings.json`. [Validado com êxito via teste automatizado e build com 0 erros]
 
 ---
 

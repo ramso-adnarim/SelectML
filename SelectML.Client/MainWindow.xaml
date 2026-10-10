@@ -338,6 +338,15 @@
                     <MenuItem Header="Desativar" IsCheckable="True" IsChecked="{Binding IsNameModifierDisabled}"/>
                     <MenuItem Header="Personalizado" IsCheckable="True" IsChecked="{Binding IsNameModifierCustomActive}" Command="{Binding OpenNameModifierConfigCommand}" Foreground="{DynamicResource Brush.Text.Primary}"/>
                 </MenuItem>
+                <MenuItem Foreground="{DynamicResource Brush.Text.Primary}" FontWeight="SemiBold" VerticalAlignment="Center">
+                    <MenuItem.Header>
+                        <TextBlock Text="Configuração" VerticalAlignment="Center"/>
+                    </MenuItem.Header>
+                    <MenuItem Header="Listar todas as características" 
+                              IsCheckable="True" 
+                              IsChecked="{Binding IsListAllFeaturesActive}" 
+                              Foreground="{DynamicResource Brush.Text.Primary}"/>
+                </MenuItem>
             </Menu>
 
             <!-- Theme Toggle -->
