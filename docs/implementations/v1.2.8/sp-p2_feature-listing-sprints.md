@@ -77,29 +77,29 @@ Cada sprint possui escopo bem delimitado, tarefas técnicas com caixas de seleç
   * `SelectML.Client/ResultItem.cs`
   * `SelectML.Client/ViewModels/MainViewModel.cs`
 * **Tarefas Técnicas:**
-  - [ ] Atualizar `ResultItem.cs` para suportar:
+  - [x] Atualizar `ResultItem.cs` para suportar:
     - `double? Value` (nullable), flag `HasValue`, `FeatureType`, `IsAttribute`, `IsApproved`, `Nominal`, `LSL`, `USL`, `DecimalLength`, `IsFromDbRoutine`.
-  - [ ] No `MainViewModel.cs` (método de carga de arquivo `OnFileCreated` / `ProcessFile`):
-    - [ ] Se `IsListAllFeaturesActive == true`:
-      - [ ] Obter o identificador do lote (`data.BatchNumber`).
-      - [ ] Consultar a rotina via `GetInspectionRoutineFeaturesAsync(data.BatchNumber)`.
-      - [ ] Se houver cotas na rotina:
+  - [x] No `MainViewModel.cs` (método de carga de arquivo `OnFileCreated` / `ProcessFile`):
+    - [x] Se `IsListAllFeaturesActive == true`:
+      - [x] Obter o identificador do lote (`data.BatchNumber`).
+      - [x] Consultar a rotina via `GetInspectionRoutineFeaturesAsync(data.BatchNumber)`.
+      - [x] Se houver cotas na rotina:
         - Mesclagem na ordem `fr.OrderNo ASC`:
           - Cota presente no arquivo: atribui o valor medido e define `HasValue = true`.
           - Cota ausente no arquivo: insere com `HasValue = false` (aguardando medição com placeholder).
           - Define `IsFromDbRoutine = true`.
         - Anexa eventuais cotas do arquivo ausentes na rotina do banco no rodapé.
-    - [ ] No método `DetectStationAndFeatures()` (digitação manual do lote no cabeçalho):
-      - [ ] Se `IsListAllFeaturesActive == true`:
-        - Capturar os valores previamente digitados/medidos na tela (`var previousValues = MeasuredResults.Where(x => x.HasValue).ToDictionary(...)`).
+    - [x] No método `DetectStationAndFeatures()` / `LoadFeaturesForPart()` (digitação manual do lote no cabeçalho):
+      - [x] Se `IsListAllFeaturesActive == true`:
+        - Capturar os valores previamente digitados/medidos na tela (`previousItems = MeasuredResults.ToDictionary(...)`).
         - Carregar a rotina do novo lote via `GetInspectionRoutineFeaturesAsync(BatchNumber)`.
         - **Preservação de Valores:** Para cada cota da nova lista que já possuía valor medido na tela anterior, restaurar o valor automaticamente, evitando retrabalho.
-    - [ ] Assegurar que a exclusão manual de linha (botão direito -> *"Excluir valor"*) continue funcionando para o operador descartar cotas não desejadas.
-    - [ ] Ajustar `IsAutoMode`: suspender o auto-envio caso `IsListAllFeaturesActive == true` e restem cotas pendentes na rotina.
+    - [x] Assegurar que a exclusão manual de linha (botão direito -> *"Excluir valor"*) continue funcionando para o operador descartar cotas não desejadas.
+    - [x] Ajustar `IsAutoMode`: suspender o auto-envio caso `IsListAllFeaturesActive == true` e restem cotas pendentes na rotina.
 * **Critério de Aceitação:**
   * Ao carregar arquivo com 3 cotas para uma rotina de 15 cotas, a tela exibe todas as 15 cotas na ordem sequencial do MeasurLink.
   * As 3 cotas do arquivo exibem seus valores; as outras 12 exibem o indicativo *"Aguardando medição..."*.
-  * Ao alterar o número do lote no cabeçalho, a rotina é atualizada e os valores já digitados nas cotas coincidentes permanecem preservados.
+  * Ao alterar o número do lote no cabeçalho, a rotina é atualizada e os valores já digitados nas cotas coincidentes permanecem preservados. [Validado com êxito via teste automatizado integrado ao banco de dados e compilação limpa com 0 erros]
 
 ---
 
