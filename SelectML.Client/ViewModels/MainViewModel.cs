@@ -1655,6 +1655,12 @@ namespace SelectML.Client.ViewModels
         {
             if (e.PropertyName == nameof(ResultItem.Characteristic))
             {
+                if (sender is ResultItem changedItem && !string.IsNullOrWhiteSpace(changedItem.Characteristic))
+                {
+                    bool merged = TryMergeWithPendingRoutineItem(changedItem);
+                    if (merged) return;
+                }
+
                 TriggerValidation();
             }
             else if (e.PropertyName == nameof(ResultItem.Value) || 
@@ -1663,6 +1669,41 @@ namespace SelectML.Client.ViewModels
             {
                 CommandManager.InvalidateRequerySuggested();
             }
+        }
+
+        private bool TryMergeWithPendingRoutineItem(ResultItem changedItem)
+        {
+            if (!IsListAllFeaturesActive || MeasuredResults == null) return false;
+
+            string targetName = changedItem.Characteristic.Trim();
+
+            // Localiza se existe uma cota da rotina (IsFromDbRoutine) que esteja aguardando medição (!HasValue) com esse mesmo nome
+            var targetRoutineItem = MeasuredResults.FirstOrDefault(x =>
+                x != changedItem &&
+                x.IsFromDbRoutine &&
+                !x.HasValue &&
+                string.Equals(x.Characteristic?.Trim(), targetName, StringComparison.OrdinalIgnoreCase));
+
+            if (targetRoutineItem != null)
+            {
+                // Funde os dados medidos na posição original da rotina
+                targetRoutineItem.Value = changedItem.Value;
+                targetRoutineItem.IsApproved = changedItem.IsApproved;
+                targetRoutineItem.OriginalCharacteristic = changedItem.OriginalCharacteristic;
+                targetRoutineItem.IsFromSerial = changedItem.IsFromSerial;
+
+                // Remove a linha avulsa da tabela e revalida
+                System.Windows.Application.Current.Dispatcher.InvokeAsync(() =>
+                {
+                    changedItem.PropertyChanged -= ResultItem_PropertyChanged;
+                    MeasuredResults.Remove(changedItem);
+                    TriggerValidation();
+                });
+
+                return true;
+            }
+
+            return false;
         }
 
         private async Task LoadFeaturesForPart()
