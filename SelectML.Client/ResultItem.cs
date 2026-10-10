@@ -56,6 +56,7 @@ namespace SelectML.Client
                 OnPropertyChanged(); 
                 OnPropertyChanged(nameof(HasValue));
                 OnPropertyChanged(nameof(DisplayValue));
+                OnPropertyChanged(nameof(RawTextValue));
                 OnPropertyChanged(nameof(Status));
             }
         }
@@ -126,7 +127,7 @@ namespace SelectML.Client
         public int? DecimalLength
         {
             get => _decimalLength;
-            set { _decimalLength = value; OnPropertyChanged(); OnPropertyChanged(nameof(DisplayValue)); }
+            set { _decimalLength = value; OnPropertyChanged(); OnPropertyChanged(nameof(DisplayValue)); OnPropertyChanged(nameof(RawTextValue)); }
         }
 
         public bool IsFromDbRoutine
@@ -186,6 +187,30 @@ namespace SelectML.Client
                     return _value.Value.ToString($"F{DecimalLength.Value}", CultureInfo.InvariantCulture);
                 }
                 return _value.Value.ToString(CultureInfo.InvariantCulture);
+            }
+        }
+
+        public string RawTextValue
+        {
+            get => DisplayValue;
+            set
+            {
+                if (string.IsNullOrWhiteSpace(value))
+                {
+                    Value = null;
+                }
+                else
+                {
+                    string normalized = value.Trim().Replace(',', '.');
+                    if (double.TryParse(normalized, NumberStyles.Any, CultureInfo.InvariantCulture, out double parsed))
+                    {
+                        Value = parsed;
+                    }
+                    else
+                    {
+                        OnPropertyChanged();
+                    }
+                }
             }
         }
 

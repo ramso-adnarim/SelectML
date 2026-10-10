@@ -109,30 +109,33 @@ Cada sprint possui escopo bem delimitado, tarefas técnicas com caixas de seleç
 * **Arquivos Afetados:**
   * `SelectML.Client/ResultItem.cs`
   * `SelectML.Client/MainWindow.xaml`
+  * `SelectML.Client/Selectors/ValueColumnTemplateSelector.cs`
   * `SelectML.Client/ViewModels/MainViewModel.cs`
 * **Tarefas Técnicas:**
-  - [ ] Em `ResultItem.cs`:
-    - [ ] Implementar a lógica de cálculo de `ToleranceStatus` (`Conforming`, `OutOfTolerance`, `Pending`, `NotEvaluated`).
-    - [ ] Para características do tipo Variável com valor:
+  - [x] Em `ResultItem.cs`:
+    - [x] Implementar a lógica de cálculo de `ToleranceStatus` (`Conforming`, `OutOfTolerance`, `Pending`, `NotEvaluated`).
+    - [x] Para características do tipo Variável com valor:
       - Se `LSL` e `USL` definidos: `Value >= LSL && Value <= USL` -> Conforming (Verde); caso contrário, OutOfTolerance (Vermelho).
       - Tratamento para limites unilaterais (apenas USL ou apenas LSL).
       - Sem tolerâncias cadastradas: `NotEvaluated` (cor neutra padrão).
-    - [ ] Para características do tipo Atributo:
+    - [x] Para características do tipo Atributo:
       - Se `IsApproved == true` -> Conforming (Verde); se `false` -> OutOfTolerance (Vermelho).
-  - [ ] Em `MainWindow.xaml`:
-    - [ ] Estilizar a coluna *"Valor"* no `ResultsDataGrid`:
-      - **Para Atributos (`IsAttribute == true`):** Botão Toggle horizontal sutil e moderno (estilo pill switch) alternando entre *"Aprovado"* (verde) e *"Reprovado"* (vermelho) com um clique, sem caixa de texto numérica.
+    - [x] Adicionar propriedade `RawTextValue` com suporte tolerante a vírgula (teclado pt-BR) e ponto, com reset para `null` em texto vazio.
+  - [x] Em `MainWindow.xaml` e `ValueColumnTemplateSelector.cs`:
+    - [x] Criar `ValueColumnTemplateSelector` para alternar dinamicamente entre `VariableTemplate` e `AttributeTemplate`.
+    - [x] Estilizar a coluna *"Valor"* no `ResultsDataGrid`:
+      - **Para Atributos (`IsAttribute == true`):** Botão Toggle horizontal sutil e moderno (estilo pill switch com `AttributeTogglePillStyle`) alternando entre *"● Aprovado"* (verde `#163828`/`#4ade80`) e *"● Reprovado"* (vermelho `#3d1a1a`/`#f87171`) com um clique, sem caixa de texto numérica.
       - **Para Variáveis (`IsAttribute == false`):** TextBox com comportamento de watermark:
         - Quando `HasValue == false`: exibe texto indicativo *"Aguardando medição..."* em cinza/itálico.
-        - Ao clicar/focar para digitação: o texto desaparece permitindo inserção numérica livre.
+        - Ao clicar/focar para digitação: o texto desaparece instantaneamente via trigger de foco permitindo inserção numérica livre.
         - Cor do texto vinculada ao status de tolerância (Verde para dentro dos limites, Vermelho para fora).
-  - [ ] Na rotina de envio (`GenerateOutputCsv`):
-    - [ ] Para itens do tipo Atributo, gravar no CSV `0` para Aprovado e `1` para Reprovado.
+  - [x] Na rotina de envio (`BuildMeasurementDataFromUI` / exportação CSV):
+    - [x] Para itens do tipo Atributo, gravar no dicionário/CSV `0` para Aprovado e `1` para Reprovado.
 * **Critério de Aceitação:**
-  * Linhas de atributo exibem o botão toggle em vez de TextBox, alternando entre Aprovado e Reprovado.
-  * Linhas de variáveis vazias exibem *"Aguardando medição..."*, que desaparece ao focar para digitação.
+  * Linhas de atributo exibem o botão toggle em vez de TextBox, alternando entre Aprovado e Reprovado com visual pill moderno.
+  * Linhas de variáveis vazias exibem *"Aguardando medição..."*, que desaparece ao focar/clicar para digitação e aceita números com vírgula ou ponto.
   * Valores medidos dentro da tolerância aparecem em verde; valores fora da tolerância aparecem em vermelho.
-  * O arquivo CSV final exporta `0` ou `1` para os atributos e os valores decimais para as variáveis.
+  * O arquivo CSV final exporta `0` ou `1` para os atributos e os valores decimais para as variáveis. [Validado com êxito: 14 testes automatizados aprovados e build 100% limpo]
 
 ---
 
