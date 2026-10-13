@@ -61,4 +61,10 @@
     <SolidColorBrush x:Key="{x:Static SystemColors.HighlightBrushKey}" Color="#3b82f6"/>
     <SolidColorBrush x:Key="{x:Static SystemColors.HighlightTextBrushKey}" Color="#FFFFFF"/>
 
+    <!-- ScrollBar Theme Tokens -->
+    <SolidColorBrush x:Key="Brush.ScrollBar.Track" Color="#161f2c"/>
+    <SolidColorBrush x:Key="Brush.ScrollBar.Thumb" Color="#37475d"/>
+    <SolidColorBrush x:Key="Brush.ScrollBar.Thumb.Hover" Color="#506584"/>
+    <SolidColorBrush x:Key="Brush.ScrollBar.Thumb.Dragging" Color="#136dec"/>
+
 </ResourceDictionary>
