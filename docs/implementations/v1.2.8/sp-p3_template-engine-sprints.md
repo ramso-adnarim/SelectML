@@ -42,19 +42,19 @@ Cada sprint possui escopo delimitado, tarefas rastreáveis por checklist, arquiv
   * `SelectML.Client/Services/TemplateRepository.cs` (Novo arquivo)
   * `SelectML.sln` (Inclusão do novo projeto)
 * **Tarefas Técnicas:**
-  - [ ] Criar a estrutura de modelos `TemplateDefinition` e `TemplateLineRule` em `SelectML.Core.Templates`.
-  - [ ] Criar a interface `IConfigurableParser : IMachineParser` para identificação de parsers parametrizáveis.
-  - [ ] Criar o projeto de biblioteca de classes `.NET 8` `SelectML.Parsers.TextTemplate` com saída configurada para `..\SelectML.Client\bin\$(Configuration)\net8.0-windows\Plugins\`.
-  - [ ] Implementar `EncodingDetector`: identificação automática transparente de UTF-8 (com/sem BOM) e ISO-8859-1 (Latin-1/ANSI).
-  - [ ] Implementar `TemplateExecutionEngine`:
+  - [x] Criar a estrutura de modelos `TemplateDefinition` e `TemplateLineRule` em `SelectML.Core.Templates`.
+  - [x] Criar a interface `IConfigurableParser : IMachineParser` para identificação de parsers parametrizáveis.
+  - [x] Criar o projeto de biblioteca de classes `.NET 8` `SelectML.Parsers.TextTemplate` com saída configurada para `..\SelectML.Client\bin\$(Configuration)\net8.0-windows\Plugins\`.
+  - [x] Implementar `EncodingDetector`: identificação automática transparente de UTF-8 (com/sem BOM) e ISO-8859-1 (Latin-1/ANSI).
+  - [x] Implementar `TemplateExecutionEngine`:
     - Leitura com codificação auto-detectada.
     - Suporte a extração de `PartName` e `BatchNumber` (via regra ou fallback automático de nome de arquivo).
     - Suporte unificado e transparente a **leiaute horizontal** (linha de cotas + linha de valores) e **leiaute linha a linha** (cada linha com cota + valor).
     - Conversão decimal inteligente (reconhecimento automático de ponto ou vírgula como separador decimal).
-  - [ ] Implementar `TextTemplateParser : IConfigurableParser, INotifyPropertyChanged` com suporte a template ativo e nome dinâmico.
-  - [ ] Implementar `TemplateRepository` em `SelectML.Client` salvando em `%APPDATA%\SelectML\Templates`.
+  - [x] Implementar `TextTemplateParser : IConfigurableParser, INotifyPropertyChanged` com suporte a template ativo e nome dinâmico.
+  - [x] Implementar `TemplateRepository` em `SelectML.Core.Templates` salvando em `%APPDATA%\SelectML\Templates`.
 * **Critério de Aceitação:**
-  * O projeto compila com sucesso, gera `Plugins\SelectML.Parsers.TextTemplate.dll` e um teste unitário executa o parsing de arquivos horizontais e linha por linha contendo caracteres especiais (`Ø`, `°`, `µ`) e vírgula decimal, retornando `MeasurementData` perfeito.
+  * O projeto compila com sucesso, gera `Plugins\SelectML.Parsers.TextTemplate.dll` e um teste unitário executa o parsing de arquivos horizontais e linha por linha contendo caracteres especiais (`Ø`, `°`, `µ`) e vírgula decimal, retornando `MeasurementData` perfeito. [100% Validado com êxito na suíte automatizada]
 
 ---
 
