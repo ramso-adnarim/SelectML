@@ -213,13 +213,8 @@
                         BorderBrush="{DynamicResource Brush.Border.Base}" BorderThickness="1" 
                         CornerRadius="8" Padding="14">
                     <Grid>
-                        <Grid.RowDefinitions>
-                            <RowDefinition Height="Auto"/>
-                            <RowDefinition Height="*"/>
-                        </Grid.RowDefinitions>
-
                         <!-- Top Toolbar do Arquivo de Amostra -->
-                        <Grid Grid.Row="0" Margin="0,0,0,10">
+                        <Grid Grid.Row="0" Margin="0,0,0,8">
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="Auto"/>
                                 <ColumnDefinition Width="*"/>
@@ -233,19 +228,104 @@
                                      Height="28" Style="{StaticResource {x:Type TextBox}}" 
                                      VerticalContentAlignment="Center" Margin="0,0,8,0"/>
 
-                            <Button Grid.Column="2" Content="Procurar..." Width="85" Height="28"
-                                    Style="{StaticResource SecondaryButton}"/>
+                            <Button Grid.Column="2" Content="Procurar..." Command="{Binding BrowseSampleFileCommand}"
+                                    Width="90" Height="28" Style="{StaticResource SecondaryButton}"/>
                         </Grid>
 
-                        <!-- Área de Prévia do Arquivo -->
+                        <!-- Legenda de Cores para Marcação Rápida -->
                         <Border Grid.Row="1" Background="{DynamicResource Brush.Surface.Input}" 
+                                CornerRadius="4" Padding="8,4" Margin="0,0,0,8">
+                            <WrapPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                <TextBlock Text="Legenda (Clique com botão direito na linha ou seleção):" FontSize="11" 
+                                           Foreground="{DynamicResource Brush.Text.Secondary}" Margin="0,0,10,0" VerticalAlignment="Center"/>
+                                <StackPanel Orientation="Horizontal" Margin="0,0,12,0" VerticalAlignment="Center">
+                                    <Ellipse Width="10" Height="10" Fill="#E06C75" Margin="0,0,4,0"/>
+                                    <TextBlock Text="Rotina" FontSize="11" Foreground="{DynamicResource Brush.Text.Primary}"/>
+                                </StackPanel>
+                                <StackPanel Orientation="Horizontal" Margin="0,0,12,0" VerticalAlignment="Center">
+                                    <Ellipse Width="10" Height="10" Fill="#C678DD" Margin="0,0,4,0"/>
+                                    <TextBlock Text="Corrida/Lote" FontSize="11" Foreground="{DynamicResource Brush.Text.Primary}"/>
+                                </StackPanel>
+                                <StackPanel Orientation="Horizontal" Margin="0,0,12,0" VerticalAlignment="Center">
+                                    <Ellipse Width="10" Height="10" Fill="#61AFEF" Margin="0,0,4,0"/>
+                                    <TextBlock Text="Características" FontSize="11" Foreground="{DynamicResource Brush.Text.Primary}"/>
+                                </StackPanel>
+                                <StackPanel Orientation="Horizontal" Margin="0,0,12,0" VerticalAlignment="Center">
+                                    <Ellipse Width="10" Height="10" Fill="#98C379" Margin="0,0,4,0"/>
+                                    <TextBlock Text="Valores Medidos" FontSize="11" Foreground="{DynamicResource Brush.Text.Primary}"/>
+                                </StackPanel>
+                                <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                    <Ellipse Width="10" Height="10" Fill="#E5C07B" Margin="0,0,4,0"/>
+                                    <TextBlock Text="Cota + Valor (Linha a Linha)" FontSize="11" Foreground="{DynamicResource Brush.Text.Primary}"/>
+                                </StackPanel>
+                            </WrapPanel>
+                        </Border>
+
+                        <!-- Área de Prévia do Arquivo com Régua de Linhas e RichTextBox Interativo -->
+                        <Border Grid.Row="2" Background="{DynamicResource Brush.Surface.Input}" 
                                 BorderBrush="{DynamicResource Brush.Border.Base}" BorderThickness="1" 
-                                CornerRadius="6" Padding="10">
-                            <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Auto">
-                                <TextBlock Text="{Binding SampleFileContent, FallbackValue='Clique em Procurar... para carregar um arquivo CSV ou TXT de amostra e mapear as linhas.'}"
-                                           FontFamily="Consolas" FontSize="12" 
-                                           Foreground="{DynamicResource Brush.Text.Secondary}"/>
-                            </ScrollViewer>
+                                CornerRadius="6" AllowDrop="True" Drop="OnSampleFileDrop" PreviewDragOver="OnSampleFileDragOver">
+                            <Grid>
+                                <!-- Mensagem de Instrução quando nenhum arquivo carregado -->
+                                <TextBlock Text="Clique em 'Procurar...' para carregar um arquivo CSV ou TXT de amostra e mapear as linhas com o mouse."
+                                           HorizontalAlignment="Center" VerticalAlignment="Center"
+                                           Foreground="{DynamicResource Brush.Text.Inactive}" FontSize="12"
+                                           Visibility="{Binding HasSampleFile, Converter={StaticResource BooleanToVisibilityConverter}, ConverterParameter=Inverse}"/>
+
+                                <!-- Editor com Régua de Numeração Lateral -->
+                                <Grid Visibility="{Binding HasSampleFile, Converter={StaticResource BooleanToVisibilityConverter}}">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="42"/>
+                                        <ColumnDefinition Width="1"/>
+                                        <ColumnDefinition Width="*"/>
+                                    </Grid.ColumnDefinitions>
+
+                                    <!-- Coluna 0: Régua de Linhas -->
+                                    <ScrollViewer x:Name="LineNumbersScroll" Grid.Column="0"
+                                                  VerticalScrollBarVisibility="Hidden" 
+                                                  HorizontalScrollBarVisibility="Disabled"
+                                                  Focusable="False">
+                                        <TextBlock x:Name="TxtLineNumbers" FontFamily="Consolas" FontSize="12"
+                                                   Foreground="{DynamicResource Brush.Text.Inactive}"
+                                                   TextAlignment="Right" Padding="0,4,6,4"
+                                                   LineHeight="20" LineStackingStrategy="BlockLineHeight"/>
+                                    </ScrollViewer>
+
+                                    <!-- Separador vertical discreto -->
+                                    <Rectangle Grid.Column="1" Fill="{DynamicResource Brush.Border.Base}"/>
+
+                                    <!-- Coluna 2: Editor Interativo de Texto -->
+                                    <RichTextBox x:Name="SampleTextEditor" Grid.Column="2"
+                                                 FontFamily="Consolas" FontSize="12"
+                                                 IsReadOnly="True" IsDocumentEnabled="True"
+                                                 BorderThickness="0" Background="Transparent"
+                                                 Foreground="{DynamicResource Brush.Text.Primary}"
+                                                 VerticalScrollBarVisibility="Auto"
+                                                 HorizontalScrollBarVisibility="Auto"
+                                                 Padding="6,4,6,4">
+                                        <RichTextBox.Resources>
+                                            <Style TargetType="{x:Type Paragraph}">
+                                                <Setter Property="Margin" Value="0"/>
+                                                <Setter Property="LineHeight" Value="20"/>
+                                                <Setter Property="LineStackingStrategy" Value="BlockLineHeight"/>
+                                            </Style>
+                                        </RichTextBox.Resources>
+                                        <RichTextBox.ContextMenu>
+                                            <ContextMenu>
+                                                <MenuItem Header="🔴  Nome da Rotina (PartName)" Click="OnMarkPartNameClick"/>
+                                                <MenuItem Header="🟣  Nome da Corrida / Lote (BatchNumber)" Click="OnMarkBatchNumberClick"/>
+                                                <Separator/>
+                                                <MenuItem Header="🔵  Nomes das Características (Linha Horizontal)" Click="OnMarkCharacteristicNamesClick"/>
+                                                <MenuItem Header="🟢  Valores Medidos (Linha Horizontal)" Click="OnMarkMeasuredValuesClick"/>
+                                                <Separator/>
+                                                <MenuItem Header="🔶  Cota e Valor Medido (Formato Linha por Linha)" Click="OnMarkRowFeatureAndValueClick"/>
+                                                <Separator/>
+                                                <MenuItem Header="✖  Remover Marcação desta Linha" Click="OnRemoveLineMarkingClick"/>
+                                            </ContextMenu>
+                                        </RichTextBox.ContextMenu>
+                                    </RichTextBox>
+                                </Grid>
+                            </Grid>
                         </Border>
                     </Grid>
                 </Border>

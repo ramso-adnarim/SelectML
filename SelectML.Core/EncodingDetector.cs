@@ -2,7 +2,7 @@ using System;
 using System.IO;
 using System.Text;
 
-namespace SelectML.Parsers.TextTemplate
+namespace SelectML.Core
 {
     /// <summary>
     /// Utilitário de alta performance para detecção automática de codificação de arquivos de texto.
@@ -113,6 +113,18 @@ namespace SelectML.Parsers.TextTemplate
 
             // Se for estritamente ASCII ou tiver sequências UTF-8 válidas, usa UTF-8
             return hasMultiByteUtf8 || isPureAscii ? Encoding.UTF8 : Encoding.Latin1;
+        }
+
+        public static string DetectAndReadAllText(string filePath)
+        {
+            var encoding = Detect(filePath);
+            return File.ReadAllText(filePath, encoding);
+        }
+
+        public static string[] DetectAndReadAllLines(string filePath)
+        {
+            var encoding = Detect(filePath);
+            return File.ReadAllLines(filePath, encoding);
         }
     }
 }

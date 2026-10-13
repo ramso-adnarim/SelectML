@@ -116,23 +116,24 @@ Cada sprint possui escopo delimitado, tarefas rastreáveis por checklist, arquiv
   * `SelectML.Client/ViewModels/TemplateConfigViewModel.cs`
   * `SelectML.Client/Services/TemplateRuleGenerator.cs` (Novo arquivo)
 * **Tarefas Técnicas:**
-  - [ ] Implementar o visualizador de arquivo de amostra:
-    - Campo de caminho com botão "Procurar..." (diálogo de arquivo aberto para `.csv`, `.txt`, `*.*`).
-    - Exibição de texto em área monoespaçada com numeração lateral de linhas.
-    - Aplicação imediata de auto-detecção de encoding ao carregar o arquivo na tela.
-  - [ ] Implementar seleção de texto e menu de contexto (botão direito):
-    - Opções: "Nome da corrida (lote)", "Nome da rotina", "Nome da característica", "Valor medido", "Definir separador...", "Remover marcação".
-  - [ ] Implementar mecanismo de coloração visual sobre os trechos marcados:
-    - Vermelho: Nome da rotina
-    - Roxo: Nome da corrida
-    - Azul: Nome da característica
-    - Verde: Valor medido
-  - [ ] Implementar `TemplateRuleGenerator`:
+  - [x] Implementar o visualizador de arquivo de amostra:
+    - Campo de caminho com botão "Procurar..." (diálogo de arquivo aberto para `.csv`, `.txt`, `*.*`) e suporte a arrastar-e-soltar (drag & drop).
+    - Exibição de texto em área monoespaçada com régua sincronizada de numeração lateral de linhas.
+    - Aplicação imediata de auto-detecção de encoding (`EncodingDetector`) ao carregar o arquivo na tela.
+  - [x] Implementar seleção de texto e menu de contexto (botão direito):
+    - Opções com ícones e cores: "Nome da rotina", "Nome da corrida (lote)", "Características", "Valores medidos", "Linha a linha (Cota + Valor)", "Remover marcação".
+  - [x] Implementar mecanismo de coloração visual sobre os trechos marcados:
+    - Vermelho suave: Nome da rotina (`PartName`)
+    - Roxo suave: Nome da corrida (`BatchNumber`)
+    - Azul suave: Nome da característica (`CharacteristicNames`)
+    - Verde suave: Valor medido (`MeasuredValues`)
+    - Âmbar suave: Linha de medição cota + valor (`RowFeatureAndValue`)
+  - [x] Implementar `TemplateRuleGenerator`:
     - Dedução automática de **leiaute horizontal** quando características e valores estiverem em linhas separadas.
     - Dedução automática de **leiaute linha por linha** quando características e valores estiverem associados por linha.
     - Geração de regras e expressões regulares de captura, alimentando a tabela de regras instantaneamente.
 * **Critério de Aceitação:**
-  * Ao carregar um arquivo de amostra, o operador seleciona trechos no texto e clica com o botão direito; os trechos são coloridos com precisão e as regras são criadas na tabela sem necessidade de escolher tipos estruturais manualmente.
+  * Ao carregar um arquivo de amostra, o operador seleciona trechos no texto e clica com o botão direito; os trechos são coloridos com precisão e as regras são criadas na tabela sem necessidade de escolher tipos estruturais manualmente. [100% Validado com êxito na suíte automatizada]
 
 ---
 

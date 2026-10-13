@@ -32,10 +32,14 @@ namespace SelectML.Client.ViewModels
         public List<string> AvailableExtensions { get; } = new List<string> { ".csv", ".txt", ".dat", "*.*" };
         public List<string> AvailableSeparators { get; } = new List<string> { ";", ",", "\\t", " ", "|" };
 
+        public event Action<string>? SampleFileLoaded;
+        public event Action? RulesChanged;
+
         public ICommand NewTemplateCommand { get; }
         public ICommand DuplicateTemplateCommand { get; }
         public ICommand DeleteTemplateCommand { get; }
         public ICommand RemoveRuleCommand { get; }
+        public ICommand BrowseSampleFileCommand { get; }
         public ICommand SaveAndApplyCommand { get; }
         public ICommand CancelCommand { get; }
 
@@ -48,6 +52,7 @@ namespace SelectML.Client.ViewModels
             DuplicateTemplateCommand = new RelayCommand(ExecuteDuplicateTemplate, CanExecuteOnSelected);
             DeleteTemplateCommand = new RelayCommand(ExecuteDeleteTemplate, CanExecuteOnSelected);
             RemoveRuleCommand = new RelayCommand(ExecuteRemoveRule);
+            BrowseSampleFileCommand = new RelayCommand(ExecuteBrowseSampleFile);
             SaveAndApplyCommand = new RelayCommand(ExecuteSaveAndApply, CanExecuteOnSelected);
             CancelCommand = new RelayCommand(ExecuteCancel);
 
@@ -313,7 +318,68 @@ namespace SelectML.Client.ViewModels
                 SelectedTemplate.LineRules.Remove(rule);
                 RefreshCurrentRules();
                 UpdateValidationStatus();
+                RulesChanged?.Invoke();
             }
+        }
+
+        private void ExecuteBrowseSampleFile(object? obj)
+        {
+            var dialog = new Microsoft.Win32.OpenFileDialog
+            {
+                Title = "Selecionar Arquivo de Amostra",
+                Filter = "Arquivos de Dados (*.csv;*.txt;*.dat)|*.csv;*.txt;*.dat|Todos os Arquivos (*.*)|*.*"
+            };
+
+            if (dialog.ShowDialog() == true)
+            {
+                LoadSampleFile(dialog.FileName);
+            }
+        }
+
+        public void LoadSampleFile(string filePath)
+        {
+            if (string.IsNullOrWhiteSpace(filePath) || !File.Exists(filePath))
+                return;
+
+            try
+            {
+                SampleFilePath = filePath;
+                SampleFileContent = EncodingDetector.DetectAndReadAllText(filePath);
+                SampleFileLoaded?.Invoke(SampleFileContent);
+            }
+            catch (Exception ex)
+            {
+                ModernDialogWindow.Show(
+                    $"Erro ao ler o arquivo de amostra:\n\n{ex.Message}",
+                    "Erro de Leitura",
+                    ModernDialogButtons.OK,
+                    ModernDialogIcon.Error);
+            }
+        }
+
+        public void ApplyRule(LineRuleRole role, int lineIndex, string fullLine, string selectedText, int selectionStart, int selectionLength)
+        {
+            if (SelectedTemplate == null) return;
+
+            var rule = TemplateRuleGenerator.GenerateRule(
+                role, lineIndex, fullLine, selectedText, selectionStart, selectionLength, SelectedTemplate);
+
+            TemplateRuleGenerator.ApplyRule(SelectedTemplate, rule);
+
+            RefreshCurrentRules();
+            UpdateValidationStatus();
+            RulesChanged?.Invoke();
+        }
+
+        public void RemoveRuleForLine(int lineIndex)
+        {
+            if (SelectedTemplate == null) return;
+
+            TemplateRuleGenerator.RemoveRulesForLine(SelectedTemplate, lineIndex);
+
+            RefreshCurrentRules();
+            UpdateValidationStatus();
+            RulesChanged?.Invoke();
         }
 
         private void ExecuteSaveAndApply(object? obj)

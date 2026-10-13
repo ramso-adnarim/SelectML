@@ -216,6 +216,16 @@ namespace SelectML.Parsers.TextTemplate
                 }
             }
 
+            // Se houver separador e índice de coluna especificado (FeatureColumnIndex)
+            if (!string.IsNullOrEmpty(rule.Separator) && line.Contains(rule.Separator))
+            {
+                var tokens = SplitTokens(line, rule.Separator);
+                if (rule.FeatureColumnIndex >= 0 && rule.FeatureColumnIndex < tokens.Length)
+                {
+                    return tokens[rule.FeatureColumnIndex].Trim().Trim('"', '\'');
+                }
+            }
+
             return line.Trim();
         }
 

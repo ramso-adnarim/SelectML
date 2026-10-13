@@ -103,6 +103,13 @@ namespace SelectML.Core.Templates
                     return $"Separador: '{Separator}'";
                 if (Role == LineRuleRole.RowFeatureAndValue)
                     return $"Col. Cota: {FeatureColumnIndex + 1}, Col. Valor: {ValueColumnIndex + 1} (Sep: '{Separator}')";
+                if (Role == LineRuleRole.PartName || Role == LineRuleRole.BatchNumber)
+                {
+                    if (!string.IsNullOrWhiteSpace(RegexPattern))
+                        return $"Regex: {RegexPattern}";
+                    if (!string.IsNullOrEmpty(Separator))
+                        return $"Col. {FeatureColumnIndex + 1} (Sep: '{Separator}')";
+                }
                 if (!string.IsNullOrWhiteSpace(RegexPattern))
                     return $"Regex: {RegexPattern}";
                 return "Linha inteira / Padrão";
