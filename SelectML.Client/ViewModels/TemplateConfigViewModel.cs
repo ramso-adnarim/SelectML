@@ -18,16 +18,25 @@ namespace SelectML.Client.ViewModels
     {
         private readonly TemplateRepository _repository;
         private readonly IConfigurableParser? _parser;
+        private readonly TemplateExecutionEngine _engine = new TemplateExecutionEngine();
 
         private TemplateDefinition? _selectedTemplate;
         private string _sampleFilePath = string.Empty;
         private string _sampleFileContent = string.Empty;
+
+        // Propriedades observáveis da Prévia do Resultado
+        private string _previewPartName = "-";
+        private string _previewBatchNumber = "-";
+        private int _previewItemCount = 0;
+        private string _previewStatusMessage = "Mapeie características e valores para visualizar o resultado.";
+        private bool _hasPreviewResults = false;
 
         public event PropertyChangedEventHandler? PropertyChanged;
         public event Action<bool>? RequestClose;
 
         public ObservableCollection<TemplateDefinition> Templates { get; } = new ObservableCollection<TemplateDefinition>();
         public ObservableCollection<TemplateLineRule> CurrentRules { get; } = new ObservableCollection<TemplateLineRule>();
+        public ObservableCollection<TemplatePreviewItem> PreviewResults { get; } = new ObservableCollection<TemplatePreviewItem>();
 
         public List<string> AvailableExtensions { get; } = new List<string> { ".csv", ".txt", ".dat", "*.*" };
         public List<string> AvailableSeparators { get; } = new List<string> { ";", ",", "\\t", " ", "|" };
@@ -42,6 +51,46 @@ namespace SelectML.Client.ViewModels
         public ICommand BrowseSampleFileCommand { get; }
         public ICommand SaveAndApplyCommand { get; }
         public ICommand CancelCommand { get; }
+
+        public string PreviewPartName
+        {
+            get => _previewPartName;
+            private set { if (_previewPartName != value) { _previewPartName = value; OnPropertyChanged(); } }
+        }
+
+        public string PreviewBatchNumber
+        {
+            get => _previewBatchNumber;
+            private set { if (_previewBatchNumber != value) { _previewBatchNumber = value; OnPropertyChanged(); } }
+        }
+
+        public int PreviewItemCount
+        {
+            get => _previewItemCount;
+            private set
+            {
+                if (_previewItemCount != value)
+                {
+                    _previewItemCount = value;
+                    OnPropertyChanged();
+                    OnPropertyChanged(nameof(PreviewItemCountDisplay));
+                }
+            }
+        }
+
+        public string PreviewItemCountDisplay => PreviewItemCount == 1 ? "1 cota" : $"{PreviewItemCount} cotas";
+
+        public string PreviewStatusMessage
+        {
+            get => _previewStatusMessage;
+            private set { if (_previewStatusMessage != value) { _previewStatusMessage = value; OnPropertyChanged(); } }
+        }
+
+        public bool HasPreviewResults
+        {
+            get => _hasPreviewResults;
+            private set { if (_hasPreviewResults != value) { _hasPreviewResults = value; OnPropertyChanged(); } }
+        }
 
         public TemplateConfigViewModel(IConfigurableParser? parser = null, TemplateRepository? repository = null)
         {
@@ -74,6 +123,7 @@ namespace SelectML.Client.ViewModels
                     OnPropertyChanged(nameof(DefaultSeparator));
                     RefreshCurrentRules();
                     UpdateValidationStatus();
+                    UpdatePreview();
                 }
             }
         }
@@ -90,6 +140,7 @@ namespace SelectML.Client.ViewModels
                     SelectedTemplate.Name = value;
                     OnPropertyChanged();
                     UpdateValidationStatus();
+                    UpdatePreview();
                 }
             }
         }
@@ -116,6 +167,7 @@ namespace SelectML.Client.ViewModels
                 {
                     SelectedTemplate.DefaultSeparator = value;
                     OnPropertyChanged();
+                    UpdatePreview();
                 }
             }
         }
@@ -337,6 +389,7 @@ namespace SelectML.Client.ViewModels
                 RefreshCurrentRules();
                 UpdateValidationStatus();
                 RulesChanged?.Invoke();
+                UpdatePreview();
             }
         }
 
@@ -364,6 +417,7 @@ namespace SelectML.Client.ViewModels
                 SampleFilePath = filePath;
                 SampleFileContent = EncodingDetector.DetectAndReadAllText(filePath);
                 SampleFileLoaded?.Invoke(SampleFileContent);
+                UpdatePreview();
             }
             catch (Exception ex)
             {
@@ -387,6 +441,7 @@ namespace SelectML.Client.ViewModels
             RefreshCurrentRules();
             UpdateValidationStatus();
             RulesChanged?.Invoke();
+            UpdatePreview();
         }
 
         public void RemoveRuleForLine(int lineIndex)
@@ -398,6 +453,55 @@ namespace SelectML.Client.ViewModels
             RefreshCurrentRules();
             UpdateValidationStatus();
             RulesChanged?.Invoke();
+            UpdatePreview();
+        }
+
+        public void UpdatePreview()
+        {
+            if (!HasSampleFile || string.IsNullOrWhiteSpace(SampleFilePath) || !File.Exists(SampleFilePath) || SelectedTemplate == null)
+            {
+                PreviewPartName = "-";
+                PreviewBatchNumber = "-";
+                PreviewResults.Clear();
+                PreviewItemCount = 0;
+                HasPreviewResults = false;
+                PreviewStatusMessage = "Carregue um arquivo de amostra para visualizar o resultado.";
+                return;
+            }
+
+            try
+            {
+                var data = _engine.Execute(SampleFilePath, SelectedTemplate);
+
+                PreviewPartName = string.IsNullOrWhiteSpace(data.PartName) ? "-" : data.PartName;
+                PreviewBatchNumber = string.IsNullOrWhiteSpace(data.BatchNumber) ? "-" : data.BatchNumber;
+
+                PreviewResults.Clear();
+                if (data.Results != null)
+                {
+                    foreach (var kvp in data.Results)
+                    {
+                        PreviewResults.Add(new TemplatePreviewItem
+                        {
+                            FeatureName = kvp.Key,
+                            Value = kvp.Value
+                        });
+                    }
+                }
+
+                PreviewItemCount = PreviewResults.Count;
+                HasPreviewResults = PreviewResults.Count > 0;
+                PreviewStatusMessage = HasPreviewResults ? string.Empty : "Nenhuma característica ou valor mapeado com as regras atuais.";
+            }
+            catch (Exception ex)
+            {
+                PreviewPartName = "-";
+                PreviewBatchNumber = "-";
+                PreviewResults.Clear();
+                PreviewItemCount = 0;
+                HasPreviewResults = false;
+                PreviewStatusMessage = $"Prévia pendente ou incompleta: {ex.Message}";
+            }
         }
 
         /// <summary>

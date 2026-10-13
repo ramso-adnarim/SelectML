@@ -4,10 +4,8 @@ using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Text.RegularExpressions;
-using SelectML.Core;
-using SelectML.Core.Templates;
 
-namespace SelectML.Parsers.TextTemplate
+namespace SelectML.Core.Templates
 {
     /// <summary>
     /// Motor determinístico e otimizado de execução de templates de texto.
