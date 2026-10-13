@@ -66,15 +66,15 @@ Cada sprint possui escopo delimitado, tarefas rastreáveis por checklist, arquiv
   * `SelectML.Client/ViewModels/MainViewModel.cs`
   * `SelectML.Client/Services/AppConfig.cs`
 * **Tarefas Técnicas:**
-  - [ ] Em `AppConfig.cs`:
+  - [x] Em `AppConfig.cs`:
     - Adicionar a propriedade `public string LastTemplateName { get; set; } = string.Empty;`.
-  - [ ] Em `MainWindow.xaml`:
+  - [x] Em `MainWindow.xaml`:
     - No `Grid` da seção "Equipamento", adicionar coluna intermediária para o botão de configuração:
       - Botão com ícone ⚙️, estilo `IconButton`, posicionado à direita da ComboBox e imediatamente à esquerda do botão "✖".
       - Binding de visibilidade atrelado a `IsTemplateParserSelected`.
       - Binding de habilitação atrelado a `IsConfigEnabled`.
       - Comando: `OpenTemplateConfigCommand`.
-  - [ ] Em `MainViewModel.cs`:
+  - [x] Em `MainViewModel.cs`:
     - Adicionar propriedade booleana `IsTemplateParserSelected` atualizada ao alterar `SelectedParser`.
     - Ao selecionar `TextTemplateParser`, carregar o último template utilizado a partir de `config.LastTemplateName`.
     - Garantir que o nome exibido no ComboBox reflita `"Leitor de arquivos de texto - [NOME DO TEMPLATE]"`.
@@ -82,7 +82,7 @@ Cada sprint possui escopo delimitado, tarefas rastreáveis por checklist, arquiv
 * **Critério de Aceitação:**
   * Ao selecionar outros plugins (ex: ViciVision, Zeiss), o botão ⚙️ permanece invisível.
   * Ao selecionar "Leitor de arquivos de texto", o botão ⚙️ surge suavemente entre a ComboBox e o botão "✖".
-  * Ao iniciar o monitoramento, o botão ⚙️ fica desabilitado junto com os demais controles de configuração.
+  * Ao iniciar o monitoramento, o botão ⚙️ fica desabilitado junto com os demais controles de configuração. [100% Validado com êxito na suíte automatizada]
 
 ---
 

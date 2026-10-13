@@ -1,0 +1,41 @@
+<Window x:Class="SelectML.Client.Views.TemplateConfigWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Configuração de Templates" Height="650" Width="960"
+        MinHeight="550" MinWidth="800"
+        WindowStartupLocation="CenterOwner"
+        Style="{StaticResource ModernWindowStyle}">
+    <Grid Margin="15">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <!-- Header -->
+        <TextBlock Text="Configuração de Templates de Arquivos de Texto" 
+                   FontSize="16" FontWeight="SemiBold" 
+                   Foreground="{DynamicResource Brush.Text.Primary}" 
+                   Margin="0,0,0,15" Grid.Row="0"/>
+
+        <!-- Main Body Placeholder (Será expandido na Sprint 3 e 4) -->
+        <Border Grid.Row="1" Background="{DynamicResource Brush.Surface.Card}" 
+                BorderBrush="{DynamicResource Brush.Border.Base}" BorderThickness="1" 
+                CornerRadius="8" Padding="20">
+            <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center">
+                <TextBlock Text="⚙ Biblioteca de Templates" FontSize="20" FontWeight="Bold"
+                           HorizontalAlignment="Center" Foreground="{DynamicResource Brush.Text.Primary}" Margin="0,0,0,10"/>
+                <TextBlock Text="Selecione ou edite seus templates para o Leitor de Arquivos de Texto."
+                           FontSize="13" Foreground="{DynamicResource Brush.Text.Secondary}" HorizontalAlignment="Center"/>
+            </StackPanel>
+        </Border>
+
+        <!-- Footer / Action Buttons -->
+        <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,15,0,0">
+            <Button Content="Cancelar" Width="100" Height="32" Margin="0,0,10,0"
+                    Style="{StaticResource SecondaryButton}" Click="CancelButton_Click"/>
+            <Button Content="Salvar e Aplicar" Width="130" Height="32"
+                    Style="{StaticResource PrimaryButton}" Click="ApplyButton_Click"/>
+        </StackPanel>
+    </Grid>
+</Window>

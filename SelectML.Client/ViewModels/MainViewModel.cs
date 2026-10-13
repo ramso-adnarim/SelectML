@@ -165,6 +165,7 @@ namespace SelectML.Client.ViewModels
             
             OpenSerialConfigCommand = new RelayCommand(ExecuteOpenSerialConfig);
             OpenNameModifierConfigCommand = new RelayCommand(ExecuteOpenNameModifierConfig);
+            OpenTemplateConfigCommand = new RelayCommand(ExecuteOpenTemplateConfig, CanChangeConfig);
             ClearParserCommand = new RelayCommand(obj => SelectedParser = null, CanChangeConfig);
 
             LoadParsers();
@@ -566,7 +567,64 @@ namespace SelectML.Client.ViewModels
         public IMachineParser SelectedParser
         {
             get => _selectedParser;
-            set { _selectedParser = value; OnPropertyChanged(); }
+            set
+            {
+                if (_selectedParser is INotifyPropertyChanged oldNotifier)
+                {
+                    oldNotifier.PropertyChanged -= OnParserPropertyChanged;
+                }
+
+                _selectedParser = value;
+                OnPropertyChanged();
+                OnPropertyChanged(nameof(IsTemplateParserSelected));
+
+                if (_selectedParser is INotifyPropertyChanged newNotifier)
+                {
+                    newNotifier.PropertyChanged += OnParserPropertyChanged;
+                }
+
+                if (_selectedParser is IConfigurableParser configParser)
+                {
+                    var cfg = _configService.Load();
+                    if (!string.IsNullOrEmpty(cfg.LastTemplateName) && string.IsNullOrEmpty(configParser.ActiveTemplateName))
+                    {
+                        configParser.SetActiveTemplateByName(cfg.LastTemplateName);
+                    }
+                }
+
+                try
+                {
+                    var cfg = _configService.Load();
+                    cfg.LastPluginName = _selectedParser?.MachineName ?? "";
+                    if (_selectedParser is IConfigurableParser cp)
+                    {
+                        cfg.LastTemplateName = cp.ActiveTemplateName;
+                    }
+                    _configService.Save(cfg);
+                }
+                catch { }
+            }
+        }
+
+        public bool IsTemplateParserSelected => SelectedParser is IConfigurableParser;
+
+        private void OnParserPropertyChanged(object? sender, PropertyChangedEventArgs e)
+        {
+            if (e.PropertyName == nameof(IMachineParser.MachineName))
+            {
+                OnPropertyChanged(nameof(SelectedParser));
+                try
+                {
+                    var cfg = _configService.Load();
+                    cfg.LastPluginName = _selectedParser?.MachineName ?? "";
+                    if (_selectedParser is IConfigurableParser cp)
+                    {
+                        cfg.LastTemplateName = cp.ActiveTemplateName;
+                    }
+                    _configService.Save(cfg);
+                }
+                catch { }
+            }
         }
 
         public string PartName
@@ -717,6 +775,7 @@ namespace SelectML.Client.ViewModels
 
         public RelayCommand OpenSerialConfigCommand { get; }
         public RelayCommand OpenNameModifierConfigCommand { get; }
+        public RelayCommand OpenTemplateConfigCommand { get; }
         public RelayCommand ClearParserCommand { get; }
 
         // --- Métodos de Configuração e Watcher ---
@@ -835,6 +894,35 @@ namespace SelectML.Client.ViewModels
             ReapplyNameModifierToCurrentResults();
         }
 
+        private void ExecuteOpenTemplateConfig(object obj)
+        {
+            try
+            {
+                var win = new Views.TemplateConfigWindow(SelectedParser as IConfigurableParser);
+                win.Owner = System.Windows.Application.Current.MainWindow;
+                if (win.ShowDialog() == true)
+                {
+                    if (SelectedParser is IConfigurableParser cp)
+                    {
+                        var cfg = _configService.Load();
+                        cfg.LastPluginName = cp.MachineName;
+                        cfg.LastTemplateName = cp.ActiveTemplateName;
+                        _configService.Save(cfg);
+                        OnPropertyChanged(nameof(SelectedParser));
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Log.Error(ex, "Falha ao abrir a tela de Configuração de Templates");
+                System.Windows.MessageBox.Show(
+                    $"Não foi possível abrir a tela de Configuração de Templates:\n\n{ex.Message}",
+                    "Configuração de Templates",
+                    System.Windows.MessageBoxButton.OK,
+                    System.Windows.MessageBoxImage.Warning);
+            }
+        }
+
         private void LoadParsers()
         {
             var path = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Plugins");
@@ -872,6 +960,19 @@ namespace SelectML.Client.ViewModels
             if (!string.IsNullOrEmpty(config.LastPluginName))
             {
                 SelectedParser = AvailableParsers.FirstOrDefault(p => p.MachineName == config.LastPluginName);
+
+                if (SelectedParser == null && (config.LastPluginName.StartsWith("Leitor de arquivos de texto") || !string.IsNullOrEmpty(config.LastTemplateName)))
+                {
+                    var templateParser = AvailableParsers.FirstOrDefault(p => p is IConfigurableParser);
+                    if (templateParser != null)
+                    {
+                        if (templateParser is IConfigurableParser cp && !string.IsNullOrEmpty(config.LastTemplateName))
+                        {
+                            cp.SetActiveTemplateByName(config.LastTemplateName);
+                        }
+                        SelectedParser = templateParser;
+                    }
+                }
             }
 
             if (SelectedParser == null && AvailableParsers.Count > 0)
@@ -966,6 +1067,10 @@ namespace SelectML.Client.ViewModels
                 config.OutputDirectory = OutputDirectory;
                 config.UseOutputDirectory = UseOutputDirectory;
                 config.LastPluginName = SelectedParser?.MachineName ?? ""; // Allow null
+                if (SelectedParser is IConfigurableParser cpSave)
+                {
+                    config.LastTemplateName = cpSave.ActiveTemplateName;
+                }
 
                 // Save DB fields
                 config.DbServer = DbServer;
