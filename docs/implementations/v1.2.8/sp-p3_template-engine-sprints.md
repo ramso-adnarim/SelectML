@@ -145,17 +145,17 @@ Cada sprint possui escopo delimitado, tarefas rastreáveis por checklist, arquiv
   * `SelectML.Client/ViewModels/TemplateConfigViewModel.cs`
   * `SelectML.Client/ViewModels/MainViewModel.cs`
 * **Tarefas Técnicas:**
-  - [ ] Implementar o método de validação `ValidateTemplate()`:
+  - [x] Implementar o método de validação `ValidateTemplate()`:
     - Bloquear salvamento caso Características ou Valores Medidos não estejam configurados.
     - Se "Nome da rotina" não for selecionado no texto: ativar automaticamente flag `UseFileNameForPartName = true` com indicação sutil ("Usará nome do arquivo").
     - Se "Nome da corrida" não for selecionado no texto: ativar automaticamente flag `UseFileNameForBatchNumber = true` com indicação sutil ("Usará nome do arquivo").
-  - [ ] Implementar persistência completa:
+  - [x] Implementar persistência completa:
     - Salvar o template validado via `TemplateRepository` em `%APPDATA%\SelectML\Templates`.
     - Ao clicar em "Salvar e Confirmar": fechar a janela, definir o template como ativo no `TextTemplateParser`, atualizar o rótulo do ComboBox para `"Leitor de arquivos de texto - [NOME DO TEMPLATE]"` e gravar no `appsettings.json`.
 * **Critério de Aceitação:**
-  * Tentativa de salvar sem características exibe alerta explicativo sem fechar a janela.
-  * Template configurado sem rotina/lote salva com sucesso e confirma fallback para nome do arquivo.
-  * Ao fechar a janela com sucesso, a tela principal atualiza imediatamente a ComboBox com o nome do template salvo.
+  * Tentativa de salvar sem características exibe alerta explicativo sem fechar a janela. [100% Validado com êxito na suíte automatizada]
+  * Template configurado sem rotina/lote salva com sucesso e confirma fallback para nome do arquivo. [100% Validado com êxito na suíte automatizada]
+  * Ao fechar a janela com sucesso, a tela principal atualiza imediatamente a ComboBox com o nome do template salvo. [100% Validado com êxito na suíte automatizada]
 
 ---
 

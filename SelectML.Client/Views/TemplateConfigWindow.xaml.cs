@@ -64,7 +64,14 @@ namespace SelectML.Client.Views
 
             ViewModel.RequestClose += (result) =>
             {
-                DialogResult = result;
+                try
+                {
+                    DialogResult = result;
+                }
+                catch (InvalidOperationException)
+                {
+                    // Janela não exibida como caixa de diálogo modal (ShowDialog)
+                }
                 Close();
             };
 

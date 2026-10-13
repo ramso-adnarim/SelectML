@@ -590,6 +590,15 @@ namespace SelectML.Client.ViewModels
                     {
                         configParser.SetActiveTemplateByName(cfg.LastTemplateName);
                     }
+                    else if (string.IsNullOrEmpty(configParser.ActiveTemplateName))
+                    {
+                        var repo = new SelectML.Core.Templates.TemplateRepository();
+                        var all = repo.GetAllTemplates();
+                        if (all.Count > 0)
+                        {
+                            configParser.SetActiveTemplate(all[0]);
+                        }
+                    }
                 }
 
                 try
@@ -624,6 +633,8 @@ namespace SelectML.Client.ViewModels
                     _configService.Save(cfg);
                 }
                 catch { }
+
+                System.Windows.Data.CollectionViewSource.GetDefaultView(AvailableParsers)?.Refresh();
             }
         }
 
@@ -908,7 +919,10 @@ namespace SelectML.Client.ViewModels
                         cfg.LastPluginName = cp.MachineName;
                         cfg.LastTemplateName = cp.ActiveTemplateName;
                         _configService.Save(cfg);
+                        
+                        System.Windows.Data.CollectionViewSource.GetDefaultView(AvailableParsers)?.Refresh();
                         OnPropertyChanged(nameof(SelectedParser));
+                        OnPropertyChanged(nameof(AvailableParsers));
                     }
                 }
             }
@@ -928,7 +942,19 @@ namespace SelectML.Client.ViewModels
             var path = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Plugins");
             var plugins = _pluginLoader.LoadPlugins(path);
             AvailableParsers.Clear();
-            foreach (var parser in plugins) AvailableParsers.Add(parser);
+            foreach (var parser in plugins)
+            {
+                if (parser is IConfigurableParser cp && cp.ActiveTemplate == null)
+                {
+                    var repo = new SelectML.Core.Templates.TemplateRepository();
+                    var all = repo.GetAllTemplates();
+                    if (all.Count > 0)
+                    {
+                        cp.SetActiveTemplate(all[0]);
+                    }
+                }
+                AvailableParsers.Add(parser);
+            }
         }
 
         private void LoadConfiguration()

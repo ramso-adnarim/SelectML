@@ -248,7 +248,25 @@ namespace SelectML.Client.ViewModels
             if (SelectedTemplate.IsValid(out string error))
             {
                 IsTemplateValid = true;
-                ValidationMessage = "Template válido e pronto para uso.";
+                bool noPart = SelectedTemplate.UseFileNameForPartName;
+                bool noBatch = SelectedTemplate.UseFileNameForBatchNumber;
+
+                if (noPart && noBatch)
+                {
+                    ValidationMessage = "Template válido (Rotina e Corrida usarão o nome do arquivo).";
+                }
+                else if (noPart)
+                {
+                    ValidationMessage = "Template válido (Rotina usará o nome do arquivo).";
+                }
+                else if (noBatch)
+                {
+                    ValidationMessage = "Template válido (Corrida usará o nome do arquivo).";
+                }
+                else
+                {
+                    ValidationMessage = "Template válido e pronto para uso.";
+                }
             }
             else
             {
@@ -382,22 +400,41 @@ namespace SelectML.Client.ViewModels
             RulesChanged?.Invoke();
         }
 
+        /// <summary>
+        /// Ação customizável para exibição de avisos de validação (útil para testes unitários automatizados).
+        /// </summary>
+        public Action<string, string>? ShowWarningAction { get; set; }
+
         private void ExecuteSaveAndApply(object? obj)
         {
             if (SelectedTemplate == null) return;
 
             if (!SelectedTemplate.IsValid(out string error))
             {
-                ModernDialogWindow.Show(
-                    $"Não foi possível salvar o template:\n\n{error}",
-                    "Validação de Template",
-                    ModernDialogButtons.OK,
-                    ModernDialogIcon.Warning);
+                if (ShowWarningAction != null)
+                {
+                    ShowWarningAction(error, "Validação de Template");
+                }
+                else
+                {
+                    ModernDialogWindow.Show(
+                        $"Não foi possível salvar o template:\n\n{error}",
+                        "Validação de Template",
+                        ModernDialogButtons.OK,
+                        ModernDialogIcon.Warning);
+                }
                 return;
             }
 
-            // Salva no disco
-            _repository.SaveTemplate(SelectedTemplate);
+            // Persiste todos os templates gerenciados no disco
+            foreach (var template in Templates)
+            {
+                if (string.IsNullOrWhiteSpace(template.Name))
+                {
+                    template.Name = "Novo Template";
+                }
+                _repository.SaveTemplate(template);
+            }
 
             // Aplica no parser em memória
             _parser?.SetActiveTemplate(SelectedTemplate);

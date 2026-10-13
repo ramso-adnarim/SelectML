@@ -50,6 +50,7 @@ namespace SelectML.Core.Templates
 
         /// <summary>
         /// Retorna todos os templates cadastrados no repositório.
+        /// Caso o diretório esteja vazio, inicializa automaticamente com o template padrão.
         /// </summary>
         public List<TemplateDefinition> GetAllTemplates()
         {
@@ -59,6 +60,13 @@ namespace SelectML.Core.Templates
             try
             {
                 var files = Directory.GetFiles(_templatesDirectory, "*.json");
+                if (files.Length == 0)
+                {
+                    var defaultTemplate = CreateInitialDefaultTemplate();
+                    SaveTemplate(defaultTemplate);
+                    files = Directory.GetFiles(_templatesDirectory, "*.json");
+                }
+
                 var options = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
 
                 foreach (var file in files)
@@ -87,6 +95,26 @@ namespace SelectML.Core.Templates
         }
 
         /// <summary>
+        /// Cria a instância canônica do Template Padrão (CSV).
+        /// </summary>
+        public static TemplateDefinition CreateInitialDefaultTemplate()
+        {
+            return new TemplateDefinition
+            {
+                Name = "Template Padrão (CSV)",
+                FileExtension = ".csv",
+                DefaultSeparator = ";",
+                UseFileNameForPartName = true,
+                UseFileNameForBatchNumber = true,
+                LineRules = new List<TemplateLineRule>
+                {
+                    new TemplateLineRule { LineIndex = 1, Role = LineRuleRole.CharacteristicNames, Separator = ";" },
+                    new TemplateLineRule { LineIndex = 2, Role = LineRuleRole.MeasuredValues, Separator = ";" }
+                }
+            };
+        }
+
+        /// <summary>
         /// Busca um template pelo seu nome.
         /// </summary>
         public TemplateDefinition? GetTemplateByName(string name)
@@ -99,6 +127,7 @@ namespace SelectML.Core.Templates
 
         /// <summary>
         /// Salva ou atualiza um template no disco.
+        /// Se o template foi renomeado, remove o arquivo com o nome anterior com base no mesmo Id.
         /// </summary>
         public void SaveTemplate(TemplateDefinition template)
         {
@@ -107,6 +136,33 @@ namespace SelectML.Core.Templates
 
             var safeName = SanitizeFileName(template.Name);
             var filePath = Path.Combine(_templatesDirectory, $"{safeName}.json");
+
+            // Se o template foi renomeado, remove o arquivo JSON anterior de mesmo Id
+            if (!string.IsNullOrWhiteSpace(template.Id))
+            {
+                try
+                {
+                    var existingFiles = Directory.GetFiles(_templatesDirectory, "*.json");
+                    var checkOptions = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
+                    foreach (var file in existingFiles)
+                    {
+                        if (string.Equals(Path.GetFullPath(file), Path.GetFullPath(filePath), StringComparison.OrdinalIgnoreCase))
+                            continue;
+
+                        try
+                        {
+                            var existingJson = File.ReadAllText(file);
+                            var existing = JsonSerializer.Deserialize<TemplateDefinition>(existingJson, checkOptions);
+                            if (existing != null && string.Equals(existing.Id, template.Id, StringComparison.OrdinalIgnoreCase))
+                            {
+                                File.Delete(file);
+                            }
+                        }
+                        catch { }
+                    }
+                }
+                catch { }
+            }
 
             var options = new JsonSerializerOptions
             {

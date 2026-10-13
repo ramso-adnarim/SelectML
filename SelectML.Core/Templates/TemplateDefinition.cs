@@ -98,6 +98,7 @@ namespace SelectML.Core.Templates
 
         /// <summary>
         /// Valida se o template possui a estrutura mínima necessária para realizar uma medição válida.
+        /// Caso Rotina ou Corrida não estejam mapeadas no texto, ativa automaticamente o fallback para o nome do arquivo.
         /// </summary>
         public bool IsValid(out string errorMessage)
         {
@@ -123,6 +124,11 @@ namespace SelectML.Core.Templates
                 errorMessage = "O template precisa conter o mapeamento de Valores Medidos.";
                 return false;
             }
+
+            // Regras de fallback automático: se a rotina ou a corrida não foram mapeadas no texto,
+            // ativa automaticamente o fallback para o nome do arquivo.
+            UseFileNameForPartName = !LineRules.Any(r => r.Role == LineRuleRole.PartName);
+            UseFileNameForBatchNumber = !LineRules.Any(r => r.Role == LineRuleRole.BatchNumber);
 
             return true;
         }
