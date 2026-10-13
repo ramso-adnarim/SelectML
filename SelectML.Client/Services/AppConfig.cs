@@ -10,6 +10,7 @@ namespace SelectML.Client.Services
         public string OutputDirectory { get; set; }
         public bool UseOutputDirectory { get; set; } = false;
         public string LastPluginName { get; set; }
+        public string LastTemplateName { get; set; } = string.Empty;
         public string ConnectionString { get; set; }
 
         // Database Connection Fields

@@ -31,7 +31,11 @@ namespace SelectML.Client.Views
         public static MessageBoxResult Show(string message, string title = "SelectML", ModernDialogButtons buttons = ModernDialogButtons.OK, ModernDialogIcon icon = ModernDialogIcon.Information, Window? owner = null)
         {
             var win = new ModernDialogWindow();
-            win.Owner = owner ?? WpfApplication.Current?.MainWindow;
+            var targetOwner = owner ?? WpfApplication.Current?.MainWindow;
+            if (targetOwner != null && targetOwner.IsVisible)
+            {
+                win.Owner = targetOwner;
+            }
             win.Title = title;
             win.DialogTitleText.Text = title;
             win.DialogMessageText.Text = message;

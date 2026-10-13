@@ -590,8 +590,9 @@
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="*"/>
                         <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="Auto"/>
                     </Grid.ColumnDefinitions>
-                    <StackPanel>
+                    <StackPanel Grid.Column="0">
                         <TextBlock Text="Equipamento" Style="{StaticResource LabelText}"/>
                         <ComboBox ItemsSource="{Binding AvailableParsers}" 
                                   SelectedItem="{Binding SelectedParser}"
@@ -605,8 +606,15 @@
                             </ComboBox.ItemTemplate>
                         </ComboBox>
                     </StackPanel>
-                    <Button Grid.Column="1" Command="{Binding ClearParserCommand}"
-                            Content="✖" Width="25" Height="30" Margin="10,15,0,0"
+                    <Button Grid.Column="1" Command="{Binding OpenTemplateConfigCommand}"
+                            Content="⚙" ToolTip="Configuração de Templates"
+                            Width="25" Height="30" Margin="10,15,0,0"
+                            Style="{StaticResource IconButton}" Foreground="{DynamicResource Brush.Action.Primary}"
+                            IsEnabled="{Binding IsConfigEnabled}"
+                            Visibility="{Binding IsTemplateParserSelected, Converter={StaticResource BooleanToVisibilityConverter}}"
+                            VerticalAlignment="Bottom"/>
+                    <Button Grid.Column="2" Command="{Binding ClearParserCommand}"
+                            Content="✖" Width="25" Height="30" Margin="6,15,0,0"
                             Style="{StaticResource IconButton}" Foreground="{DynamicResource Brush.Status.Error}"
                             IsEnabled="{Binding IsConfigEnabled}"
                             VerticalAlignment="Bottom"/>

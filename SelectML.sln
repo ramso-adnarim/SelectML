@@ -13,6 +13,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SelectML.Parsers.ZeissPdf",
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SelectML.Parsers.ViciVisionJson", "SelectML.Parsers.ViciVisionJson\SelectML.Parsers.ViciVisionJson.csproj", "{C982089C-1B15-41C7-BF40-5014CEE2C314}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SelectML.Parsers.TextTemplate", "SelectML.Parsers.TextTemplate\SelectML.Parsers.TextTemplate.csproj", "{64F3B833-1D72-4E5D-B6FB-E64CDDB2693B}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -83,6 +85,18 @@ Global
 		{C982089C-1B15-41C7-BF40-5014CEE2C314}.Release|x64.Build.0 = Release|Any CPU
 		{C982089C-1B15-41C7-BF40-5014CEE2C314}.Release|x86.ActiveCfg = Release|Any CPU
 		{C982089C-1B15-41C7-BF40-5014CEE2C314}.Release|x86.Build.0 = Release|Any CPU
+		{64F3B833-1D72-4E5D-B6FB-E64CDDB2693B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{64F3B833-1D72-4E5D-B6FB-E64CDDB2693B}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{64F3B833-1D72-4E5D-B6FB-E64CDDB2693B}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{64F3B833-1D72-4E5D-B6FB-E64CDDB2693B}.Debug|x64.Build.0 = Debug|Any CPU
+		{64F3B833-1D72-4E5D-B6FB-E64CDDB2693B}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{64F3B833-1D72-4E5D-B6FB-E64CDDB2693B}.Debug|x86.Build.0 = Debug|Any CPU
+		{64F3B833-1D72-4E5D-B6FB-E64CDDB2693B}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{64F3B833-1D72-4E5D-B6FB-E64CDDB2693B}.Release|Any CPU.Build.0 = Release|Any CPU
+		{64F3B833-1D72-4E5D-B6FB-E64CDDB2693B}.Release|x64.ActiveCfg = Release|Any CPU
+		{64F3B833-1D72-4E5D-B6FB-E64CDDB2693B}.Release|x64.Build.0 = Release|Any CPU
+		{64F3B833-1D72-4E5D-B6FB-E64CDDB2693B}.Release|x86.ActiveCfg = Release|Any CPU
+		{64F3B833-1D72-4E5D-B6FB-E64CDDB2693B}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
