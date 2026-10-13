@@ -10,6 +10,7 @@ using System.Windows.Navigation;
 using System.Windows.Shapes;
 using Hardcodet.Wpf.TaskbarNotification;
 using SelectML.Client.ViewModels;
+using WpfTextBox = System.Windows.Controls.TextBox;
 
 namespace SelectML.Client
 {
@@ -243,16 +244,161 @@ namespace SelectML.Client
         {
             try
             {
-                string iconPath = isDarkMode ? "Resources/SelectML-logo-short-dark.ico" : "Resources/SelectML-logo-short-light.ico";
-                var uri = new Uri($"pack://application:,,,/SelectML.Client;component/{iconPath}");
-                var icon = new BitmapImage(uri);
-                icon.Freeze();
-                this.Icon = icon;
+                string iconName = isDarkMode ? "SelectML-logo-short-dark.ico" : "SelectML-logo-short-light.ico";
+                var uri = new Uri($"pack://application:,,,/Resources/{iconName}");
+                this.Icon = BitmapFrame.Create(uri);
             }
             catch (Exception ex)
             {
                 System.Diagnostics.Debug.WriteLine($"Error updating window icon: {ex.Message}");
             }
+        }
+
+        private void ValBox_PreviewKeyDown(object sender, System.Windows.Input.KeyEventArgs e)
+        {
+            if (e.Key == Key.Enter || e.Key == Key.Return)
+            {
+                if (sender is WpfTextBox currentTextBox)
+                {
+                    // Força a atualização do binding do valor digitado
+                    var binding = currentTextBox.GetBindingExpression(WpfTextBox.TextProperty);
+                    binding?.UpdateSource();
+
+                    // Identifica a linha atual
+                    var row = FindVisualParent<DataGridRow>(currentTextBox);
+                    if (row != null)
+                    {
+                        int currentIndex = ResultsDataGrid.ItemContainerGenerator.IndexFromContainer(row);
+                        int targetIndex = (Keyboard.Modifiers.HasFlag(ModifierKeys.Shift)) ? currentIndex - 1 : currentIndex + 1;
+
+                        if (targetIndex >= 0 && targetIndex < ResultsDataGrid.Items.Count)
+                        {
+                            NavigateAndFocusValueInput(targetIndex);
+                        }
+                    }
+
+                    e.Handled = true;
+                }
+            }
+        }
+
+        private void ResultsDataGrid_PreviewKeyDown(object sender, System.Windows.Input.KeyEventArgs e)
+        {
+            if (e.Key == Key.Enter || e.Key == Key.Return)
+            {
+                int currentIndex = ResultsDataGrid.SelectedIndex;
+                if (currentIndex >= 0)
+                {
+                    int targetIndex = (Keyboard.Modifiers.HasFlag(ModifierKeys.Shift)) ? currentIndex - 1 : currentIndex + 1;
+                    if (targetIndex >= 0 && targetIndex < ResultsDataGrid.Items.Count)
+                    {
+                        NavigateAndFocusValueInput(targetIndex);
+                        e.Handled = true;
+                    }
+                }
+            }
+        }
+
+        private void NavigateAndFocusValueInput(int targetIndex)
+        {
+            ResultsDataGrid.SelectedIndex = targetIndex;
+            ResultsDataGrid.ScrollIntoView(ResultsDataGrid.Items[targetIndex]);
+
+            Dispatcher.BeginInvoke(new Action(() =>
+            {
+                var targetRow = (DataGridRow)ResultsDataGrid.ItemContainerGenerator.ContainerFromIndex(targetIndex);
+                if (targetRow != null)
+                {
+                    // Foca o TextBox da coluna Valor
+                    var textBox = FindVisualChildByName<WpfTextBox>(targetRow, "ValBox");
+                    if (textBox != null && textBox.IsEnabled)
+                    {
+                        textBox.Focus();
+                        textBox.SelectAll();
+                        return;
+                    }
+
+                    // Se for linha de atributo, foca o ToggleButton
+                    var toggle = FindVisualChild<System.Windows.Controls.Primitives.ToggleButton>(targetRow);
+                    if (toggle != null && toggle.IsEnabled)
+                    {
+                        toggle.Focus();
+                    }
+                }
+            }), System.Windows.Threading.DispatcherPriority.Input);
+        }
+
+        private void ResultsDataGrid_PreviewMouseRightButtonDown(object sender, MouseButtonEventArgs e)
+        {
+            var depObj = e.OriginalSource as DependencyObject;
+            var row = FindVisualParent<DataGridRow>(depObj);
+            if (row != null)
+            {
+                row.IsSelected = true;
+                if (row.ContextMenu != null)
+                {
+                    row.ContextMenu.PlacementTarget = row;
+                    row.ContextMenu.IsOpen = true;
+                    e.Handled = true; // Suprime o menu de contexto nativo do Windows no TextBox
+                }
+            }
+        }
+
+        private static T? FindVisualParent<T>(DependencyObject? child) where T : DependencyObject
+        {
+            while (child != null)
+            {
+                if (child is T parent)
+                {
+                    return parent;
+                }
+                child = VisualTreeHelper.GetParent(child);
+            }
+            return null;
+        }
+
+        private static T? FindVisualChildByName<T>(DependencyObject? parent, string name) where T : FrameworkElement
+        {
+            if (parent == null) return null;
+
+            int count = VisualTreeHelper.GetChildrenCount(parent);
+            for (int i = 0; i < count; i++)
+            {
+                var child = VisualTreeHelper.GetChild(parent, i);
+                if (child is T typedChild && typedChild.Name == name)
+                {
+                    return typedChild;
+                }
+
+                var descendant = FindVisualChildByName<T>(child, name);
+                if (descendant != null)
+                {
+                    return descendant;
+                }
+            }
+            return null;
+        }
+
+        private static T? FindVisualChild<T>(DependencyObject? parent) where T : DependencyObject
+        {
+            if (parent == null) return null;
+
+            int count = VisualTreeHelper.GetChildrenCount(parent);
+            for (int i = 0; i < count; i++)
+            {
+                var child = VisualTreeHelper.GetChild(parent, i);
+                if (child is T typedChild)
+                {
+                    return typedChild;
+                }
+
+                var descendant = FindVisualChild<T>(child);
+                if (descendant != null)
+                {
+                    return descendant;
+                }
+            }
+            return null;
         }
     }
 }

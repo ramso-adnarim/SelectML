@@ -761,7 +761,7 @@ namespace SelectML.Client.ViewModels
             if (!IsUpdateAvailable)
             {
                  // Feedback for user when clicking the green checkmark
-                 System.Windows.MessageBox.Show($"Você está utilizando a versão mais recente ({CurrentVersion}).", "SelectML", MessageBoxButton.OK, MessageBoxImage.Information);
+                 ModernDialogWindow.Show($"Você está utilizando a versão mais recente ({CurrentVersion}).", "SelectML", ModernDialogButtons.OK, ModernDialogIcon.Information);
                  return;
             }
 
@@ -1878,7 +1878,7 @@ namespace SelectML.Client.ViewModels
             if (MeasuredResults.Any(r => string.IsNullOrWhiteSpace(r.Characteristic)))
             {
                 StatusMessage = "Erro: Existem características sem nome na lista.";
-                System.Windows.MessageBox.Show("Todas as características devem possuir um nome válido antes do envio. Preencha os campos vazios.", "Erro de Validação", MessageBoxButton.OK, MessageBoxImage.Warning);
+                ModernDialogWindow.Show("Todas as características devem possuir um nome válido antes do envio. Preencha os campos vazios.", "Erro de Validação", ModernDialogButtons.OK, ModernDialogIcon.Warning);
                 return;
             }
 
@@ -1886,7 +1886,7 @@ namespace SelectML.Client.ViewModels
             if (MeasuredResults.Any(r => r.HasDuplicateName))
             {
                 StatusMessage = "Erro: Nomes de características duplicados detectados.";
-                System.Windows.MessageBox.Show("Existem características com o mesmo nome na lista. Corrija antes de enviar.", "Erro de Validação", MessageBoxButton.OK, MessageBoxImage.Warning);
+                ModernDialogWindow.Show("Existem características com o mesmo nome na lista. Corrija antes de enviar.", "Erro de Validação", ModernDialogButtons.OK, ModernDialogIcon.Warning);
                 return;
             }
 
@@ -1894,11 +1894,11 @@ namespace SelectML.Client.ViewModels
             if (MeasuredResults.Any(r => !r.IsAttribute && !r.HasValue))
             {
                 StatusMessage = "Aviso: Existem características aguardando medição.";
-                var promptResult = System.Windows.MessageBox.Show(
+                var promptResult = ModernDialogWindow.Show(
                     "Existem características na rotina que ainda não foram medidas.\n\nDeseja enviar a corrida apenas com as características preenchidas? (As cotas sem medição serão desconsideradas no envio)",
                     "Características Pendentes",
-                    MessageBoxButton.YesNo,
-                    MessageBoxImage.Question);
+                    ModernDialogButtons.YesNo,
+                    ModernDialogIcon.Question);
 
                 if (promptResult != MessageBoxResult.Yes)
                 {

@@ -171,6 +171,41 @@ Cada sprint possui escopo bem delimitado, tarefas técnicas com caixas de seleç
 
 ---
 
+### 🎨 Refinamentos Visuais e Funcionais (Feedback de Homologação da Sprint 5)
+> **Objetivo:** Adequar componentes visuais aos temas Claro/Escuro, uniformizar janelas modais com o Design System da aplicação, e aperfeiçoar a ergonomia de digitação no DataGrid.
+
+* **Arquivos Afetados:**
+  * `SelectML.Client/Themes/Dark.xaml`
+  * `SelectML.Client/Themes/Light.xaml`
+  * `SelectML.Client/MainWindow.xaml`
+  * `SelectML.Client/MainWindow.xaml.cs`
+  * `SelectML.Client/Views/ModernDialogWindow.xaml` (Novo)
+  * `SelectML.Client/Views/ModernDialogWindow.xaml.cs` (Novo)
+  * `SelectML.Client/Views/UpdateWindow.xaml`
+  * `SelectML.Client/Views/ConfirmationWindow.xaml`
+  * `SelectML.Client/Views/StationSelectionWindow.xaml`
+  * `SelectML.Client/ViewModels/MainViewModel.cs`
+* **Tarefas Técnicas:**
+  - [x] **Visual 1 & 2 (Toggle de Atributos):**
+    - Adicionados tokens de cores temáticas (`Brush.Toggle.Approved.*` e `Brush.Toggle.Rejected.*`) em `Dark.xaml` e `Light.xaml`.
+    - Substituído o indicador circular por símbolos diretos: `✓ Aprovado` (verde) e `✕ Reprovado` (vermelho) com alta legibilidade em ambos os temas.
+  - [x] **Visual 3 (Ícone da Barra de Tarefas):**
+    - Ajustado `UpdateWindowIcon` em `MainWindow.xaml.cs` para carregar o arquivo `.ico` via `BitmapFrame.Create(uri)`, garantindo preservação de todas as resoluções de ícone no Windows Shell na inicialização.
+  - [x] **Visual 4 (Diálogos e Modais Modernos):**
+    - Criada a janela modal `ModernDialogWindow` estilizada com `ModernWindowStyle` para substituir `System.Windows.MessageBox.Show`.
+    - Modernizados os estilos e tokens de `UpdateWindow.xaml`, `ConfirmationWindow.xaml` e `StationSelectionWindow.xaml`.
+    - Integrado o aviso de características pendentes em `MainViewModel.cs` usando `ModernDialogWindow.Show`.
+  - [x] **Visual 5 (Contraste de Menus no Tema Claro):**
+    - Removidos overrides locais de cor nos itens de menu em `MainWindow.xaml` e configurado o trigger `IsHighlighted` para aplicar `Brush.Text.Inverse` (`#FFFFFF`) sobre o fundo azul.
+  - [x] **Funcional 1 (Navegação com ENTER no DataGrid):**
+    - Implementado `ValBox_PreviewKeyDown` e `NavigateAndFocusValueInput` para que ao teclar ENTER, o valor seja salvo e o cursor avance para a próxima linha com foco imediato e seleção no `TextBox` da coluna Valor.
+  - [x] **Funcional 2 (Menu de Contexto Limpo sem Opções Nativas):**
+    - Implementado `ResultsDataGrid_PreviewMouseRightButtonDown` para selecionar a linha e abrir o menu customizado *"Excluir valor"*, suprimindo completamente o menu nativo do Windows (Copiar/Recortar/Colar).
+* **Critério de Aceitação:**
+  * Todas as correções visuais e funcionais validadas com build 100% limpo e compatíveis com os dois temas.
+
+---
+
 ### 🧪 Sprint 6: Testes Integrados, Homologação e QA
 > **Objetivo:** Execução completa dos cenários de validação integrada, verificação contra o banco de dados `MeasurLink10` e testes de não-regressão.
 

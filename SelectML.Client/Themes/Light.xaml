@@ -33,6 +33,16 @@
     <SolidColorBrush x:Key="Brush.Status.Error" Color="#ef4444"/>
     <SolidColorBrush x:Key="Brush.Status.Error.Background" Color="#FEF2F2"/> <!-- Light Red bg for errors -->
 
+    <!-- Attribute Toggle -->
+    <SolidColorBrush x:Key="Brush.Toggle.Approved.Background" Color="#DCFCE7"/>
+    <SolidColorBrush x:Key="Brush.Toggle.Approved.Border" Color="#22c55e"/>
+    <SolidColorBrush x:Key="Brush.Toggle.Approved.Foreground" Color="#15803D"/>
+    <SolidColorBrush x:Key="Brush.Toggle.Approved.Hover" Color="#BBF7D0"/>
+    <SolidColorBrush x:Key="Brush.Toggle.Rejected.Background" Color="#FEE2E2"/>
+    <SolidColorBrush x:Key="Brush.Toggle.Rejected.Border" Color="#ef4444"/>
+    <SolidColorBrush x:Key="Brush.Toggle.Rejected.Foreground" Color="#B91C1C"/>
+    <SolidColorBrush x:Key="Brush.Toggle.Rejected.Hover" Color="#FECACA"/>
+
     <!-- Inputs -->
     <SolidColorBrush x:Key="Brush.Input.Background" Color="#FFFFFF"/>
 

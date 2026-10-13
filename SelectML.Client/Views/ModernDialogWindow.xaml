@@ -1,0 +1,87 @@
+<Window x:Class="SelectML.Client.Views.ModernDialogWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Aviso"
+        SizeToContent="Height"
+        Width="440"
+        WindowStartupLocation="CenterOwner"
+        ResizeMode="NoResize"
+        ShowInTaskbar="False"
+        Background="{DynamicResource Brush.Background.Base}"
+        Foreground="{DynamicResource Brush.Text.Primary}"
+        Style="{StaticResource ModernWindowStyle}">
+
+    <Grid Margin="20,15,20,20">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <!-- Content Area: Icon + Text -->
+        <Grid Grid.Row="0" Margin="0,5,0,20">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto"/>
+                <ColumnDefinition Width="*"/>
+            </Grid.ColumnDefinitions>
+
+            <!-- Icon Circle -->
+            <Border x:Name="IconContainer"
+                    Grid.Column="0"
+                    Width="40" Height="40"
+                    CornerRadius="20"
+                    Margin="0,0,16,0"
+                    VerticalAlignment="Top"
+                    HorizontalAlignment="Center"
+                    Background="{DynamicResource Brush.Action.Primary}">
+                <TextBlock x:Name="IconGlyph"
+                           Text="ℹ"
+                           FontSize="20"
+                           FontWeight="Bold"
+                           Foreground="#FFFFFF"
+                           HorizontalAlignment="Center"
+                           VerticalAlignment="Center"/>
+            </Border>
+
+            <!-- Text Content -->
+            <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                <TextBlock x:Name="DialogTitleText"
+                           Text="Título do Diálogo"
+                           FontSize="15"
+                           FontWeight="Bold"
+                           Foreground="{DynamicResource Brush.Text.Primary}"
+                           Margin="0,0,0,6"/>
+                <TextBlock x:Name="DialogMessageText"
+                           Text="Mensagem do diálogo detalhada aqui..."
+                           FontSize="13"
+                           TextWrapping="Wrap"
+                           LineHeight="18"
+                           Foreground="{DynamicResource Brush.Text.Secondary}"/>
+            </StackPanel>
+        </Grid>
+
+        <!-- Actions / Buttons Area -->
+        <StackPanel Grid.Row="1" Orientation="Horizontal" HorizontalAlignment="Right">
+            <Button x:Name="BtnYes"
+                    Content="Sim"
+                    Width="85"
+                    Height="30"
+                    Margin="0,0,10,0"
+                    Click="BtnYes_Click"
+                    Style="{DynamicResource PrimaryButton}"/>
+            <Button x:Name="BtnNo"
+                    Content="Não"
+                    Width="85"
+                    Height="30"
+                    Click="BtnNo_Click"
+                    IsCancel="True"
+                    Style="{DynamicResource GhostButton}"/>
+            <Button x:Name="BtnOk"
+                    Content="OK"
+                    Width="85"
+                    Height="30"
+                    Click="BtnOk_Click"
+                    IsDefault="True"
+                    Style="{DynamicResource PrimaryButton}"/>
+        </StackPanel>
+    </Grid>
+</Window>

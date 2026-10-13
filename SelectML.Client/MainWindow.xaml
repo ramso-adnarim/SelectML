@@ -139,44 +139,49 @@
                 <Setter.Value>
                     <ControlTemplate TargetType="ToggleButton">
                         <Border x:Name="PillBorder"
-                                Background="#163828"
-                                BorderBrush="#22c55e"
+                                Background="{DynamicResource Brush.Toggle.Approved.Background}"
+                                BorderBrush="{DynamicResource Brush.Toggle.Approved.Border}"
                                 BorderThickness="1"
                                 CornerRadius="10"
                                 SnapsToDevicePixels="True">
                             <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center">
-                                <TextBlock x:Name="StatusDot" Text="●" FontSize="8" Margin="0,0,5,0" Foreground="#22c55e" VerticalAlignment="Center"/>
+                                <TextBlock x:Name="StatusIcon" 
+                                           Text="✓" 
+                                           FontSize="11" 
+                                           FontWeight="Bold" 
+                                           Margin="0,0,5,0" 
+                                           Foreground="{DynamicResource Brush.Toggle.Approved.Foreground}" 
+                                           VerticalAlignment="Center"/>
                                 <TextBlock x:Name="StatusText" 
                                            Text="Aprovado" 
                                            FontSize="11" 
                                            FontWeight="Bold" 
-                                           Foreground="#4ade80" 
+                                           Foreground="{DynamicResource Brush.Toggle.Approved.Foreground}" 
                                            VerticalAlignment="Center"/>
                             </StackPanel>
                         </Border>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsChecked" Value="False">
-                                <Setter TargetName="PillBorder" Property="Background" Value="#3d1a1a"/>
-                                <Setter TargetName="PillBorder" Property="BorderBrush" Value="#ef4444"/>
-                                <Setter TargetName="StatusDot" Property="Foreground" Value="#ef4444"/>
+                                <Setter TargetName="PillBorder" Property="Background" Value="{DynamicResource Brush.Toggle.Rejected.Background}"/>
+                                <Setter TargetName="PillBorder" Property="BorderBrush" Value="{DynamicResource Brush.Toggle.Rejected.Border}"/>
+                                <Setter TargetName="StatusIcon" Property="Text" Value="✕"/>
+                                <Setter TargetName="StatusIcon" Property="Foreground" Value="{DynamicResource Brush.Toggle.Rejected.Foreground}"/>
                                 <Setter TargetName="StatusText" Property="Text" Value="Reprovado"/>
-                                <Setter TargetName="StatusText" Property="Foreground" Value="#f87171"/>
+                                <Setter TargetName="StatusText" Property="Foreground" Value="{DynamicResource Brush.Toggle.Rejected.Foreground}"/>
                             </Trigger>
                             <MultiTrigger>
                                 <MultiTrigger.Conditions>
                                     <Condition Property="IsMouseOver" Value="True"/>
                                     <Condition Property="IsChecked" Value="True"/>
                                 </MultiTrigger.Conditions>
-                                <Setter TargetName="PillBorder" Property="Background" Value="#1f4d37"/>
-                                <Setter TargetName="PillBorder" Property="BorderBrush" Value="#4ade80"/>
+                                <Setter TargetName="PillBorder" Property="Background" Value="{DynamicResource Brush.Toggle.Approved.Hover}"/>
                             </MultiTrigger>
                             <MultiTrigger>
                                 <MultiTrigger.Conditions>
                                     <Condition Property="IsMouseOver" Value="True"/>
                                     <Condition Property="IsChecked" Value="False"/>
                                 </MultiTrigger.Conditions>
-                                <Setter TargetName="PillBorder" Property="Background" Value="#4d2222"/>
-                                <Setter TargetName="PillBorder" Property="BorderBrush" Value="#f87171"/>
+                                <Setter TargetName="PillBorder" Property="Background" Value="{DynamicResource Brush.Toggle.Rejected.Hover}"/>
                             </MultiTrigger>
                             <Trigger Property="IsEnabled" Value="False">
                                 <Setter Property="Opacity" Value="0.6"/>
@@ -209,6 +214,7 @@
                         <TextBox x:Name="ValBox"
                                  Text="{Binding RawTextValue, UpdateSourceTrigger=LostFocus}"
                                  IsEnabled="{Binding DataContext.IsPendingAction, RelativeSource={RelativeSource AncestorType=Window}}"
+                                 PreviewKeyDown="ValBox_PreviewKeyDown"
                                  BorderThickness="0"
                                  Background="Transparent"
                                  FontWeight="Bold"
@@ -417,8 +423,9 @@
                                         
                                         <!-- Selection highlight states -->
                                         <Trigger Property="IsHighlighted" Value="True">
-                                            <Setter Property="Background" Value="{DynamicResource Brush.Action.Primary.Hover}"/>
+                                            <Setter TargetName="templateRoot" Property="Background" Value="{DynamicResource Brush.Action.Primary.Hover}"/>
                                             <Setter Property="Foreground" Value="{DynamicResource Brush.Text.Inverse}"/>
+                                            <Setter TargetName="templateRoot" Property="TextElement.Foreground" Value="{DynamicResource Brush.Text.Inverse}"/>
                                             <Setter TargetName="Glyph" Property="Stroke" Value="{DynamicResource Brush.Text.Inverse}"/>
                                             <Setter TargetName="RightArrow" Property="Fill" Value="{DynamicResource Brush.Text.Inverse}"/>
                                         </Trigger>
@@ -435,7 +442,7 @@
                     </Style>
                 </Menu.Resources>
                 <MenuItem Command="{Binding OpenSerialConfigCommand}" 
-                          Foreground="{DynamicResource Brush.Text.Primary}" FontWeight="SemiBold">
+                          FontWeight="SemiBold">
                     <MenuItem.Header>                        
                         <StackPanel Orientation="Horizontal">
                             <TextBlock Text="Conexão serial" VerticalAlignment="Center"/>
@@ -455,7 +462,7 @@
                         </StackPanel>
                     </MenuItem.Header>
                 </MenuItem>
-                <MenuItem Foreground="{DynamicResource Brush.Text.Primary}" FontWeight="SemiBold" VerticalAlignment="Center">
+                <MenuItem FontWeight="SemiBold" VerticalAlignment="Center">
                     <MenuItem.Header>
                         <StackPanel Orientation="Horizontal">
                             <TextBlock Text="Modificador de nomes" VerticalAlignment="Center"/>
@@ -476,16 +483,15 @@
                     </MenuItem.Header>
                     <MenuItem Header="Ativar" ToolTip="Aplica a regra Default" IsCheckable="True" IsChecked="{Binding IsNameModifierDefaultActive}"/>
                     <MenuItem Header="Desativar" IsCheckable="True" IsChecked="{Binding IsNameModifierDisabled}"/>
-                    <MenuItem Header="Personalizado" IsCheckable="True" IsChecked="{Binding IsNameModifierCustomActive}" Command="{Binding OpenNameModifierConfigCommand}" Foreground="{DynamicResource Brush.Text.Primary}"/>
+                    <MenuItem Header="Personalizado" IsCheckable="True" IsChecked="{Binding IsNameModifierCustomActive}" Command="{Binding OpenNameModifierConfigCommand}"/>
                 </MenuItem>
-                <MenuItem Foreground="{DynamicResource Brush.Text.Primary}" FontWeight="SemiBold" VerticalAlignment="Center">
+                <MenuItem FontWeight="SemiBold" VerticalAlignment="Center">
                     <MenuItem.Header>
                         <TextBlock Text="Configuração" VerticalAlignment="Center"/>
                     </MenuItem.Header>
                     <MenuItem Header="Listar todas as características" 
                               IsCheckable="True" 
-                              IsChecked="{Binding IsListAllFeaturesActive}" 
-                              Foreground="{DynamicResource Brush.Text.Primary}"/>
+                              IsChecked="{Binding IsListAllFeaturesActive}"/>
                 </MenuItem>
             </Menu>
 
@@ -877,7 +883,9 @@
                     <DataGrid x:Name="ResultsDataGrid"
                               ItemsSource="{Binding MeasuredResults}" 
                               Style="{StaticResource ModernDataGrid}"
-                              RowHeight="24">
+                              RowHeight="24"
+                              PreviewKeyDown="ResultsDataGrid_PreviewKeyDown"
+                              PreviewMouseRightButtonDown="ResultsDataGrid_PreviewMouseRightButtonDown">
                         <DataGrid.Columns>
                             <DataGridTemplateColumn Header="Característica" 
                                                     Width="*" 
