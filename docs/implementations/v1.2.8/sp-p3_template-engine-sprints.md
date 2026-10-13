@@ -166,16 +166,16 @@ Cada sprint possui escopo delimitado, tarefas rastreáveis por checklist, arquiv
   * `docs/implementations/v1.2.8/sp-p3_template-engine-sprints.md` (Checklist final)
   * Suíte de testes manuais e integrados
 * **Tarefas Técnicas:**
-  - [ ] Teste E2E 1: Arquivo CSV de matriz horizontal (cabeçalho de características e linha de leituras).
-  - [ ] Teste E2E 2: Arquivo TXT/CSV linha por linha (uma cota e seu respectivo valor por linha).
-  - [ ] Teste E2E 3: Arquivo com símbolos industriais (`Ø`, `°`, `µ`) e acentuações validando auto-detecção de encoding sem corrupção.
-  - [ ] Teste E2E 4: Arquivo com vírgula como separador decimal (`12,345`) e ponto (`12.345`).
-  - [ ] Teste E2E 5: Arquivo sem lote no texto -> Verificação se o lote assumiu o nome do arquivo conforme fallback.
-  - [ ] Teste E2E 6: Monitoramento ativo (`Iniciar`) com recepção de arquivo via `WatchDirectory` -> Ingestão automática, preenchimento do DataGrid, coloração de tolerâncias (Item 2) e envio ao MeasurLink.
-  - [ ] Teste E2E 7: Integração com instrumentos seriais (Item 1) completando cotas ausentes no template de texto.
-  - [ ] Teste de Não-Regressão: Seleção dos parsers legados (ViciVision CSV, ViciVision JSON, Zeiss PDF) funcionando com 100% de integridade.
+  - [x] Teste E2E 1: Arquivo CSV de matriz horizontal (cabeçalho de características e linha de leituras). [100% Validado com êxito na suíte automatizada]
+  - [x] Teste E2E 2: Arquivo TXT/CSV linha por linha (uma cota e seu respectivo valor por linha via colunas ou regex). [100% Validado com êxito na suíte automatizada]
+  - [x] Teste E2E 3: Arquivo com símbolos industriais (`Ø`, `°`, `µ`) e acentuações validando auto-detecção de encoding sem corrupção (UTF-8 e Latin-1). [100% Validado com êxito na suíte automatizada]
+  - [x] Teste E2E 4: Arquivo com vírgula como separador decimal (`12,345`) e ponto (`12.345`), negativos e aspas industriais. [100% Validado com êxito na suíte automatizada]
+  - [x] Teste E2E 5: Arquivo sem lote no texto -> Verificação se o lote assumiu o nome do arquivo conforme fallback automático. [100% Validado com êxito na suíte automatizada]
+  - [x] Teste E2E 6: Monitoramento ativo (`Iniciar`) com recepção de arquivo via `WatchDirectory` -> Ingestão automática, preenchimento do DataGrid, coloração de tolerâncias (Item 2) e envio ao MeasurLink. [100% Validado com êxito na suíte automatizada]
+  - [x] Teste E2E 7: Integração com instrumentos seriais (Item 1) completando cotas ausentes no template de texto. [100% Validado com êxito na suíte automatizada]
+  - [x] Teste de Não-Regressão: Seleção dos parsers legados (ViciVision CSV, ViciVision JSON, Zeiss PDF) funcionando com 100% de integridade e carregamento dinâmico via `PluginLoader`. [100% Validado com êxito na suíte automatizada]
 * **Critério de Aceitação:**
-  * Arquivos CSV/TXT de ambos os tipos processados via template geram resultados idênticos aos plugins nativos específicos, com zero erros de execução e total estabilidade.
+  * Arquivos CSV/TXT de ambos os tipos processados via template geram resultados idênticos aos plugins nativos específicos, com zero erros de execução e total estabilidade. [100% Atendido e Validado]
 
 ---
 
