@@ -1,8 +1,8 @@
 <Window x:Class="SelectML.Client.Views.TemplateConfigWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="Configuração de Templates" Height="650" Width="960"
-        MinHeight="550" MinWidth="800"
+        Title="Configuração de Templates" Height="680" Width="980"
+        MinHeight="580" MinWidth="850"
         WindowStartupLocation="CenterOwner"
         Style="{StaticResource ModernWindowStyle}">
     <Grid Margin="15">
@@ -13,29 +13,290 @@
         </Grid.RowDefinitions>
 
         <!-- Header -->
-        <TextBlock Text="Configuração de Templates de Arquivos de Texto" 
-                   FontSize="16" FontWeight="SemiBold" 
-                   Foreground="{DynamicResource Brush.Text.Primary}" 
-                   Margin="0,0,0,15" Grid.Row="0"/>
-
-        <!-- Main Body Placeholder (Será expandido na Sprint 3 e 4) -->
-        <Border Grid.Row="1" Background="{DynamicResource Brush.Surface.Card}" 
-                BorderBrush="{DynamicResource Brush.Border.Base}" BorderThickness="1" 
-                CornerRadius="8" Padding="20">
-            <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center">
-                <TextBlock Text="⚙ Biblioteca de Templates" FontSize="20" FontWeight="Bold"
-                           HorizontalAlignment="Center" Foreground="{DynamicResource Brush.Text.Primary}" Margin="0,0,0,10"/>
-                <TextBlock Text="Selecione ou edite seus templates para o Leitor de Arquivos de Texto."
-                           FontSize="13" Foreground="{DynamicResource Brush.Text.Secondary}" HorizontalAlignment="Center"/>
+        <Grid Grid.Row="0" Margin="0,0,0,12">
+            <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                <TextBlock Text="⚙" FontSize="18" Foreground="{DynamicResource Brush.Action.Primary}" Margin="0,0,8,0" VerticalAlignment="Center"/>
+                <TextBlock Text="Configuração de Templates (Leitor de Arquivos de Texto)" 
+                           FontSize="16" FontWeight="SemiBold" 
+                           Foreground="{DynamicResource Brush.Text.Primary}" 
+                           VerticalAlignment="Center"/>
             </StackPanel>
-        </Border>
+        </Grid>
 
-        <!-- Footer / Action Buttons -->
-        <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,15,0,0">
-            <Button Content="Cancelar" Width="100" Height="32" Margin="0,0,10,0"
-                    Style="{StaticResource SecondaryButton}" Click="CancelButton_Click"/>
-            <Button Content="Salvar e Aplicar" Width="130" Height="32"
-                    Style="{StaticResource PrimaryButton}" Click="ApplyButton_Click"/>
-        </StackPanel>
+        <!-- Main Body: Two Columns (Left: Templates Library, Right: Rules & Preview) -->
+        <Grid Grid.Row="1">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="270"/>
+                <ColumnDefinition Width="15"/>
+                <ColumnDefinition Width="*"/>
+            </Grid.ColumnDefinitions>
+
+            <!-- PAINEL ESQUERDO: Biblioteca de Templates -->
+            <Border Grid.Column="0" Background="{DynamicResource Brush.Surface.Card}" 
+                    BorderBrush="{DynamicResource Brush.Border.Base}" BorderThickness="1" 
+                    CornerRadius="8" Padding="12">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                    </Grid.RowDefinitions>
+
+                    <!-- Top Bar: Title & Actions -->
+                    <Grid Grid.Row="0" Margin="0,0,0,10">
+                        <TextBlock Text="Biblioteca de Templates" FontWeight="SemiBold" FontSize="13"
+                                   Foreground="{DynamicResource Brush.Text.Primary}" VerticalAlignment="Center"/>
+                        
+                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                            <Button Command="{Binding NewTemplateCommand}" ToolTip="Criar Novo Template"
+                                    Content="➕" Width="26" Height="26" Margin="0,0,4,0"
+                                    Style="{StaticResource IconButton}" Foreground="{DynamicResource Brush.Action.Primary}"/>
+                            <Button Command="{Binding DuplicateTemplateCommand}" ToolTip="Duplicar Template Selecionado"
+                                    Content="📋" Width="26" Height="26" Margin="0,0,4,0"
+                                    Style="{StaticResource IconButton}" Foreground="{DynamicResource Brush.Text.Secondary}"/>
+                            <Button Command="{Binding DeleteTemplateCommand}" ToolTip="Excluir Template Selecionado"
+                                    Content="🗑" Width="26" Height="26"
+                                    Style="{StaticResource IconButton}" Foreground="{DynamicResource Brush.Status.Error}"/>
+                        </StackPanel>
+                    </Grid>
+
+                    <!-- Templates List -->
+                    <ListBox Grid.Row="1" ItemsSource="{Binding Templates}" 
+                             SelectedItem="{Binding SelectedTemplate}"
+                             Background="Transparent" BorderThickness="0"
+                             ScrollViewer.HorizontalScrollBarVisibility="Disabled">
+                        <ListBox.ItemContainerStyle>
+                            <Style TargetType="ListBoxItem">
+                                <Setter Property="Padding" Value="8,8"/>
+                                <Setter Property="Margin" Value="0,2"/>
+                                <Setter Property="Background" Value="Transparent"/>
+                                <Setter Property="BorderThickness" Value="1"/>
+                                <Setter Property="BorderBrush" Value="Transparent"/>
+                                <Setter Property="Cursor" Value="Hand"/>
+                                <Setter Property="Template">
+                                    <Setter.Value>
+                                        <ControlTemplate TargetType="ListBoxItem">
+                                            <Border x:Name="ItemBorder" Background="{TemplateBinding Background}" 
+                                                    BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}" 
+                                                    CornerRadius="6" Padding="{TemplateBinding Padding}">
+                                                <ContentPresenter/>
+                                            </Border>
+                                            <ControlTemplate.Triggers>
+                                                <Trigger Property="IsMouseOver" Value="True">
+                                                    <Setter TargetName="ItemBorder" Property="Background" Value="{DynamicResource Brush.Surface.Hover}"/>
+                                                </Trigger>
+                                                <Trigger Property="IsSelected" Value="True">
+                                                    <Setter TargetName="ItemBorder" Property="Background" Value="{DynamicResource Brush.Action.Primary.Soft}"/>
+                                                    <Setter TargetName="ItemBorder" Property="BorderBrush" Value="{DynamicResource Brush.Action.Primary}"/>
+                                                </Trigger>
+                                            </ControlTemplate.Triggers>
+                                        </ControlTemplate>
+                                    </Setter.Value>
+                                </Setter>
+                            </Style>
+                        </ListBox.ItemContainerStyle>
+                        <ListBox.ItemTemplate>
+                            <DataTemplate>
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="Auto"/>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                    </Grid.ColumnDefinitions>
+                                    <TextBlock Grid.Column="0" Text="📄" Margin="0,0,8,0" VerticalAlignment="Center" FontSize="13"/>
+                                    <TextBlock Grid.Column="1" Text="{Binding Name}" FontWeight="Medium" FontSize="12"
+                                               Foreground="{DynamicResource Brush.Text.Primary}" VerticalAlignment="Center"
+                                               TextTrimming="CharacterEllipsis"/>
+                                    <Border Grid.Column="2" Background="{DynamicResource Brush.Surface.Input}" 
+                                            CornerRadius="4" Padding="5,1" Margin="4,0,0,0">
+                                        <TextBlock Text="{Binding FileExtension}" FontSize="10" 
+                                                   Foreground="{DynamicResource Brush.Text.Secondary}" VerticalAlignment="Center"/>
+                                    </Border>
+                                </Grid>
+                            </DataTemplate>
+                        </ListBox.ItemTemplate>
+                    </ListBox>
+                </Grid>
+            </Border>
+
+            <!-- PAINEL DIREITO: Metadados, Regras e Visualizador -->
+            <Grid Grid.Column="2" IsEnabled="{Binding HasSelectedTemplate}">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="12"/>
+                    <RowDefinition Height="*"/>
+                </Grid.RowDefinitions>
+
+                <!-- PARTE SUPERIOR: Metadados e Tabela de Regras -->
+                <Border Grid.Row="0" Background="{DynamicResource Brush.Surface.Card}" 
+                        BorderBrush="{DynamicResource Brush.Border.Base}" BorderThickness="1" 
+                        CornerRadius="8" Padding="14">
+                    <StackPanel>
+                        <!-- Inputs Grid -->
+                        <Grid Margin="0,0,0,12">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="2*"/>
+                                <ColumnDefinition Width="15"/>
+                                <ColumnDefinition Width="1*"/>
+                                <ColumnDefinition Width="15"/>
+                                <ColumnDefinition Width="1*"/>
+                            </Grid.ColumnDefinitions>
+
+                            <!-- Nome do Template -->
+                            <StackPanel Grid.Column="0">
+                                <TextBlock Text="Nome do Template" Style="{StaticResource LabelText}"/>
+                                <TextBox Text="{Binding TemplateName, UpdateSourceTrigger=PropertyChanged}" 
+                                         Style="{StaticResource {x:Type TextBox}}" Height="30"/>
+                            </StackPanel>
+
+                            <!-- Extensão do Arquivo -->
+                            <StackPanel Grid.Column="2">
+                                <TextBlock Text="Extensão do Arquivo" Style="{StaticResource LabelText}"/>
+                                <ComboBox ItemsSource="{Binding AvailableExtensions}" 
+                                          SelectedItem="{Binding FileExtension}" 
+                                          Style="{StaticResource {x:Type ComboBox}}" Height="30"/>
+                            </StackPanel>
+
+                            <!-- Separador Padrão -->
+                            <StackPanel Grid.Column="4">
+                                <TextBlock Text="Separador Padrão" Style="{StaticResource LabelText}"/>
+                                <ComboBox ItemsSource="{Binding AvailableSeparators}" 
+                                          SelectedItem="{Binding DefaultSeparator}" 
+                                          Style="{StaticResource {x:Type ComboBox}}" Height="30"/>
+                            </StackPanel>
+                        </Grid>
+
+                        <!-- Fallback Checkboxes -->
+                        <Grid Margin="0,0,0,14">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+
+                            <CheckBox Grid.Column="0" IsChecked="{Binding UseFileNameForPartName}" 
+                                      VerticalAlignment="Center">
+                                <TextBlock Text="Usar nome do arquivo para Rotina se não marcado" 
+                                           Foreground="{DynamicResource Brush.Text.Primary}" FontSize="12"/>
+                            </CheckBox>
+
+                            <CheckBox Grid.Column="1" IsChecked="{Binding UseFileNameForBatchNumber}" 
+                                      VerticalAlignment="Center">
+                                <TextBlock Text="Usar nome do arquivo para Lote se não marcado" 
+                                           Foreground="{DynamicResource Brush.Text.Primary}" FontSize="12"/>
+                            </CheckBox>
+                        </Grid>
+
+                        <!-- Tabela de Regras Mapeadas -->
+                        <TextBlock Text="Regras de Interpretação Mapeadas:" FontWeight="SemiBold" FontSize="12"
+                                   Foreground="{DynamicResource Brush.Text.Primary}" Margin="0,0,0,6"/>
+
+                        <Border Background="{DynamicResource Brush.Surface.Input}" 
+                                BorderBrush="{DynamicResource Brush.Border.Base}" BorderThickness="1" 
+                                CornerRadius="6" MaxHeight="130" MinHeight="70">
+                            <DataGrid ItemsSource="{Binding CurrentRules}" AutoGenerateColumns="False" 
+                                      IsReadOnly="True" HeadersVisibility="Column"
+                                      GridLinesVisibility="Horizontal" RowHeaderWidth="0"
+                                      Background="Transparent" BorderThickness="0"
+                                      HorizontalGridLinesBrush="{DynamicResource Brush.Border.Base}">
+                                <DataGrid.Columns>
+                                    <DataGridTextColumn Header="Linha" Binding="{Binding LineDisplay}" Width="100"/>
+                                    <DataGridTextColumn Header="Função / Papel" Binding="{Binding RoleDescription}" Width="160"/>
+                                    <DataGridTextColumn Header="Detalhes da Extração" Binding="{Binding DetailsDisplay}" Width="*"/>
+                                    <DataGridTemplateColumn Width="40">
+                                        <DataGridTemplateColumn.CellTemplate>
+                                            <DataTemplate>
+                                                <Button Content="✖" Width="20" Height="20"
+                                                        Command="{Binding DataContext.RemoveRuleCommand, RelativeSource={RelativeSource AncestorType=Window}}"
+                                                        CommandParameter="{Binding}"
+                                                        Style="{StaticResource IconButton}" 
+                                                        Foreground="{DynamicResource Brush.Status.Error}"
+                                                        ToolTip="Remover esta regra"/>
+                                            </DataTemplate>
+                                        </DataGridTemplateColumn.CellTemplate>
+                                    </DataGridTemplateColumn>
+                                </DataGrid.Columns>
+                            </DataGrid>
+                        </Border>
+                    </StackPanel>
+                </Border>
+
+                <!-- PARTE INFERIOR: Visualizador de Arquivo de Amostra (Base para a Sprint 4) -->
+                <Border Grid.Row="2" Background="{DynamicResource Brush.Surface.Card}" 
+                        BorderBrush="{DynamicResource Brush.Border.Base}" BorderThickness="1" 
+                        CornerRadius="8" Padding="14">
+                    <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="*"/>
+                        </Grid.RowDefinitions>
+
+                        <!-- Top Toolbar do Arquivo de Amostra -->
+                        <Grid Grid.Row="0" Margin="0,0,0,10">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+
+                            <TextBlock Grid.Column="0" Text="Arquivo de Amostra:" FontWeight="SemiBold" FontSize="12"
+                                       Foreground="{DynamicResource Brush.Text.Primary}" VerticalAlignment="Center" Margin="0,0,10,0"/>
+
+                            <TextBox Grid.Column="1" Text="{Binding SampleFilePath}" IsReadOnly="True" 
+                                     Height="28" Style="{StaticResource {x:Type TextBox}}" 
+                                     VerticalContentAlignment="Center" Margin="0,0,8,0"/>
+
+                            <Button Grid.Column="2" Content="Procurar..." Width="85" Height="28"
+                                    Style="{StaticResource SecondaryButton}"/>
+                        </Grid>
+
+                        <!-- Área de Prévia do Arquivo -->
+                        <Border Grid.Row="1" Background="{DynamicResource Brush.Surface.Input}" 
+                                BorderBrush="{DynamicResource Brush.Border.Base}" BorderThickness="1" 
+                                CornerRadius="6" Padding="10">
+                            <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Auto">
+                                <TextBlock Text="{Binding SampleFileContent, FallbackValue='Clique em Procurar... para carregar um arquivo CSV ou TXT de amostra e mapear as linhas.'}"
+                                           FontFamily="Consolas" FontSize="12" 
+                                           Foreground="{DynamicResource Brush.Text.Secondary}"/>
+                            </ScrollViewer>
+                        </Border>
+                    </Grid>
+                </Border>
+            </Grid>
+        </Grid>
+
+        <!-- Footer / Barra de Status e Ações -->
+        <Grid Grid.Row="2" Margin="0,15,0,0">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="Auto"/>
+            </Grid.ColumnDefinitions>
+
+            <!-- Status de Validação -->
+            <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center">
+                <Ellipse Width="8" Height="8" Margin="0,0,8,0" VerticalAlignment="Center">
+                    <Ellipse.Style>
+                        <Style TargetType="Ellipse">
+                            <Setter Property="Fill" Value="{DynamicResource Brush.Status.Warning}"/>
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding IsTemplateValid}" Value="True">
+                                    <Setter Property="Fill" Value="{DynamicResource Brush.Status.Success}"/>
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </Ellipse.Style>
+                </Ellipse>
+                <TextBlock Text="{Binding ValidationMessage}" FontSize="12" 
+                           Foreground="{DynamicResource Brush.Text.Secondary}" VerticalAlignment="Center"/>
+            </StackPanel>
+
+            <!-- Botões de Ação -->
+            <StackPanel Grid.Column="1" Orientation="Horizontal">
+                <Button Content="Cancelar" Command="{Binding CancelCommand}" 
+                        Width="100" Height="32" Margin="0,0,10,0"
+                        Style="{StaticResource SecondaryButton}"/>
+                <Button Content="Salvar e Aplicar" Command="{Binding SaveAndApplyCommand}" 
+                        Width="130" Height="32"
+                        Style="{StaticResource PrimaryButton}"/>
+            </StackPanel>
+        </Grid>
     </Grid>
 </Window>

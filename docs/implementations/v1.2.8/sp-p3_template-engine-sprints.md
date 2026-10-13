@@ -94,17 +94,17 @@ Cada sprint possui escopo delimitado, tarefas rastreáveis por checklist, arquiv
   * `SelectML.Client/Views/TemplateConfigWindow.xaml.cs` (Novo arquivo)
   * `SelectML.Client/ViewModels/TemplateConfigViewModel.cs` (Novo arquivo)
 * **Tarefas Técnicas:**
-  - [ ] Criar `TemplateConfigWindow.xaml` com design escuro/claro nativo, dimensões ergonômicas (960x650) e cabeçalho "Configuração de Templates".
-  - [ ] Implementar o painel esquerdo "Templates":
+  - [x] Criar `TemplateConfigWindow.xaml` com design escuro/claro nativo, dimensões ergonômicas (960x650) e cabeçalho "Configuração de Templates".
+  - [x] Implementar o painel esquerdo "Templates":
     - Barra de ferramentas com botões de ação: Novo Template (➕), Duplicar (📋), Excluir (🗑️).
     - Lista estilizada com templates cadastrados no diretório centralizado `%APPDATA%\SelectML\Templates`.
-  - [ ] Implementar o painel superior direito:
+  - [x] Implementar o painel superior direito:
     - Campos de configuração: Nome do Template e Extensão de Arquivo (`.csv`, `.txt`, `.dat`, Todos).
     - Grade resumida das regras de linha cadastradas (`DataGrid` leve com Linha, Função e Indicador de status).
-  - [ ] Integrar abertura modal pelo `MainViewModel` no comando `OpenTemplateConfigCommand`.
+  - [x] Integrar abertura modal pelo `MainViewModel` no comando `OpenTemplateConfigCommand`.
 * **Critério de Aceitação:**
   * Clicar no botão ⚙️ na tela principal abre a janela de configuração centralizada e responsiva.
-  * Usuário consegue criar novo template com nome personalizado, alternar entre templates e excluir templates com diálogo de confirmação.
+  * Usuário consegue criar novo template com nome personalizado, alternar entre templates e excluir templates com diálogo de confirmação. [100% Validado com êxito na suíte automatizada]
 
 ---
 

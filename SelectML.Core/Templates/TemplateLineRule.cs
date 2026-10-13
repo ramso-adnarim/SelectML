@@ -73,5 +73,40 @@ namespace SelectML.Core.Templates
         /// Nome do grupo nomeado de captura no Regex (ex: "val", "part", "batch").
         /// </summary>
         public string RegexGroupName { get; set; } = string.Empty;
+
+        /// <summary>
+        /// Descrição amigável do papel para exibição em listas e tabelas.
+        /// </summary>
+        public string RoleDescription => Role switch
+        {
+            LineRuleRole.PartName => "Nome da Rotina / Peça",
+            LineRuleRole.BatchNumber => "Nome da Corrida / Lote",
+            LineRuleRole.CharacteristicNames => "Características (Nomes)",
+            LineRuleRole.MeasuredValues => "Valores Medidos",
+            LineRuleRole.RowFeatureAndValue => "Linha de Medição (Cota + Valor)",
+            _ => Role.ToString()
+        };
+
+        /// <summary>
+        /// Rótulo amigável da linha aplicada.
+        /// </summary>
+        public string LineDisplay => LineIndex == 0 ? "Todas as Linhas" : $"Linha {LineIndex}";
+
+        /// <summary>
+        /// Resumo dos parâmetros aplicados nesta regra.
+        /// </summary>
+        public string DetailsDisplay
+        {
+            get
+            {
+                if (Role == LineRuleRole.CharacteristicNames || Role == LineRuleRole.MeasuredValues)
+                    return $"Separador: '{Separator}'";
+                if (Role == LineRuleRole.RowFeatureAndValue)
+                    return $"Col. Cota: {FeatureColumnIndex + 1}, Col. Valor: {ValueColumnIndex + 1} (Sep: '{Separator}')";
+                if (!string.IsNullOrWhiteSpace(RegexPattern))
+                    return $"Regex: {RegexPattern}";
+                return "Linha inteira / Padrão";
+            }
+        }
     }
 }

@@ -1,28 +1,24 @@
 using System.Windows;
+using SelectML.Client.ViewModels;
 using SelectML.Core;
 
 namespace SelectML.Client.Views
 {
     public partial class TemplateConfigWindow : Window
     {
-        private readonly IConfigurableParser? _parser;
+        public TemplateConfigViewModel ViewModel { get; }
 
         public TemplateConfigWindow(IConfigurableParser? parser = null)
         {
             InitializeComponent();
-            _parser = parser;
-        }
+            ViewModel = new TemplateConfigViewModel(parser);
+            DataContext = ViewModel;
 
-        private void CancelButton_Click(object sender, RoutedEventArgs e)
-        {
-            DialogResult = false;
-            Close();
-        }
-
-        private void ApplyButton_Click(object sender, RoutedEventArgs e)
-        {
-            DialogResult = true;
-            Close();
+            ViewModel.RequestClose += (result) =>
+            {
+                DialogResult = result;
+                Close();
+            };
         }
     }
 }
