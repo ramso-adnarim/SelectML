@@ -129,12 +129,50 @@ namespace SelectML.Parsers.TextTemplate
 
         private void ExtractRowByRowResults(string[] lines, List<TemplateLineRule> rowRules, TemplateDefinition template, Dictionary<string, double> results)
         {
-            var genericRule = rowRules.FirstOrDefault(r => r.LineIndex == 0);
+            var genericRule = rowRules.FirstOrDefault(r => r.LineIndex == 0) ?? rowRules.FirstOrDefault();
 
             if (genericRule != null)
             {
                 // Aplica para todas as linhas a partir de DataStartLine
                 int start = Math.Max(1, template.DataStartLine) - 1;
+
+                // 1. Suporte a extração por REGEX com grupos nomeados "feat" e "val"
+                if (!string.IsNullOrWhiteSpace(genericRule.RegexPattern))
+                {
+                    Regex regex;
+                    try
+                    {
+                        regex = new Regex(genericRule.RegexPattern, RegexOptions.Compiled);
+                    }
+                    catch
+                    {
+                        regex = new Regex(genericRule.RegexPattern);
+                    }
+
+                    for (int i = start; i < lines.Length; i++)
+                    {
+                        var line = lines[i];
+                        if (string.IsNullOrWhiteSpace(line)) continue;
+
+                        var match = regex.Match(line);
+                        if (match.Success)
+                        {
+                            string featName = match.Groups["feat"].Success ? match.Groups["feat"].Value.Trim() : string.Empty;
+                            string rawVal = match.Groups["val"].Success ? match.Groups["val"].Value.Trim() : string.Empty;
+
+                            if (!string.IsNullOrWhiteSpace(featName) && SmartNumberParser.TryParse(rawVal, out double val))
+                            {
+                                if (!results.ContainsKey(featName))
+                                {
+                                    results.Add(featName, val);
+                                }
+                            }
+                        }
+                    }
+                    return;
+                }
+
+                // 2. Extração por Colunas Delimitadas
                 string sep = !string.IsNullOrEmpty(genericRule.Separator) ? genericRule.Separator : template.DefaultSeparator;
 
                 for (int i = start; i < lines.Length; i++)
@@ -143,10 +181,11 @@ namespace SelectML.Parsers.TextTemplate
                     if (string.IsNullOrWhiteSpace(line)) continue;
 
                     var tokens = SplitTokens(line, sep);
-                    if (tokens.Length > genericRule.FeatureColumnIndex && tokens.Length > genericRule.ValueColumnIndex)
+                    if (genericRule.FeatureColumnIndex >= 0 && genericRule.FeatureColumnIndex < tokens.Length &&
+                        genericRule.ValueColumnIndex >= 0 && genericRule.ValueColumnIndex < tokens.Length)
                     {
-                        string featName = tokens[genericRule.FeatureColumnIndex].Trim();
-                        string rawVal = tokens[genericRule.ValueColumnIndex].Trim();
+                        string featName = tokens[genericRule.FeatureColumnIndex].Trim().Trim('"', '\'');
+                        string rawVal = tokens[genericRule.ValueColumnIndex].Trim().Trim('"', '\'');
 
                         if (!string.IsNullOrWhiteSpace(featName) && SmartNumberParser.TryParse(rawVal, out double val))
                         {
@@ -168,13 +207,33 @@ namespace SelectML.Parsers.TextTemplate
                     var line = lines[rule.LineIndex - 1];
                     if (string.IsNullOrWhiteSpace(line)) continue;
 
+                    if (!string.IsNullOrWhiteSpace(rule.RegexPattern))
+                    {
+                        var match = Regex.Match(line, rule.RegexPattern);
+                        if (match.Success)
+                        {
+                            string featName = match.Groups["feat"].Success ? match.Groups["feat"].Value.Trim() : string.Empty;
+                            string rawVal = match.Groups["val"].Success ? match.Groups["val"].Value.Trim() : string.Empty;
+
+                            if (!string.IsNullOrWhiteSpace(featName) && SmartNumberParser.TryParse(rawVal, out double val))
+                            {
+                                if (!results.ContainsKey(featName))
+                                {
+                                    results.Add(featName, val);
+                                }
+                            }
+                        }
+                        continue;
+                    }
+
                     string sep = !string.IsNullOrEmpty(rule.Separator) ? rule.Separator : template.DefaultSeparator;
                     var tokens = SplitTokens(line, sep);
 
-                    if (tokens.Length > rule.FeatureColumnIndex && tokens.Length > rule.ValueColumnIndex)
+                    if (rule.FeatureColumnIndex >= 0 && rule.FeatureColumnIndex < tokens.Length &&
+                        rule.ValueColumnIndex >= 0 && rule.ValueColumnIndex < tokens.Length)
                     {
-                        string featName = tokens[rule.FeatureColumnIndex].Trim();
-                        string rawVal = tokens[rule.ValueColumnIndex].Trim();
+                        string featName = tokens[rule.FeatureColumnIndex].Trim().Trim('"', '\'');
+                        string rawVal = tokens[rule.ValueColumnIndex].Trim().Trim('"', '\'');
 
                         if (!string.IsNullOrWhiteSpace(featName) && SmartNumberParser.TryParse(rawVal, out double val))
                         {

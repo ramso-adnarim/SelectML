@@ -38,6 +38,62 @@ namespace SelectML.Core.Templates
         }
 
         /// <summary>
+        /// Identifica o índice da coluna (0-based) a partir do texto selecionado ou da posição do cursor.
+        /// </summary>
+        public static int IdentifyColumnIndex(string fullLine, string separator, string selectedText, int selectionStart)
+        {
+            if (string.IsNullOrEmpty(fullLine) || string.IsNullOrEmpty(separator)) return 0;
+
+            var tokens = fullLine.Split(new[] { separator }, StringSplitOptions.None);
+            if (tokens.Length <= 1) return 0;
+
+            // 1. Se selectedText corresponde exatamente a um token único
+            if (!string.IsNullOrWhiteSpace(selectedText))
+            {
+                int exactMatchIndex = -1;
+                int matchCount = 0;
+                for (int i = 0; i < tokens.Length; i++)
+                {
+                    if (tokens[i].Trim().Trim('"', '\'').Equals(selectedText.Trim().Trim('"', '\''), StringComparison.OrdinalIgnoreCase))
+                    {
+                        exactMatchIndex = i;
+                        matchCount++;
+                    }
+                }
+                if (matchCount == 1) return exactMatchIndex;
+            }
+
+            // 2. Se houver cursor/posição de seleção ou múltiplos matches (desambiguação por posição física na linha)
+            int currentOffset = 0;
+            for (int i = 0; i < tokens.Length; i++)
+            {
+                int tokenLength = tokens[i].Length;
+                int tokenEnd = currentOffset + tokenLength;
+
+                if (selectionStart >= currentOffset && selectionStart <= tokenEnd)
+                {
+                    return i;
+                }
+
+                currentOffset = tokenEnd + separator.Length;
+            }
+
+            // 3. Fallback: se selectedText está contido em algum token
+            if (!string.IsNullOrWhiteSpace(selectedText))
+            {
+                for (int i = 0; i < tokens.Length; i++)
+                {
+                    if (tokens[i].IndexOf(selectedText, StringComparison.OrdinalIgnoreCase) >= 0)
+                    {
+                        return i;
+                    }
+                }
+            }
+
+            return 0;
+        }
+
+        /// <summary>
         /// Gera uma regra de linha com base no papel selecionado e no contexto da linha/seleção.
         /// </summary>
         public static TemplateLineRule GenerateRule(
@@ -65,7 +121,6 @@ namespace SelectML.Core.Templates
             {
                 case LineRuleRole.CharacteristicNames:
                 case LineRuleRole.MeasuredValues:
-                    // Linhas de matriz horizontal: armazenam o separador detectado
                     template.DefaultSeparator = separator;
                     break;
 
@@ -74,9 +129,77 @@ namespace SelectML.Core.Templates
                     ConfigureMetadataRule(rule, role, fullLine, selectedText, separator);
                     break;
 
+                case LineRuleRole.RowFeatureColumn:
+                {
+                    var existingRule = template.LineRules.FirstOrDefault(r => r.Role == LineRuleRole.RowFeatureAndValue);
+                    var targetRule = existingRule ?? new TemplateLineRule
+                    {
+                        LineIndex = 0,
+                        Role = LineRuleRole.RowFeatureAndValue,
+                        Separator = separator,
+                        FeatureColumnIndex = -1,
+                        ValueColumnIndex = -1
+                    };
+
+                    targetRule.Separator = separator;
+                    targetRule.LineIndex = 0;
+                    template.DataStartLine = lineIndex;
+
+                    if (!string.IsNullOrEmpty(separator) && fullLine.Contains(separator))
+                    {
+                        int colIdx = IdentifyColumnIndex(fullLine, separator, selectedText, selectionStart);
+                        targetRule.FeatureColumnIndex = colIdx;
+                    }
+                    else
+                    {
+                        ConfigureRowRegex(targetRule, "feat", fullLine, selectedText, selectionStart);
+                    }
+
+                    return targetRule;
+                }
+
+                case LineRuleRole.RowValueColumn:
+                {
+                    var existingRule = template.LineRules.FirstOrDefault(r => r.Role == LineRuleRole.RowFeatureAndValue);
+                    var targetRule = existingRule ?? new TemplateLineRule
+                    {
+                        LineIndex = 0,
+                        Role = LineRuleRole.RowFeatureAndValue,
+                        Separator = separator,
+                        FeatureColumnIndex = -1,
+                        ValueColumnIndex = -1
+                    };
+
+                    targetRule.Separator = separator;
+                    targetRule.LineIndex = 0;
+                    template.DataStartLine = lineIndex;
+
+                    if (!string.IsNullOrEmpty(separator) && fullLine.Contains(separator))
+                    {
+                        int colIdx = IdentifyColumnIndex(fullLine, separator, selectedText, selectionStart);
+                        targetRule.ValueColumnIndex = colIdx;
+                    }
+                    else
+                    {
+                        ConfigureRowRegex(targetRule, "val", fullLine, selectedText, selectionStart);
+                    }
+
+                    return targetRule;
+                }
+
                 case LineRuleRole.RowFeatureAndValue:
-                    ConfigureRowByRowRule(rule, lineIndex, fullLine, selectedText, separator, template);
-                    break;
+                {
+                    var existingRule = template.LineRules.FirstOrDefault(r => r.Role == LineRuleRole.RowFeatureAndValue);
+                    var targetRule = existingRule ?? new TemplateLineRule
+                    {
+                        LineIndex = 0,
+                        Role = LineRuleRole.RowFeatureAndValue,
+                        Separator = separator
+                    };
+
+                    ConfigureRowByRowRule(targetRule, lineIndex, fullLine, selectedText, separator, template);
+                    return targetRule;
+                }
             }
 
             return rule;
@@ -114,22 +237,145 @@ namespace SelectML.Core.Templates
                 if (idx > 0)
                 {
                     // Obtém o prefixo imediato dentro do mesmo token (após o último separador)
-                    int lastDelim = fullLine.LastIndexOfAny(SeparatorCandidates, idx - 1);
-                    string prefix = lastDelim >= 0 
-                        ? fullLine.Substring(lastDelim + 1, idx - lastDelim - 1).Trim() 
-                        : fullLine.Substring(0, idx).Trim();
+                    // Obtém o prefixo imediato dentro do mesmo token (ignorando espaços intermediários)
+                    int end = idx - 1;
+                    while (end >= 0 && char.IsWhiteSpace(fullLine[end])) end--;
 
-                    if (!string.IsNullOrEmpty(prefix) && (prefix.EndsWith(":") || prefix.EndsWith("=") || prefix.Length <= 30))
+                    if (end >= 0)
                     {
-                        rule.RegexPattern = $@"{Regex.Escape(prefix)}\s*(?<{groupName}>[^\r\n;\t,]+)";
-                        rule.RegexGroupName = groupName;
-                        return;
+                        int lastDelim = fullLine.LastIndexOfAny(SeparatorCandidates, end);
+                        string prefix = lastDelim >= 0 
+                            ? fullLine.Substring(lastDelim + 1, end - lastDelim).Trim() 
+                            : fullLine.Substring(0, end + 1).Trim();
+
+                        if (!string.IsNullOrEmpty(prefix) && (prefix.EndsWith(":") || prefix.EndsWith("=") || prefix.Length <= 30))
+                        {
+                            rule.RegexPattern = $@"{Regex.Escape(prefix)}\s*(?<{groupName}>[^\r\n;\t,]+)";
+                            rule.RegexGroupName = groupName;
+                            return;
+                        }
                     }
                 }
 
                 // Captura do padrão exato selecionado
                 rule.RegexPattern = $@"(?<{groupName}>{Regex.Escape(selectedText)})";
                 rule.RegexGroupName = groupName;
+            }
+        }
+
+        private static void ConfigureRowRegex(
+            TemplateLineRule rule, 
+            string groupName, 
+            string fullLine, 
+            string selectedText, 
+            int selectionStart)
+        {
+            string targetText = !string.IsNullOrWhiteSpace(selectedText) ? selectedText : string.Empty;
+            int idx = !string.IsNullOrWhiteSpace(targetText) ? fullLine.IndexOf(targetText, StringComparison.Ordinal) : selectionStart;
+            if (idx < 0) idx = 0;
+
+            string pattern = string.Empty;
+
+            // Procura por um prefixo (rótulo, ex: "FEAT:", "MEAS:", "VAL:") antes do texto selecionado
+            if (idx > 0)
+            {
+                int end = idx - 1;
+                while (end >= 0 && char.IsWhiteSpace(fullLine[end])) end--;
+
+                if (end >= 0)
+                {
+                    int lastDelim = fullLine.LastIndexOfAny(new[] { ' ', '\t', ';', ',', '|' }, end);
+                    string prefix = lastDelim >= 0
+                        ? fullLine.Substring(lastDelim + 1, end - lastDelim).Trim()
+                        : fullLine.Substring(0, end + 1).Trim();
+
+                    if (!string.IsNullOrEmpty(prefix) && (prefix.EndsWith(":") || prefix.EndsWith("=") || prefix.Length <= 15))
+                    {
+                        if (groupName == "feat")
+                        {
+                            pattern = $@"{Regex.Escape(prefix)}\s*(?<feat>[A-Za-z0-9_Ø°µ\.\-]+)";
+                        }
+                        else
+                        {
+                            pattern = $@"{Regex.Escape(prefix)}\s*(?<val>[-+]?\d+[\.,]?\d*)";
+                        }
+                    }
+                }
+            }
+
+            if (string.IsNullOrEmpty(pattern))
+            {
+                if (groupName == "feat")
+                {
+                    pattern = !string.IsNullOrWhiteSpace(targetText) 
+                        ? $@"(?<feat>{Regex.Escape(targetText)})" 
+                        : @"(?<feat>[A-Za-z0-9_Ø°µ\.\-]+)";
+                }
+                else
+                {
+                    pattern = @"(?<val>[-+]?\d+[\.,]?\d*)";
+                }
+            }
+
+            // Mesclagem com padrão já existente se houver
+            if (string.IsNullOrWhiteSpace(rule.RegexPattern))
+            {
+                rule.RegexPattern = pattern;
+            }
+            else
+            {
+                bool hasFeat = rule.RegexPattern.Contains("(?<feat>");
+                bool hasVal = rule.RegexPattern.Contains("(?<val>");
+
+                if (groupName == "feat")
+                {
+                    if (hasVal)
+                    {
+                        rule.RegexPattern = pattern + ".*?" + ExtractGroupPattern(rule.RegexPattern, "val");
+                    }
+                    else
+                    {
+                        rule.RegexPattern = pattern;
+                    }
+                }
+                else if (groupName == "val")
+                {
+                    if (hasFeat)
+                    {
+                        rule.RegexPattern = ExtractGroupPattern(rule.RegexPattern, "feat") + ".*?" + pattern;
+                    }
+                    else
+                    {
+                        rule.RegexPattern = pattern;
+                    }
+                }
+            }
+
+            rule.RegexGroupName = string.Empty;
+        }
+
+        private static string ExtractGroupPattern(string fullRegex, string group)
+        {
+            if (string.IsNullOrWhiteSpace(fullRegex))
+                return group == "feat" ? @"(?<feat>[A-Za-z0-9_Ø°µ\.\-]+)" : @"(?<val>[-+]?\d+[\.,]?\d*)";
+
+            int sepIdx = fullRegex.IndexOf(".*?", StringComparison.Ordinal);
+
+            if (group == "feat")
+            {
+                if (sepIdx > 0)
+                {
+                    return fullRegex.Substring(0, sepIdx);
+                }
+                return fullRegex;
+            }
+            else // "val"
+            {
+                if (sepIdx >= 0)
+                {
+                    return fullRegex.Substring(sepIdx + 3);
+                }
+                return fullRegex;
             }
         }
 
@@ -141,7 +387,6 @@ namespace SelectML.Core.Templates
             string separator, 
             TemplateDefinition template)
         {
-            // Formato Linha por Linha: aplica-se repetitivamente para todas as linhas a partir desta
             rule.LineIndex = 0;
             template.DataStartLine = lineIndex;
 
@@ -152,7 +397,6 @@ namespace SelectML.Core.Templates
                 int featureCol = 0;
                 int valueCol = 1;
 
-                // Identifica qual token é numérico
                 bool token0IsNum = IsNumeric(tokens[0]);
                 bool token1IsNum = IsNumeric(tokens[1]);
 
@@ -168,7 +412,6 @@ namespace SelectML.Core.Templates
                 }
                 else if (tokens.Length > 2)
                 {
-                    // Se houver mais de 2 colunas, busca a primeira coluna que seja número
                     for (int i = 0; i < tokens.Length; i++)
                     {
                         if (IsNumeric(tokens[i]))
@@ -184,7 +427,6 @@ namespace SelectML.Core.Templates
             }
             else
             {
-                // Fallback padrão se não houver múltiplos tokens
                 rule.FeatureColumnIndex = 0;
                 rule.ValueColumnIndex = 1;
             }
@@ -216,12 +458,21 @@ namespace SelectML.Core.Templates
                     break;
 
                 case LineRuleRole.RowFeatureAndValue:
-                    // Linha por linha substitui o layout horizontal e outras regras de linha por linha
+                case LineRuleRole.RowFeatureColumn:
+                case LineRuleRole.RowValueColumn:
                     template.LineRules.RemoveAll(r => 
                         r.Role == LineRuleRole.CharacteristicNames || 
-                        r.Role == LineRuleRole.MeasuredValues || 
-                        r.Role == LineRuleRole.RowFeatureAndValue);
-                    break;
+                        r.Role == LineRuleRole.MeasuredValues);
+
+                    newRule.Role = LineRuleRole.RowFeatureAndValue;
+                    newRule.LineIndex = 0;
+
+                    if (!template.LineRules.Contains(newRule))
+                    {
+                        template.LineRules.RemoveAll(r => r.Role == LineRuleRole.RowFeatureAndValue);
+                        template.LineRules.Add(newRule);
+                    }
+                    return;
 
                 case LineRuleRole.PartName:
                     template.LineRules.RemoveAll(r => r.Role == LineRuleRole.PartName);
@@ -236,8 +487,7 @@ namespace SelectML.Core.Templates
             if (newRule.LineIndex > 0)
             {
                 if (newRule.Role == LineRuleRole.CharacteristicNames || 
-                    newRule.Role == LineRuleRole.MeasuredValues || 
-                    newRule.Role == LineRuleRole.RowFeatureAndValue)
+                    newRule.Role == LineRuleRole.MeasuredValues)
                 {
                     template.LineRules.RemoveAll(r => r.LineIndex == newRule.LineIndex);
                 }
@@ -246,12 +496,14 @@ namespace SelectML.Core.Templates
                     template.LineRules.RemoveAll(r => r.LineIndex == newRule.LineIndex && 
                         (r.Role == LineRuleRole.CharacteristicNames || 
                          r.Role == LineRuleRole.MeasuredValues || 
-                         r.Role == LineRuleRole.RowFeatureAndValue || 
                          r.Role == newRule.Role));
                 }
             }
 
-            template.LineRules.Add(newRule);
+            if (!template.LineRules.Contains(newRule))
+            {
+                template.LineRules.Add(newRule);
+            }
         }
 
         /// <summary>

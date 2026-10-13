@@ -110,18 +110,35 @@ namespace SelectML.Core.Templates
                 return false;
             }
 
-            bool hasFeatures = LineRules.Any(r => r.Role == LineRuleRole.CharacteristicNames || r.Role == LineRuleRole.RowFeatureAndValue);
-            bool hasValues = LineRules.Any(r => r.Role == LineRuleRole.MeasuredValues || r.Role == LineRuleRole.RowFeatureAndValue);
+            bool hasFeatures = LineRules.Any(r => 
+                r.Role == LineRuleRole.CharacteristicNames || 
+                (r.Role == LineRuleRole.RowFeatureAndValue && (r.FeatureColumnIndex >= 0 || (!string.IsNullOrEmpty(r.RegexPattern) && r.RegexPattern.Contains("(?<feat>")))));
+
+            bool hasValues = LineRules.Any(r => 
+                r.Role == LineRuleRole.MeasuredValues || 
+                (r.Role == LineRuleRole.RowFeatureAndValue && (r.ValueColumnIndex >= 0 || (!string.IsNullOrEmpty(r.RegexPattern) && r.RegexPattern.Contains("(?<val>")))));
+
+            bool hasRowByRow = LineRules.Any(r => r.Role == LineRuleRole.RowFeatureAndValue);
+
+            if (!hasFeatures && !hasValues)
+            {
+                errorMessage = "O template precisa conter o mapeamento de Características e Valores Medidos.";
+                return false;
+            }
 
             if (!hasFeatures)
             {
-                errorMessage = "O template precisa conter o mapeamento de Características (Nomes das cotas).";
+                errorMessage = hasRowByRow
+                    ? "O formato linha a linha necessita da definição da coluna ou trecho das Características (Nomes das cotas)."
+                    : "O template precisa conter o mapeamento de Características (Nomes das cotas).";
                 return false;
             }
 
             if (!hasValues)
             {
-                errorMessage = "O template precisa conter o mapeamento de Valores Medidos.";
+                errorMessage = hasRowByRow
+                    ? "O formato linha a linha necessita da definição da coluna ou trecho dos Valores Medidos."
+                    : "O template precisa conter o mapeamento de Valores Medidos.";
                 return false;
             }
 

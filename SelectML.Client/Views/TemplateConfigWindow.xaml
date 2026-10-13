@@ -297,15 +297,15 @@
                                 </StackPanel>
                                 <StackPanel Orientation="Horizontal" Margin="0,0,14,0" VerticalAlignment="Center">
                                     <Ellipse Width="10" Height="10" Fill="#61AFEF" Margin="0,0,5,0" VerticalAlignment="Center"/>
-                                    <TextBlock Text="Características" FontSize="11" Foreground="{DynamicResource Brush.Text.Primary}" VerticalAlignment="Center"/>
+                                    <TextBlock Text="Características (ou Coluna Cota)" FontSize="11" Foreground="{DynamicResource Brush.Text.Primary}" VerticalAlignment="Center"/>
                                 </StackPanel>
                                 <StackPanel Orientation="Horizontal" Margin="0,0,14,0" VerticalAlignment="Center">
                                     <Ellipse Width="10" Height="10" Fill="#98C379" Margin="0,0,5,0" VerticalAlignment="Center"/>
-                                    <TextBlock Text="Valores Medidos" FontSize="11" Foreground="{DynamicResource Brush.Text.Primary}" VerticalAlignment="Center"/>
+                                    <TextBlock Text="Valores Medidos (ou Coluna Valor)" FontSize="11" Foreground="{DynamicResource Brush.Text.Primary}" VerticalAlignment="Center"/>
                                 </StackPanel>
                                 <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
                                     <Ellipse Width="10" Height="10" Fill="#E5C07B" Margin="0,0,5,0" VerticalAlignment="Center"/>
-                                    <TextBlock Text="Cota + Valor (Linha a Linha)" FontSize="11" Foreground="{DynamicResource Brush.Text.Primary}" VerticalAlignment="Center"/>
+                                    <TextBlock Text="Cota + Valor (Auto)" FontSize="11" Foreground="{DynamicResource Brush.Text.Primary}" VerticalAlignment="Center"/>
                                 </StackPanel>
                             </WrapPanel>
                         </Border>
@@ -383,7 +383,17 @@
                                                     </MenuItem.Icon>
                                                 </MenuItem>
                                                 <Separator/>
-                                                <MenuItem Header="Cota e Valor Medido (Formato Linha por Linha)" Click="OnMarkRowFeatureAndValueClick">
+                                                <MenuItem Header="Característica Deste Trecho / Coluna (Linha a Linha)" Click="OnMarkRowFeatureColumnClick">
+                                                    <MenuItem.Icon>
+                                                        <Ellipse Width="10" Height="10" Fill="#61AFEF" VerticalAlignment="Center" HorizontalAlignment="Center"/>
+                                                    </MenuItem.Icon>
+                                                </MenuItem>
+                                                <MenuItem Header="Valor Medido Deste Trecho / Coluna (Linha a Linha)" Click="OnMarkRowValueColumnClick">
+                                                    <MenuItem.Icon>
+                                                        <Ellipse Width="10" Height="10" Fill="#98C379" VerticalAlignment="Center" HorizontalAlignment="Center"/>
+                                                    </MenuItem.Icon>
+                                                </MenuItem>
+                                                <MenuItem Header="Cota + Valor (Auto-deduzir Linha Inteira)" Click="OnMarkRowFeatureAndValueClick">
                                                     <MenuItem.Icon>
                                                         <Ellipse Width="10" Height="10" Fill="#E5C07B" VerticalAlignment="Center" HorizontalAlignment="Center"/>
                                                     </MenuItem.Icon>

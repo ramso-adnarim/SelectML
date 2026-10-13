@@ -2,6 +2,7 @@ using System;
 using System.IO;
 using System.Linq;
 using System.Text;
+using System.Text.RegularExpressions;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Documents;
@@ -19,11 +20,18 @@ using DragEventArgs = System.Windows.DragEventArgs;
 using DataFormats = System.Windows.DataFormats;
 using DragDropEffects = System.Windows.DragDropEffects;
 using Application = System.Windows.Application;
+using RichTextBox = System.Windows.Controls.RichTextBox;
 
 namespace SelectML.Client.Views
 {
     public partial class TemplateConfigWindow : Window
     {
+        private sealed class LineInfo
+        {
+            public int LineNumber { get; set; }
+            public string RawText { get; set; } = string.Empty;
+        }
+
         // Pincéis estáticos pré-compilados para as marcações de cores do template
         private static readonly Brush BrushPartNameBg = new SolidColorBrush(Color.FromArgb(0x40, 0xE0, 0x6C, 0x75)); // Vermelho suave
         private static readonly Brush BrushPartNameFg = new SolidColorBrush(Color.FromRgb(0xFF, 0x85, 0x8D));
@@ -55,6 +63,7 @@ namespace SelectML.Client.Views
         }
 
         public TemplateConfigViewModel ViewModel { get; }
+        public RichTextBox Editor => SampleTextEditor;
 
         public TemplateConfigWindow(IConfigurableParser? parser = null)
         {
@@ -127,13 +136,14 @@ namespace SelectML.Client.Views
                 int lineNum = i + 1;
                 lineNumbersBuilder.AppendLine(lineNum.ToString());
 
+                var info = new LineInfo { LineNumber = lineNum, RawText = lines[i] };
                 var para = new Paragraph
                 {
                     Margin = new Thickness(0),
                     Padding = new Thickness(2, 0, 2, 0),
                     LineHeight = 20,
                     LineStackingStrategy = LineStackingStrategy.BlockLineHeight,
-                    Tag = lineNum
+                    Tag = info
                 };
 
                 var run = new Run(lines[i]);
@@ -154,54 +164,158 @@ namespace SelectML.Client.Views
 
             var rules = ViewModel.SelectedTemplate.LineRules;
             int dataStartLine = ViewModel.SelectedTemplate.DataStartLine;
-            bool hasRowByRow = rules.Any(r => r.Role == LineRuleRole.RowFeatureAndValue);
+            var rowRule = rules.FirstOrDefault(r => r.Role == LineRuleRole.RowFeatureAndValue);
 
             Brush defaultFg = Application.Current.TryFindResource("Brush.Text.Primary") as Brush ?? Brushes.White;
 
-            foreach (var block in SampleTextEditor.Document.Blocks)
+            var blocks = SampleTextEditor.Document.Blocks.ToList();
+            foreach (var block in blocks)
             {
-                if (block is Paragraph para && para.Tag is int lineIndex)
+                if (block is Paragraph para && para.Tag is LineInfo info)
                 {
-                    Brush bg = Brushes.Transparent;
-                    Brush fg = defaultFg;
+                    int lineIndex = info.LineNumber;
+                    string rawText = info.RawText;
 
                     var rule = rules.FirstOrDefault(r => r.LineIndex == lineIndex);
-                    if (rule != null)
+
+                    if (rule != null && rule.Role != LineRuleRole.RowFeatureAndValue)
                     {
+                        para.Inlines.Clear();
+                        para.Inlines.Add(new Run(rawText));
+
                         switch (rule.Role)
                         {
                             case LineRuleRole.PartName:
-                                bg = BrushPartNameBg;
-                                fg = BrushPartNameFg;
+                                para.Background = BrushPartNameBg;
+                                para.Foreground = BrushPartNameFg;
                                 break;
                             case LineRuleRole.BatchNumber:
-                                bg = BrushBatchNumberBg;
-                                fg = BrushBatchNumberFg;
+                                para.Background = BrushBatchNumberBg;
+                                para.Foreground = BrushBatchNumberFg;
                                 break;
                             case LineRuleRole.CharacteristicNames:
-                                bg = BrushCharacteristicsBg;
-                                fg = BrushCharacteristicsFg;
+                                para.Background = BrushCharacteristicsBg;
+                                para.Foreground = BrushCharacteristicsFg;
                                 break;
                             case LineRuleRole.MeasuredValues:
-                                bg = BrushValuesBg;
-                                fg = BrushValuesFg;
-                                break;
-                            case LineRuleRole.RowFeatureAndValue:
-                                bg = BrushRowFeatureBg;
-                                fg = BrushRowFeatureFg;
+                                para.Background = BrushValuesBg;
+                                para.Foreground = BrushValuesFg;
                                 break;
                         }
                     }
-                    else if (hasRowByRow && lineIndex >= dataStartLine)
+                    else if (rowRule != null && lineIndex >= dataStartLine)
                     {
-                        bg = BrushRowFeatureBg;
-                        fg = BrushRowFeatureFg;
+                        HighlightRowByRowLine(para, info, rowRule, defaultFg);
                     }
-
-                    para.Background = bg;
-                    para.Foreground = fg;
+                    else
+                    {
+                        para.Inlines.Clear();
+                        para.Inlines.Add(new Run(rawText));
+                        para.Background = Brushes.Transparent;
+                        para.Foreground = defaultFg;
+                    }
                 }
             }
+        }
+
+        private void HighlightRowByRowLine(Paragraph para, LineInfo info, TemplateLineRule rowRule, Brush defaultFg)
+        {
+            string line = info.RawText;
+
+            // 1. Caso delimitado: coloração independente de tokens por coluna
+            if (!string.IsNullOrEmpty(rowRule.Separator) && line.Contains(rowRule.Separator))
+            {
+                para.Background = Brushes.Transparent;
+                para.Foreground = defaultFg;
+                para.Inlines.Clear();
+
+                string sep = rowRule.Separator;
+                var tokens = line.Split(new[] { sep }, StringSplitOptions.None);
+
+                for (int c = 0; c < tokens.Length; c++)
+                {
+                    if (c > 0)
+                    {
+                        para.Inlines.Add(new Run(sep) { Foreground = defaultFg });
+                    }
+
+                    var tokenRun = new Run(tokens[c]);
+                    if (c == rowRule.FeatureColumnIndex)
+                    {
+                        tokenRun.Background = BrushCharacteristicsBg;
+                        tokenRun.Foreground = BrushCharacteristicsFg;
+                        tokenRun.FontWeight = FontWeights.SemiBold;
+                    }
+                    else if (c == rowRule.ValueColumnIndex)
+                    {
+                        tokenRun.Background = BrushValuesBg;
+                        tokenRun.Foreground = BrushValuesFg;
+                        tokenRun.FontWeight = FontWeights.SemiBold;
+                    }
+                    else
+                    {
+                        tokenRun.Foreground = defaultFg;
+                    }
+
+                    para.Inlines.Add(tokenRun);
+                }
+                return;
+            }
+
+            // 2. Caso REGEX: coloração de grupos de captura nomeados "feat" e "val"
+            if (!string.IsNullOrWhiteSpace(rowRule.RegexPattern))
+            {
+                try
+                {
+                    var match = Regex.Match(line, rowRule.RegexPattern);
+                    if (match.Success)
+                    {
+                        para.Background = Brushes.Transparent;
+                        para.Foreground = defaultFg;
+                        para.Inlines.Clear();
+
+                        var groups = new[]
+                        {
+                            new { Name = "feat", Group = match.Groups["feat"], Bg = BrushCharacteristicsBg, Fg = BrushCharacteristicsFg },
+                            new { Name = "val", Group = match.Groups["val"], Bg = BrushValuesBg, Fg = BrushValuesFg }
+                        }.Where(g => g.Group.Success).OrderBy(g => g.Group.Index).ToList();
+
+                        int currIndex = 0;
+                        foreach (var g in groups)
+                        {
+                            if (g.Group.Index > currIndex)
+                            {
+                                para.Inlines.Add(new Run(line.Substring(currIndex, g.Group.Index - currIndex)) { Foreground = defaultFg });
+                            }
+
+                            para.Inlines.Add(new Run(g.Group.Value)
+                            {
+                                Background = g.Bg,
+                                Foreground = g.Fg,
+                                FontWeight = FontWeights.SemiBold
+                            });
+
+                            currIndex = g.Group.Index + g.Group.Length;
+                        }
+
+                        if (currIndex < line.Length)
+                        {
+                            para.Inlines.Add(new Run(line.Substring(currIndex)) { Foreground = defaultFg });
+                        }
+                        return;
+                    }
+                }
+                catch
+                {
+                    // Fallback para marcação inteira abaixo em caso de falha de regex
+                }
+            }
+
+            // 3. Fallback: marcação em bloco da linha inteira
+            para.Inlines.Clear();
+            para.Inlines.Add(new Run(line));
+            para.Background = BrushRowFeatureBg;
+            para.Foreground = BrushRowFeatureFg;
         }
 
         private (int lineIndex, string fullLine, string selectedText, int selectionStart, int selectionLength) GetSelectionContext()
@@ -226,23 +340,38 @@ namespace SelectML.Client.Views
                 para = SampleTextEditor.CaretPosition.Paragraph;
             }
 
-            if (para == null || para.Tag is not int lineIndex)
+            if (para == null || para.Tag is not LineInfo info)
             {
                 return (0, string.Empty, string.Empty, 0, 0);
             }
 
-            var fullLineRange = new TextRange(para.ContentStart, para.ContentEnd);
-            string fullLine = fullLineRange.Text.TrimEnd('\r', '\n');
+            int lineIndex = info.LineNumber;
+            string fullLine = info.RawText;
 
             string selectedText = selection?.Text?.Trim() ?? string.Empty;
             int selectionStart = 0;
             int selectionLength = selectedText.Length;
 
-            if (!string.IsNullOrEmpty(selectedText))
+            if (selection != null && !selection.IsEmpty)
             {
-                selectionStart = fullLine.IndexOf(selectedText, StringComparison.Ordinal);
-                if (selectionStart < 0) selectionStart = 0;
+                selectionStart = new TextRange(para.ContentStart, selection.Start).Text.Length;
             }
+            else
+            {
+                var mousePos = Mouse.GetPosition(SampleTextEditor);
+                var pointer = SampleTextEditor.GetPositionFromPoint(mousePos, true);
+                if (pointer != null)
+                {
+                    selectionStart = new TextRange(para.ContentStart, pointer).Text.Length;
+                }
+                else if (SampleTextEditor.CaretPosition != null)
+                {
+                    selectionStart = new TextRange(para.ContentStart, SampleTextEditor.CaretPosition).Text.Length;
+                }
+            }
+
+            if (selectionStart < 0) selectionStart = 0;
+            if (selectionStart > fullLine.Length) selectionStart = fullLine.Length;
 
             return (lineIndex, fullLine, selectedText, selectionStart, selectionLength);
         }
@@ -280,6 +409,24 @@ namespace SelectML.Client.Views
             if (lineIndex <= 0) return;
 
             ViewModel.ApplyRule(LineRuleRole.MeasuredValues, lineIndex, fullLine, selectedText, start, len);
+            ApplyDocumentHighlighting();
+        }
+
+        private void OnMarkRowFeatureColumnClick(object sender, RoutedEventArgs e)
+        {
+            var (lineIndex, fullLine, selectedText, start, len) = GetSelectionContext();
+            if (lineIndex <= 0) return;
+
+            ViewModel.ApplyRule(LineRuleRole.RowFeatureColumn, lineIndex, fullLine, selectedText, start, len);
+            ApplyDocumentHighlighting();
+        }
+
+        private void OnMarkRowValueColumnClick(object sender, RoutedEventArgs e)
+        {
+            var (lineIndex, fullLine, selectedText, start, len) = GetSelectionContext();
+            if (lineIndex <= 0) return;
+
+            ViewModel.ApplyRule(LineRuleRole.RowValueColumn, lineIndex, fullLine, selectedText, start, len);
             ApplyDocumentHighlighting();
         }
 

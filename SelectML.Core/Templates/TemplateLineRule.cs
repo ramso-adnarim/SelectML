@@ -30,7 +30,17 @@ namespace SelectML.Core.Templates
         /// <summary>
         /// Linha que contém tanto o nome da característica quanto o valor medido correspondente (formato vertical / linha por linha).
         /// </summary>
-        RowFeatureAndValue = 5
+        RowFeatureAndValue = 5,
+
+        /// <summary>
+        /// Coluna ou trecho que contém o nome da característica no formato linha a linha.
+        /// </summary>
+        RowFeatureColumn = 6,
+
+        /// <summary>
+        /// Coluna ou trecho que contém o valor medido no formato linha a linha.
+        /// </summary>
+        RowValueColumn = 7
     }
 
     /// <summary>
@@ -83,14 +93,16 @@ namespace SelectML.Core.Templates
             LineRuleRole.BatchNumber => "Nome da Corrida / Lote",
             LineRuleRole.CharacteristicNames => "Características (Nomes)",
             LineRuleRole.MeasuredValues => "Valores Medidos",
-            LineRuleRole.RowFeatureAndValue => "Linha de Medição (Cota + Valor)",
+            LineRuleRole.RowFeatureAndValue => "Cota + Valor (Linha a Linha)",
+            LineRuleRole.RowFeatureColumn => "Coluna de Característica",
+            LineRuleRole.RowValueColumn => "Coluna de Valor Medido",
             _ => Role.ToString()
         };
 
         /// <summary>
         /// Rótulo amigável da linha aplicada.
         /// </summary>
-        public string LineDisplay => LineIndex == 0 ? "Todas as Linhas" : $"Linha {LineIndex}";
+        public string LineDisplay => LineIndex == 0 ? "Linha a Linha" : $"Linha {LineIndex}";
 
         /// <summary>
         /// Resumo dos parâmetros aplicados nesta regra.
@@ -102,7 +114,14 @@ namespace SelectML.Core.Templates
                 if (Role == LineRuleRole.CharacteristicNames || Role == LineRuleRole.MeasuredValues)
                     return $"Separador: '{Separator}'";
                 if (Role == LineRuleRole.RowFeatureAndValue)
-                    return $"Col. Cota: {FeatureColumnIndex + 1}, Col. Valor: {ValueColumnIndex + 1} (Sep: '{Separator}')";
+                {
+                    if (!string.IsNullOrWhiteSpace(RegexPattern))
+                        return $"Regex: {RegexPattern}";
+
+                    string featText = FeatureColumnIndex >= 0 ? $"Col. {FeatureColumnIndex + 1}" : "(Pendente)";
+                    string valText = ValueColumnIndex >= 0 ? $"Col. {ValueColumnIndex + 1}" : "(Pendente)";
+                    return $"Cota: {featText}, Valor: {valText} (Sep: '{Separator}')";
+                }
                 if (Role == LineRuleRole.PartName || Role == LineRuleRole.BatchNumber)
                 {
                     if (!string.IsNullOrWhiteSpace(RegexPattern))
