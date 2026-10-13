@@ -126,6 +126,152 @@
                 </DataTemplate>
             </sel:FeatureColumnTemplateSelector.EditableTemplate>
         </sel:FeatureColumnTemplateSelector>
+        
+        <!-- Pill Switch Toggle Button Style for Attributes -->
+        <Style x:Key="AttributeTogglePillStyle" TargetType="ToggleButton">
+            <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
+            <Setter Property="Height" Value="20"/>
+            <Setter Property="Width" Value="96"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="ToolTip" Value="Clique para alternar: Aprovado (0) / Reprovado (1)"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="ToggleButton">
+                        <Border x:Name="PillBorder"
+                                Background="{DynamicResource Brush.Toggle.Approved.Background}"
+                                BorderBrush="{DynamicResource Brush.Toggle.Approved.Border}"
+                                BorderThickness="1"
+                                CornerRadius="10"
+                                SnapsToDevicePixels="True">
+                            <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center">
+                                <TextBlock x:Name="StatusIcon" 
+                                           Text="✓" 
+                                           FontSize="11" 
+                                           FontWeight="Bold" 
+                                           Margin="0,0,5,0" 
+                                           Foreground="{DynamicResource Brush.Toggle.Approved.Foreground}" 
+                                           VerticalAlignment="Center"/>
+                                <TextBlock x:Name="StatusText" 
+                                           Text="Aprovado" 
+                                           FontSize="11" 
+                                           FontWeight="Bold" 
+                                           Foreground="{DynamicResource Brush.Toggle.Approved.Foreground}" 
+                                           VerticalAlignment="Center"/>
+                            </StackPanel>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsChecked" Value="False">
+                                <Setter TargetName="PillBorder" Property="Background" Value="{DynamicResource Brush.Toggle.Rejected.Background}"/>
+                                <Setter TargetName="PillBorder" Property="BorderBrush" Value="{DynamicResource Brush.Toggle.Rejected.Border}"/>
+                                <Setter TargetName="StatusIcon" Property="Text" Value="✕"/>
+                                <Setter TargetName="StatusIcon" Property="Foreground" Value="{DynamicResource Brush.Toggle.Rejected.Foreground}"/>
+                                <Setter TargetName="StatusText" Property="Text" Value="Reprovado"/>
+                                <Setter TargetName="StatusText" Property="Foreground" Value="{DynamicResource Brush.Toggle.Rejected.Foreground}"/>
+                            </Trigger>
+                            <MultiTrigger>
+                                <MultiTrigger.Conditions>
+                                    <Condition Property="IsMouseOver" Value="True"/>
+                                    <Condition Property="IsChecked" Value="True"/>
+                                </MultiTrigger.Conditions>
+                                <Setter TargetName="PillBorder" Property="Background" Value="{DynamicResource Brush.Toggle.Approved.Hover}"/>
+                            </MultiTrigger>
+                            <MultiTrigger>
+                                <MultiTrigger.Conditions>
+                                    <Condition Property="IsMouseOver" Value="True"/>
+                                    <Condition Property="IsChecked" Value="False"/>
+                                </MultiTrigger.Conditions>
+                                <Setter TargetName="PillBorder" Property="Background" Value="{DynamicResource Brush.Toggle.Rejected.Hover}"/>
+                            </MultiTrigger>
+                            <Trigger Property="IsEnabled" Value="False">
+                                <Setter Property="Opacity" Value="0.6"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- Template Selector for Value Column (Variables vs Attributes) -->
+        <sel:ValueColumnTemplateSelector x:Key="ValueColumnTemplateSelector">
+            <!-- Template para Atributos: Toggle Pill -->
+            <sel:ValueColumnTemplateSelector.AttributeTemplate>
+                <DataTemplate>
+                    <ToggleButton Style="{StaticResource AttributeTogglePillStyle}"
+                                  IsThreeState="False"
+                                  IsChecked="{Binding IsApproved, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                  IsEnabled="{Binding DataContext.IsPendingAction, RelativeSource={RelativeSource AncestorType=Window}}"
+                                  HorizontalAlignment="Left"
+                                  VerticalAlignment="Center"
+                                  Margin="2,0,0,0"/>
+                </DataTemplate>
+            </sel:ValueColumnTemplateSelector.AttributeTemplate>
+
+            <!-- Template para Variáveis: Watermark + Cores de Tolerância -->
+            <sel:ValueColumnTemplateSelector.VariableTemplate>
+                <DataTemplate>
+                    <Grid VerticalAlignment="Center">
+                        <TextBox x:Name="ValBox"
+                                 Text="{Binding RawTextValue, UpdateSourceTrigger=LostFocus}"
+                                 IsEnabled="{Binding DataContext.IsPendingAction, RelativeSource={RelativeSource AncestorType=Window}}"
+                                 PreviewKeyDown="ValBox_PreviewKeyDown"
+                                 BorderThickness="0"
+                                 Background="Transparent"
+                                 FontWeight="Bold"
+                                 FontSize="13"
+                                 Padding="0,0"
+                                 VerticalContentAlignment="Center">
+                            <TextBox.Style>
+                                <Style TargetType="TextBox">
+                                    <Setter Property="Foreground" Value="{DynamicResource Brush.Action.Primary}"/>
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding Status}" Value="Conforming">
+                                            <Setter Property="Foreground" Value="{DynamicResource Brush.Status.Success}"/>
+                                        </DataTrigger>
+                                        <DataTrigger Binding="{Binding Status}" Value="OutOfTolerance">
+                                            <Setter Property="Foreground" Value="{DynamicResource Brush.Status.Error}"/>
+                                        </DataTrigger>
+                                        <DataTrigger Binding="{Binding Status}" Value="Pending">
+                                            <Setter Property="Foreground" Value="{DynamicResource Brush.Text.Inactive}"/>
+                                        </DataTrigger>
+                                        <DataTrigger Binding="{Binding Status}" Value="NotEvaluated">
+                                            <Setter Property="Foreground" Value="{DynamicResource Brush.Action.Primary}"/>
+                                        </DataTrigger>
+                                        <DataTrigger Binding="{Binding RelativeSource={RelativeSource AncestorType=DataGridRow}, Path=IsSelected}" Value="True">
+                                            <Setter Property="Foreground" Value="{DynamicResource Brush.Status.Warning}"/>
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </TextBox.Style>
+                        </TextBox>
+
+                        <TextBlock x:Name="WatermarkBlock"
+                                   Text="Aguardando medição..."
+                                   FontStyle="Italic"
+                                   FontSize="12"
+                                   Foreground="{DynamicResource Brush.Text.Inactive}"
+                                   IsHitTestVisible="False"
+                                   VerticalAlignment="Center"
+                                   Margin="2,0,0,0">
+                            <TextBlock.Style>
+                                <Style TargetType="TextBlock">
+                                    <Setter Property="Visibility" Value="Collapsed"/>
+                                    <Style.Triggers>
+                                        <MultiDataTrigger>
+                                            <MultiDataTrigger.Conditions>
+                                                <Condition Binding="{Binding HasValue}" Value="False"/>
+                                                <Condition Binding="{Binding ElementName=ValBox, Path=IsKeyboardFocused}" Value="False"/>
+                                            </MultiDataTrigger.Conditions>
+                                            <Setter Property="Visibility" Value="Visible"/>
+                                        </MultiDataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </TextBlock.Style>
+                        </TextBlock>
+                    </Grid>
+                </DataTemplate>
+            </sel:ValueColumnTemplateSelector.VariableTemplate>
+        </sel:ValueColumnTemplateSelector>
 
         <!-- Helper Style for Labels -->
         <Style x:Key="LabelText" TargetType="TextBlock">
@@ -277,8 +423,9 @@
                                         
                                         <!-- Selection highlight states -->
                                         <Trigger Property="IsHighlighted" Value="True">
-                                            <Setter Property="Background" Value="{DynamicResource Brush.Action.Primary.Hover}"/>
+                                            <Setter TargetName="templateRoot" Property="Background" Value="{DynamicResource Brush.Action.Primary.Hover}"/>
                                             <Setter Property="Foreground" Value="{DynamicResource Brush.Text.Inverse}"/>
+                                            <Setter TargetName="templateRoot" Property="TextElement.Foreground" Value="{DynamicResource Brush.Text.Inverse}"/>
                                             <Setter TargetName="Glyph" Property="Stroke" Value="{DynamicResource Brush.Text.Inverse}"/>
                                             <Setter TargetName="RightArrow" Property="Fill" Value="{DynamicResource Brush.Text.Inverse}"/>
                                         </Trigger>
@@ -295,7 +442,7 @@
                     </Style>
                 </Menu.Resources>
                 <MenuItem Command="{Binding OpenSerialConfigCommand}" 
-                          Foreground="{DynamicResource Brush.Text.Primary}" FontWeight="SemiBold">
+                          FontWeight="SemiBold">
                     <MenuItem.Header>                        
                         <StackPanel Orientation="Horizontal">
                             <TextBlock Text="Conexão serial" VerticalAlignment="Center"/>
@@ -315,7 +462,7 @@
                         </StackPanel>
                     </MenuItem.Header>
                 </MenuItem>
-                <MenuItem Foreground="{DynamicResource Brush.Text.Primary}" FontWeight="SemiBold" VerticalAlignment="Center">
+                <MenuItem FontWeight="SemiBold" VerticalAlignment="Center">
                     <MenuItem.Header>
                         <StackPanel Orientation="Horizontal">
                             <TextBlock Text="Modificador de nomes" VerticalAlignment="Center"/>
@@ -336,7 +483,15 @@
                     </MenuItem.Header>
                     <MenuItem Header="Ativar" ToolTip="Aplica a regra Default" IsCheckable="True" IsChecked="{Binding IsNameModifierDefaultActive}"/>
                     <MenuItem Header="Desativar" IsCheckable="True" IsChecked="{Binding IsNameModifierDisabled}"/>
-                    <MenuItem Header="Personalizado" IsCheckable="True" IsChecked="{Binding IsNameModifierCustomActive}" Command="{Binding OpenNameModifierConfigCommand}" Foreground="{DynamicResource Brush.Text.Primary}"/>
+                    <MenuItem Header="Personalizado" IsCheckable="True" IsChecked="{Binding IsNameModifierCustomActive}" Command="{Binding OpenNameModifierConfigCommand}"/>
+                </MenuItem>
+                <MenuItem FontWeight="SemiBold" VerticalAlignment="Center">
+                    <MenuItem.Header>
+                        <TextBlock Text="Configuração" VerticalAlignment="Center"/>
+                    </MenuItem.Header>
+                    <MenuItem Header="Listar todas as características" 
+                              IsCheckable="True" 
+                              IsChecked="{Binding IsListAllFeaturesActive}"/>
                 </MenuItem>
             </Menu>
 
@@ -727,27 +882,17 @@
                     
                     <DataGrid x:Name="ResultsDataGrid"
                               ItemsSource="{Binding MeasuredResults}" 
-                              Style="{StaticResource ModernDataGrid}">
+                              Style="{StaticResource ModernDataGrid}"
+                              RowHeight="24"
+                              PreviewKeyDown="ResultsDataGrid_PreviewKeyDown"
+                              PreviewMouseRightButtonDown="ResultsDataGrid_PreviewMouseRightButtonDown">
                         <DataGrid.Columns>
                             <DataGridTemplateColumn Header="Característica" 
                                                     Width="*" 
                                                     CellTemplateSelector="{StaticResource FeatureColumnTemplateSelector}"/>
-                            <DataGridTextColumn Header="Valor" 
-                                                Binding="{Binding Value}" 
-                                                Width="*">
-                                <DataGridTextColumn.ElementStyle>
-                                    <Style TargetType="TextBlock">
-                                        <Setter Property="Foreground" Value="{DynamicResource Brush.Action.Primary}"/>
-                                        <Setter Property="FontWeight" Value="Bold"/>
-                                        <Setter Property="VerticalAlignment" Value="Center"/>
-                                        <Style.Triggers>
-                                            <DataTrigger Binding="{Binding RelativeSource={RelativeSource AncestorType=DataGridRow}, Path=IsSelected}" Value="True">
-                                                <Setter Property="Foreground" Value="{DynamicResource Brush.Status.Warning}"/>
-                                            </DataTrigger>
-                                        </Style.Triggers>
-                                    </Style>
-                                </DataGridTextColumn.ElementStyle>
-                            </DataGridTextColumn>
+                            <DataGridTemplateColumn Header="Valor" 
+                                                    Width="*" 
+                                                    CellTemplateSelector="{StaticResource ValueColumnTemplateSelector}"/>
                         </DataGrid.Columns>
                         
                         <!-- Context Menu for Rows -->

@@ -39,6 +39,9 @@ namespace SelectML.Client.Services
         public string NameModifierMode { get; set; } = "Disabled";
         public string CustomNameModifierFormat { get; set; } = "{N,2,A} {T,3,A}";
 
+        // Inspection Routine Feature Listing
+        public bool ListAllFeatures { get; set; } = false;
+
         // UI, Theme & Window Geometry Persistence
         public bool IsDarkMode { get; set; } = true;
         public double WindowWidth { get; set; } = 1100;
@@ -71,7 +74,11 @@ namespace SelectML.Client.Services
                     Directory.CreateDirectory(_configDirectory);
                 }
 
-                var options = new JsonSerializerOptions { WriteIndented = true };
+                var options = new JsonSerializerOptions 
+                { 
+                    WriteIndented = true,
+                    NumberHandling = System.Text.Json.Serialization.JsonNumberHandling.AllowNamedFloatingPointLiterals
+                };
                 string json = JsonSerializer.Serialize(config, options);
                 File.WriteAllText(_configPath, json);
             }
@@ -91,7 +98,11 @@ namespace SelectML.Client.Services
             try
             {
                 string json = File.ReadAllText(_configPath);
-                return JsonSerializer.Deserialize<AppConfig>(json) ?? new AppConfig();
+                var options = new JsonSerializerOptions 
+                { 
+                    NumberHandling = System.Text.Json.Serialization.JsonNumberHandling.AllowNamedFloatingPointLiterals 
+                };
+                return JsonSerializer.Deserialize<AppConfig>(json, options) ?? new AppConfig();
             }
             catch (Exception ex)
             {

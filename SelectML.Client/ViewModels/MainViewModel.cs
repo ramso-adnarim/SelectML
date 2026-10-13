@@ -419,6 +419,47 @@ namespace SelectML.Client.ViewModels
 
         public bool IsNameModifierActive => NameModifierMode != "Disabled";
 
+        private bool _isListAllFeaturesActive;
+        public bool IsListAllFeaturesActive
+        {
+            get => _isListAllFeaturesActive;
+            set
+            {
+                if (_isListAllFeaturesActive != value)
+                {
+                    _isListAllFeaturesActive = value;
+                    OnPropertyChanged();
+
+                    try
+                    {
+                        var config = _configService.Load();
+                        config.ListAllFeatures = _isListAllFeaturesActive;
+                        _configService.Save(config);
+                        Log.Information("ListAllFeatures changed and saved: {Active}", _isListAllFeaturesActive);
+                    }
+                    catch (Exception ex)
+                    {
+                        Log.Error(ex, "Failed to save ListAllFeatures configuration");
+                    }
+
+                    if (!_isListAllFeaturesActive)
+                    {
+                        // Se desativado, remove cotas da rotina que não possuem valor medido
+                        var emptyItems = MeasuredResults.Where(x => x.IsFromDbRoutine && !x.HasValue && !x.IsAttribute).ToList();
+                        foreach (var empty in emptyItems)
+                        {
+                            empty.PropertyChanged -= ResultItem_PropertyChanged;
+                            MeasuredResults.Remove(empty);
+                        }
+                    }
+                    else if (!string.IsNullOrWhiteSpace(BatchNumber))
+                    {
+                        _ = LoadFeaturesForPart();
+                    }
+                }
+            }
+        }
+
         public bool IsSqlCredentialsEnabled => !IsMonitoring && !DbUseWindowsAuth;
 
         public string ConfigButtonText
@@ -720,7 +761,7 @@ namespace SelectML.Client.ViewModels
             if (!IsUpdateAvailable)
             {
                  // Feedback for user when clicking the green checkmark
-                 System.Windows.MessageBox.Show($"Você está utilizando a versão mais recente ({CurrentVersion}).", "SelectML", MessageBoxButton.OK, MessageBoxImage.Information);
+                 ModernDialogWindow.Show($"Você está utilizando a versão mais recente ({CurrentVersion}).", "SelectML", ModernDialogButtons.OK, ModernDialogIcon.Information);
                  return;
             }
 
@@ -873,6 +914,9 @@ namespace SelectML.Client.ViewModels
             OnPropertyChanged(nameof(IsNameModifierDisabled));
             OnPropertyChanged(nameof(IsNameModifierCustomActive));
             OnPropertyChanged(nameof(IsNameModifierActive));
+
+            _isListAllFeaturesActive = config.ListAllFeatures;
+            OnPropertyChanged(nameof(IsListAllFeaturesActive));
         }
 
         private async void ExecuteSaveConfig(object obj)
@@ -1298,6 +1342,15 @@ namespace SelectML.Client.ViewModels
                          if (string.IsNullOrWhiteSpace(data.BatchNumber)) IsBatchNumberValid = true;
 
                          var expectedFeatures = await _databaseService.GetFeaturesForRunAsync(data.BatchNumber);
+                         List<InspectionFeatureInfo>? routineFeatures = null;
+                         if (IsListAllFeaturesActive)
+                         {
+                             routineFeatures = await _databaseService.GetInspectionRoutineFeaturesAsync(data.BatchNumber);
+                             if (routineFeatures != null && routineFeatures.Any())
+                             {
+                                 expectedFeatures = routineFeatures.Select(rf => rf.FeatureName).ToList();
+                             }
+                         }
                          // Populate KnownFeatures for Validation
                           System.Windows.Application.Current.Dispatcher.Invoke(() =>
                           {
@@ -1318,32 +1371,131 @@ namespace SelectML.Client.ViewModels
                           var config = _configService.Load();
                           string customFormat = config.CustomNameModifierFormat ?? "{N,2,A} {T,3,A}";
 
-                          foreach (var item in data.Results)
+                          if (IsListAllFeaturesActive && routineFeatures != null && routineFeatures.Any())
                           {
-                              string originalName = item.Key;
-                              data.Tolerances.TryGetValue(originalName, out var tol);
-                              string displayName = FormatModifiedName(originalName, tol, NameModifierMode, customFormat);
+                              var matchedKeys = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
 
-                              bool isRecognized = true;
-                              if (expectedFeatures != null && expectedFeatures.Any())
+                              foreach (var rf in routineFeatures)
                               {
-                                  isRecognized = expectedFeatures.Contains(displayName, StringComparer.OrdinalIgnoreCase) ||
-                                                 expectedFeatures.Contains(originalName, StringComparer.OrdinalIgnoreCase);
+                                  string? matchedKey = null;
+                                  double? matchedVal = null;
+
+                                  foreach (var kvp in data.Results)
+                                  {
+                                      string orig = kvp.Key;
+                                      data.Tolerances.TryGetValue(orig, out var t);
+                                      string disp = FormatModifiedName(orig, t, NameModifierMode, customFormat);
+
+                                      if (string.Equals(rf.FeatureName, orig, StringComparison.OrdinalIgnoreCase) ||
+                                          string.Equals(rf.FeatureName, disp, StringComparison.OrdinalIgnoreCase))
+                                      {
+                                          matchedKey = orig;
+                                          matchedVal = kvp.Value;
+                                          break;
+                                      }
+                                  }
+
+                                  var item = new ResultItem
+                                  {
+                                      OriginalCharacteristic = matchedKey ?? rf.FeatureName,
+                                      Characteristic = rf.FeatureName,
+                                      IsRecognized = true,
+                                      IsEditable = true,
+                                      IsFromSerial = false,
+                                      IsFromDbRoutine = true,
+                                      OrderNo = rf.OrderNo,
+                                      FeatureID = rf.FeatureID,
+                                      FeatureType = rf.FeatureType,
+                                      TipoDescricao = rf.TipoDescricao,
+                                      Nominal = rf.Nominal,
+                                      LSL = rf.LSL,
+                                      USL = rf.USL,
+                                      DecimalLength = rf.DecimalLength,
+                                      IsApproved = true
+                                  };
+
+                                  if (matchedKey != null && matchedVal.HasValue)
+                                  {
+                                      matchedKeys.Add(matchedKey);
+                                      if (rf.IsAttribute)
+                                      {
+                                          item.IsApproved = (matchedVal.Value == 0.0);
+                                          item.Value = matchedVal.Value;
+                                      }
+                                      else
+                                      {
+                                          item.Value = matchedVal.Value;
+                                      }
+                                  }
+                                  else
+                                  {
+                                      item.Value = null;
+                                      if (rf.IsAttribute)
+                                      {
+                                          item.IsApproved = true;
+                                      }
+                                  }
+
+                                  item.PropertyChanged += ResultItem_PropertyChanged;
+                                  MeasuredResults.Add(item);
                               }
-                             
-                              if (!isRecognized) hasUnrecognized = true;
 
-                              var newItem = new ResultItem
+                              // Anexa eventuais cotas do arquivo ausentes na rotina do banco no rodapé
+                              foreach (var kvp in data.Results)
                               {
-                                  OriginalCharacteristic = originalName,
-                                  Characteristic = displayName,
-                                  Value = item.Value,
-                                  IsRecognized = isRecognized,
-                                  IsEditable = true,
-                                  IsFromSerial = false
-                              };
-                              newItem.PropertyChanged += ResultItem_PropertyChanged;
-                              MeasuredResults.Add(newItem);
+                                  if (!matchedKeys.Contains(kvp.Key))
+                                  {
+                                      string originalName = kvp.Key;
+                                      data.Tolerances.TryGetValue(originalName, out var tol);
+                                      string displayName = FormatModifiedName(originalName, tol, NameModifierMode, customFormat);
+
+                                      hasUnrecognized = true;
+
+                                      var newItem = new ResultItem
+                                      {
+                                          OriginalCharacteristic = originalName,
+                                          Characteristic = displayName,
+                                          Value = kvp.Value,
+                                          IsRecognized = false,
+                                          IsEditable = true,
+                                          IsFromSerial = false,
+                                          IsFromDbRoutine = false
+                                      };
+                                      newItem.PropertyChanged += ResultItem_PropertyChanged;
+                                      MeasuredResults.Add(newItem);
+                                  }
+                              }
+                          }
+                          else
+                          {
+                              foreach (var item in data.Results)
+                              {
+                                  string originalName = item.Key;
+                                  data.Tolerances.TryGetValue(originalName, out var tol);
+                                  string displayName = FormatModifiedName(originalName, tol, NameModifierMode, customFormat);
+
+                                  bool isRecognized = true;
+                                  if (expectedFeatures != null && expectedFeatures.Any())
+                                  {
+                                      isRecognized = expectedFeatures.Contains(displayName, StringComparer.OrdinalIgnoreCase) ||
+                                                     expectedFeatures.Contains(originalName, StringComparer.OrdinalIgnoreCase);
+                                  }
+                                 
+                                  if (!isRecognized) hasUnrecognized = true;
+
+                                  var newItem = new ResultItem
+                                  {
+                                      OriginalCharacteristic = originalName,
+                                      Characteristic = displayName,
+                                      Value = item.Value,
+                                      IsRecognized = isRecognized,
+                                      IsEditable = true,
+                                      IsFromSerial = false,
+                                      IsFromDbRoutine = false
+                                  };
+                                  newItem.PropertyChanged += ResultItem_PropertyChanged;
+                                  MeasuredResults.Add(newItem);
+                              }
                           }
 
                           // Reanexa medições seriais prévias no final da lista
@@ -1364,14 +1516,18 @@ namespace SelectML.Client.ViewModels
 
                           if (IsAutoMode)
                           {
-                              if (!EnqueueSerialInput)
+                              bool hasPendingRoutineItems = IsListAllFeaturesActive && MeasuredResults.Any(r => !r.IsAttribute && !r.HasValue);
+
+                              if (!EnqueueSerialInput || hasPendingRoutineItems)
                               {
-                                  // Modo direto/híbrido: suspende auto-envio para permitir medições adicionais ou revisão
+                                  // Modo direto/híbrido ou rotina com cotas pendentes: suspende auto-envio para permitir medições adicionais ou revisão
                                   IsPendingAction = true;
                                   _isProcessingFile = true;
-                                  StatusMessage = hasUnrecognized
-                                      ? "Validação necessária. Verifique e envie."
-                                      : "Dados carregados. Verifique e clique em Enviar.";
+                                  StatusMessage = hasPendingRoutineItems
+                                      ? "Rotina carregada com características pendentes. Preencha e clique em Enviar."
+                                      : (hasUnrecognized
+                                          ? "Validação necessária. Verifique e envie."
+                                          : "Dados carregados. Verifique e clique em Enviar.");
                                   RequestRestoreWindow?.Invoke();
                               }
                               else if (hasUnrecognized)
@@ -1499,46 +1655,167 @@ namespace SelectML.Client.ViewModels
         {
             if (e.PropertyName == nameof(ResultItem.Characteristic))
             {
+                if (sender is ResultItem changedItem && !string.IsNullOrWhiteSpace(changedItem.Characteristic))
+                {
+                    bool merged = TryMergeWithPendingRoutineItem(changedItem);
+                    if (merged) return;
+                }
+
                 TriggerValidation();
             }
+            else if (e.PropertyName == nameof(ResultItem.Value) || 
+                     e.PropertyName == nameof(ResultItem.HasValue) || 
+                     e.PropertyName == nameof(ResultItem.IsApproved))
+            {
+                TriggerValidation();
+                CommandManager.InvalidateRequerySuggested();
+            }
         }
+
+        private bool TryMergeWithPendingRoutineItem(ResultItem changedItem)
+        {
+            if (!IsListAllFeaturesActive || MeasuredResults == null) return false;
+
+            string targetName = changedItem.Characteristic.Trim();
+
+            // Localiza se existe uma cota da rotina (IsFromDbRoutine) que esteja aguardando medição (!HasValue) com esse mesmo nome
+            var targetRoutineItem = MeasuredResults.FirstOrDefault(x =>
+                x != changedItem &&
+                x.IsFromDbRoutine &&
+                !x.HasValue &&
+                string.Equals(x.Characteristic?.Trim(), targetName, StringComparison.OrdinalIgnoreCase));
+
+            if (targetRoutineItem != null)
+            {
+                // Funde os dados medidos na posição original da rotina
+                targetRoutineItem.Value = changedItem.Value;
+                targetRoutineItem.IsApproved = changedItem.IsApproved;
+                targetRoutineItem.OriginalCharacteristic = changedItem.OriginalCharacteristic;
+                targetRoutineItem.IsFromSerial = changedItem.IsFromSerial;
+
+                // Remove a linha avulsa da tabela e revalida
+                System.Windows.Application.Current.Dispatcher.InvokeAsync(() =>
+                {
+                    changedItem.PropertyChanged -= ResultItem_PropertyChanged;
+                    MeasuredResults.Remove(changedItem);
+                    TriggerValidation();
+                });
+
+                return true;
+            }
+
+            return false;
+        }
+
         private async Task LoadFeaturesForPart()
         {
-            if (string.IsNullOrWhiteSpace(PartName) || string.IsNullOrWhiteSpace(BatchNumber)) return;
-            // Only trigger if we are not in the middle of a file load (which does its own lookup)
-            // But actually, we want to update the cache for the dropdown even if file loaded.
+            if (string.IsNullOrWhiteSpace(BatchNumber)) return;
             
             try 
             {
-                 var features = await _databaseService.GetFeaturesForRunAsync(BatchNumber); // Note: API uses BatchNumber to find Run, then Features? 
-                 // Wait, the Prompt says "GetFeaturesForRun(PartName)". 
-                 // My existing code uses: "GetFeaturesForRunAsync(data.BatchNumber)".
-                 // Let's check DatabaseService if possible, or assume existing usage is correct. 
-                 // Actually, usually it's by PartName (Routine). 
-                 // But validation logic in OnFileCreated uses BatchNumber. 
-                 // Let's stick to what works or check DatabaseService.
-                 // Assuming existing logic: GetFeaturesForRunAsync(BatchNumber).
-                 
-                 if (features != null)
+                 var features = await _databaseService.GetFeaturesForRunAsync(BatchNumber);
+                 List<InspectionFeatureInfo>? routineFeatures = null;
+                 if (IsListAllFeaturesActive)
                  {
-                     System.Windows.Application.Current.Dispatcher.Invoke(() => 
+                     routineFeatures = await _databaseService.GetInspectionRoutineFeaturesAsync(BatchNumber);
+                 }
+
+                 System.Windows.Application.Current.Dispatcher.Invoke(() => 
+                 {
+                     KnownFeatures.Clear();
+                     if (features != null && features.Any())
                      {
-                         KnownFeatures.Clear();
                          foreach(var f in features) KnownFeatures.Add(f);
-                         
+                     }
+                     else if (routineFeatures != null && routineFeatures.Any())
+                     {
+                         foreach(var rf in routineFeatures) KnownFeatures.Add(rf.FeatureName);
+                     }
+
+                     if (IsListAllFeaturesActive && routineFeatures != null && routineFeatures.Any())
+                     {
+                         SyncRoutineFeaturesPreservingValues(routineFeatures);
+                     }
+                     else
+                     {
                          // Re-validate current items against new known features
                          foreach(var item in MeasuredResults)
                          {
-                              // Trigger property changed logic to re-evaluate
                               ResultItem_PropertyChanged(item, new PropertyChangedEventArgs(nameof(ResultItem.Characteristic)));
                          }
-                     });
-                 }
+                     }
+                 });
             }
             catch (Exception ex)
             {
                 Log.Error(ex, "Failed to load features for part");
             }
+        }
+
+        private void SyncRoutineFeaturesPreservingValues(List<InspectionFeatureInfo> routineFeatures)
+        {
+            var previousItems = MeasuredResults
+                .Where(x => !string.IsNullOrWhiteSpace(x.Characteristic))
+                .GroupBy(x => x.Characteristic.Trim(), StringComparer.OrdinalIgnoreCase)
+                .ToDictionary(g => g.Key, g => g.First(), StringComparer.OrdinalIgnoreCase);
+
+            foreach (var item in MeasuredResults)
+            {
+                item.PropertyChanged -= ResultItem_PropertyChanged;
+            }
+            MeasuredResults.Clear();
+
+            foreach (var rf in routineFeatures)
+            {
+                var newItem = new ResultItem
+                {
+                    OriginalCharacteristic = rf.FeatureName,
+                    Characteristic = rf.FeatureName,
+                    IsRecognized = true,
+                    IsEditable = true,
+                    IsFromDbRoutine = true,
+                    OrderNo = rf.OrderNo,
+                    FeatureID = rf.FeatureID,
+                    FeatureType = rf.FeatureType,
+                    TipoDescricao = rf.TipoDescricao,
+                    Nominal = rf.Nominal,
+                    LSL = rf.LSL,
+                    USL = rf.USL,
+                    DecimalLength = rf.DecimalLength,
+                    IsApproved = true
+                };
+
+                if (previousItems.TryGetValue(rf.FeatureName, out var prev))
+                {
+                    if (rf.IsAttribute)
+                    {
+                        newItem.IsApproved = prev.IsApproved;
+                    }
+                    else if (prev.HasValue)
+                    {
+                        newItem.Value = prev.Value;
+                        newItem.IsFromSerial = prev.IsFromSerial;
+                    }
+                }
+
+                newItem.PropertyChanged += ResultItem_PropertyChanged;
+                MeasuredResults.Add(newItem);
+            }
+
+            // Preservar cotas extras não pertencentes à rotina
+            foreach (var kvp in previousItems)
+            {
+                var prev = kvp.Value;
+                if (!routineFeatures.Any(rf => string.Equals(rf.FeatureName, prev.Characteristic, StringComparison.OrdinalIgnoreCase)))
+                {
+                    prev.IsFromDbRoutine = false;
+                    prev.PropertyChanged += ResultItem_PropertyChanged;
+                    MeasuredResults.Add(prev);
+                }
+            }
+
+            TriggerValidation();
+            CommandManager.InvalidateRequerySuggested();
         }
 
         private bool CanExecuteAction(object obj)
@@ -1552,6 +1829,9 @@ namespace SelectML.Client.ViewModels
 
             // Cannot send if any characteristic name is empty or whitespace
             if (MeasuredResults.Any(r => string.IsNullOrWhiteSpace(r.Characteristic))) return false;
+
+            // Cannot send if there are no measurements or attributes to send
+            if (MeasuredResults.All(r => !r.HasValue && !r.IsAttribute)) return false;
 
             return IsPendingAction && !string.IsNullOrWhiteSpace(PartName) && !string.IsNullOrWhiteSpace(BatchNumber);
         }
@@ -1570,7 +1850,14 @@ namespace SelectML.Client.ViewModels
                 string key = item.Characteristic?.Trim() ?? string.Empty;
                 if (!string.IsNullOrWhiteSpace(key) && !dict.ContainsKey(key))
                 {
-                    dict[key] = item.Value;
+                    if (item.IsAttribute)
+                    {
+                        dict[key] = item.IsApproved ? 0.0 : 1.0;
+                    }
+                    else if (item.Value.HasValue)
+                    {
+                        dict[key] = item.Value.Value;
+                    }
                 }
             }
 
@@ -1591,7 +1878,7 @@ namespace SelectML.Client.ViewModels
             if (MeasuredResults.Any(r => string.IsNullOrWhiteSpace(r.Characteristic)))
             {
                 StatusMessage = "Erro: Existem características sem nome na lista.";
-                System.Windows.MessageBox.Show("Todas as características devem possuir um nome válido antes do envio. Preencha os campos vazios.", "Erro de Validação", MessageBoxButton.OK, MessageBoxImage.Warning);
+                ModernDialogWindow.Show("Todas as características devem possuir um nome válido antes do envio. Preencha os campos vazios.", "Erro de Validação", ModernDialogButtons.OK, ModernDialogIcon.Warning);
                 return;
             }
 
@@ -1599,8 +1886,24 @@ namespace SelectML.Client.ViewModels
             if (MeasuredResults.Any(r => r.HasDuplicateName))
             {
                 StatusMessage = "Erro: Nomes de características duplicados detectados.";
-                System.Windows.MessageBox.Show("Existem características com o mesmo nome na lista. Corrija antes de enviar.", "Erro de Validação", MessageBoxButton.OK, MessageBoxImage.Warning);
+                ModernDialogWindow.Show("Existem características com o mesmo nome na lista. Corrija antes de enviar.", "Erro de Validação", ModernDialogButtons.OK, ModernDialogIcon.Warning);
                 return;
+            }
+
+            // Check for unmeasured routine features
+            if (MeasuredResults.Any(r => !r.IsAttribute && !r.HasValue))
+            {
+                StatusMessage = "Aviso: Existem características aguardando medição.";
+                var promptResult = ModernDialogWindow.Show(
+                    "Existem características na rotina que ainda não foram medidas.\n\nDeseja enviar a corrida apenas com as características preenchidas? (As cotas sem medição serão desconsideradas no envio)",
+                    "Características Pendentes",
+                    ModernDialogButtons.YesNo,
+                    ModernDialogIcon.Question);
+
+                if (promptResult != MessageBoxResult.Yes)
+                {
+                    return;
+                }
             }
 
             bool recognizedOnly = false;
@@ -1811,16 +2114,33 @@ namespace SelectML.Client.ViewModels
                 while (_serialBuffer.Count > 0)
                 {
                     var item = _serialBuffer.Dequeue();
-                    MeasuredResults.Add(new ResultItem 
+                    if (IsListAllFeaturesActive)
+                    {
+                        var target = MeasuredResults.FirstOrDefault(x => x.IsFromDbRoutine && !x.IsAttribute && !x.HasValue);
+                        if (target != null)
+                        {
+                            target.Value = item.Value;
+                            target.IsFromSerial = true;
+                            continue;
+                        }
+                    }
+
+                    var newItem = new ResultItem 
                     { 
                         Characteristic = !string.IsNullOrWhiteSpace(_currentSerialFeatureName) ? _currentSerialFeatureName : item.FeatureName, 
                         Value = item.Value, 
                         IsRecognized = !item.IsGeneric,
                         IsEditable = true, // Always editable for Serial
                         IsFromSerial = true
-                    });
+                    };
+                    if (newItem.IsEditable)
+                    {
+                        newItem.PropertyChanged += ResultItem_PropertyChanged;
+                    }
+                    MeasuredResults.Add(newItem);
                 }
                 
+                TriggerValidation();
                 // Lock UI for the new serial data
                 IsPendingAction = true;
                 StatusMessage = "Dados seriais recuperados do buffer.";
@@ -1832,6 +2152,35 @@ namespace SelectML.Client.ViewModels
         {
             System.Windows.Application.Current.Dispatcher.Invoke(() =>
             {
+                // Top-Down Fill quando "Listar todas as características" está ativo:
+                if (IsListAllFeaturesActive)
+                {
+                    if (_isProcessingFile && EnqueueSerialInput)
+                    {
+                        // Cenário de colisão com arquivo sendo processado
+                        _serialBuffer.Enqueue(e);
+                        StatusMessage = $"Dado serial em buffer ({_serialBuffer.Count})...";
+                        return;
+                    }
+
+                    var targetRoutineItem = MeasuredResults.FirstOrDefault(x => x.IsFromDbRoutine && !x.IsAttribute && !x.HasValue);
+                    if (targetRoutineItem != null)
+                    {
+                        targetRoutineItem.Value = e.Value;
+                        targetRoutineItem.IsFromSerial = true;
+                        TriggerValidation();
+
+                        if (!IsPendingAction)
+                        {
+                            IsPendingAction = true;
+                        }
+                        StatusMessage = $"Medição serial recebida para {targetRoutineItem.Characteristic}: {e.Value}";
+                        RequestRestoreWindow?.Invoke();
+                        return;
+                    }
+                    // Se todas as cotas da rotina já estiverem preenchidas, segue para o comportamento de cota adicional abaixo
+                }
+
                 if (!EnqueueSerialInput)
                 {
                     // Modo Direto / Híbrido: adiciona diretamente à lista de resultados em exibição
@@ -1923,30 +2272,40 @@ namespace SelectML.Client.ViewModels
                 return;
             }
 
-            // 2. Procura a medição serial mais recente na tela (exclui itens originados de arquivos)
-            var lastSerialItem = MeasuredResults.LastOrDefault(x => x.IsFromSerial);
-            if (lastSerialItem != null)
+            // 2. 1º Passo: Verificar se há cotas seriais adicionais (!item.IsFromDbRoutine && item.IsFromSerial)
+            var extraSerialItem = MeasuredResults.LastOrDefault(x => !x.IsFromDbRoutine && x.IsFromSerial);
+            if (extraSerialItem != null)
             {
-                lastSerialItem.PropertyChanged -= ResultItem_PropertyChanged;
-                MeasuredResults.Remove(lastSerialItem);
+                extraSerialItem.PropertyChanged -= ResultItem_PropertyChanged;
+                MeasuredResults.Remove(extraSerialItem);
                 TriggerValidation();
-                Log.Information("Serial measurement item removed via U-WAVE undo command");
+                Log.Information("Additional serial measurement item removed via U-WAVE undo command: {Feature}", extraSerialItem.Characteristic);
 
                 if (MeasuredResults.Count == 0)
                 {
-                    // Se não houver mais itens na tela e nenhum arquivo de texto foi carregado, reseta o estado
                     ExecuteCancel(null);
                     UpdateStatus("Medição serial desfeita. Aguardando...");
                 }
                 else
                 {
-                    UpdateStatus("Última medição serial desfeita.");
+                    UpdateStatus($"Cota serial adicional '{extraSerialItem.Characteristic}' desfeita.");
                 }
+                return;
             }
-            else
+
+            // 3. 2º Passo: Se não houver cotas adicionais, verificar cotas da rotina preenchidas por serial (item.IsFromDbRoutine && item.IsFromSerial && item.HasValue)
+            var routineSerialItem = MeasuredResults.LastOrDefault(x => x.IsFromDbRoutine && x.IsFromSerial && x.HasValue);
+            if (routineSerialItem != null)
             {
-                Log.Information("U-WAVE undo command received, but no serial measurement found to undo.");
+                routineSerialItem.Value = null;
+                routineSerialItem.IsFromSerial = false;
+                TriggerValidation();
+                Log.Information("Routine measurement value cleared via U-WAVE undo command for {Feature}", routineSerialItem.Characteristic);
+                UpdateStatus($"Medição serial de '{routineSerialItem.Characteristic}' desfeita (aguardando nova medição).");
+                return;
             }
+
+            Log.Information("U-WAVE undo command received, but no serial measurement found to undo.");
         }
 
 

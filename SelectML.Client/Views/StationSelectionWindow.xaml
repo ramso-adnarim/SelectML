@@ -3,10 +3,10 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         Title="Seleção de Estação" Height="200" Width="400"
         WindowStartupLocation="CenterOwner" ResizeMode="NoResize"
-        Background="{DynamicResource AppBackgroundBrush}" Foreground="{DynamicResource TextBrush}"
+        Background="{DynamicResource Brush.Background.Base}" Foreground="{DynamicResource Brush.Text.Primary}"
         Style="{StaticResource ModernWindowStyle}">
 
-    <Grid Margin="15,10,15,15">
+    <Grid Margin="20,15,20,20">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="Auto"/>
@@ -14,14 +14,14 @@
         </Grid.RowDefinitions>
         
         <TextBlock Text="Nome da corrida não encontrado, deseja identificar a estação?" 
-                   TextWrapping="Wrap" Foreground="{DynamicResource TextBrush}" Margin="0,5,0,12" Grid.Row="0" FontSize="14"/>
+                   TextWrapping="Wrap" Foreground="{DynamicResource Brush.Text.Primary}" Margin="0,5,0,12" Grid.Row="0" FontSize="14"/>
 
         <ComboBox x:Name="CmbStations" Margin="0,0,0,15" Grid.Row="1" Style="{DynamicResource {x:Type ComboBox}}" Height="30" FontSize="14"/>
 
         <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Bottom" Grid.Row="2">
-            <Button Content="Enviar" Width="80" Style="{DynamicResource PrimaryButton}" Click="BtnSend_Click" Margin="0,0,10,0"/>
-            <Button Content="Não" Width="80" Margin="0,0,10,0" Style="{DynamicResource GhostButton}" Click="BtnNo_Click"/>
-            <Button Content="Cancelar" Width="80" Style="{DynamicResource DangerButton}" Click="BtnCancel_Click"/>
+            <Button Content="Enviar" Width="80" Height="30" Style="{DynamicResource PrimaryButton}" Click="BtnSend_Click" Margin="0,0,10,0"/>
+            <Button Content="Não" Width="80" Height="30" Margin="0,0,10,0" Style="{DynamicResource GhostButton}" Click="BtnNo_Click"/>
+            <Button Content="Cancelar" Width="80" Height="30" Style="{DynamicResource DangerButton}" Click="BtnCancel_Click"/>
         </StackPanel>
     </Grid>
 </Window>
