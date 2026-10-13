@@ -10,6 +10,7 @@ namespace SelectML.Client.Services
         public string OutputDirectory { get; set; }
         public bool UseOutputDirectory { get; set; } = false;
         public string LastPluginName { get; set; }
+        public string LastTemplateName { get; set; } = string.Empty;
         public string ConnectionString { get; set; }
 
         // Database Connection Fields
@@ -29,6 +30,7 @@ namespace SelectML.Client.Services
         public string LastSerialPort { get; set; }
         public string LastSerialStrategy { get; set; }
         public string LastSerialFeatureName { get; set; }
+        public bool EnqueueSerialInput { get; set; } = true;
 
         // Auto-Start Persistence
         public bool AutoStartDatabase { get; set; } = false;
@@ -37,6 +39,9 @@ namespace SelectML.Client.Services
         // Name Modifier
         public string NameModifierMode { get; set; } = "Disabled";
         public string CustomNameModifierFormat { get; set; } = "{N,2,A} {T,3,A}";
+
+        // Inspection Routine Feature Listing
+        public bool ListAllFeatures { get; set; } = false;
 
         // UI, Theme & Window Geometry Persistence
         public bool IsDarkMode { get; set; } = true;
@@ -70,7 +75,11 @@ namespace SelectML.Client.Services
                     Directory.CreateDirectory(_configDirectory);
                 }
 
-                var options = new JsonSerializerOptions { WriteIndented = true };
+                var options = new JsonSerializerOptions 
+                { 
+                    WriteIndented = true,
+                    NumberHandling = System.Text.Json.Serialization.JsonNumberHandling.AllowNamedFloatingPointLiterals
+                };
                 string json = JsonSerializer.Serialize(config, options);
                 File.WriteAllText(_configPath, json);
             }
@@ -90,7 +99,11 @@ namespace SelectML.Client.Services
             try
             {
                 string json = File.ReadAllText(_configPath);
-                return JsonSerializer.Deserialize<AppConfig>(json) ?? new AppConfig();
+                var options = new JsonSerializerOptions 
+                { 
+                    NumberHandling = System.Text.Json.Serialization.JsonNumberHandling.AllowNamedFloatingPointLiterals 
+                };
+                return JsonSerializer.Deserialize<AppConfig>(json, options) ?? new AppConfig();
             }
             catch (Exception ex)
             {

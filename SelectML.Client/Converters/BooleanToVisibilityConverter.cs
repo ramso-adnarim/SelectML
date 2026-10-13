@@ -9,14 +9,20 @@ namespace SelectML.Client.Converters
     {
         public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
         {
-            if (value is bool boolValue && boolValue)
-                return Visibility.Visible;
+            if (value is bool boolValue)
+            {
+                bool invert = parameter is string p && p.Equals("Inverse", StringComparison.OrdinalIgnoreCase);
+                bool visible = invert ? !boolValue : boolValue;
+                return visible ? Visibility.Visible : Visibility.Collapsed;
+            }
             return Visibility.Collapsed;
         }
 
         public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
         {
-            return value is Visibility visibility && visibility == Visibility.Visible;
+            bool isVisible = value is Visibility visibility && visibility == Visibility.Visible;
+            bool invert = parameter is string p && p.Equals("Inverse", StringComparison.OrdinalIgnoreCase);
+            return invert ? !isVisible : isVisible;
         }
     }
 }

@@ -112,6 +112,92 @@ namespace SelectML.Client.Services
             return features;
         }
 
+        public async Task<List<InspectionFeatureInfo>> GetInspectionRoutineFeaturesAsync(string runName)
+        {
+            var features = new List<InspectionFeatureInfo>();
+            if (string.IsNullOrWhiteSpace(_connectionString) || string.IsNullOrWhiteSpace(runName))
+                return features;
+
+            string query = @"
+                DECLARE @TargetRunID INT;
+
+                SELECT TOP 1 @TargetRunID = RunID 
+                FROM dbo.ActiveRun WITH (NOLOCK) 
+                WHERE RunName = @RunName;
+
+                IF @TargetRunID IS NULL
+                BEGIN
+                    SELECT TOP 1 @TargetRunID = RunID 
+                    FROM dbo.Run WITH (NOLOCK) 
+                    WHERE RunName = @RunName 
+                    ORDER BY RunID DESC;
+                END
+
+                IF @TargetRunID IS NOT NULL
+                BEGIN
+                    SELECT 
+                        fr.OrderNo,
+                        f.FeatureID,
+                        f.FeatureName,
+                        f.FeatureType,
+                        CASE 
+                            WHEN f.FeatureType = 1 THEN 'Variável'
+                            WHEN f.FeatureType IN (2, 4) THEN 'Atributo'
+                            WHEN f.FeatureType = 3 THEN 'Posição'
+                            ELSE 'Outro'
+                        END AS TipoDescricao,
+                        fp.Target AS Nominal,
+                        fp.LowerToleranceLimit AS LSL,
+                        fp.UpperToleranceLimit AS USL,
+                        fp.DecimalLength
+                    FROM FeatureRun fr WITH (NOLOCK)
+                    INNER JOIN Feature f WITH (NOLOCK) 
+                        ON fr.FeatureID = f.FeatureID
+                    LEFT JOIN FeatureProperties fp WITH (NOLOCK) 
+                        ON fp.FeatureID = f.FeatureID 
+                       AND fp.FeaturePropID = COALESCE(fr.FeaturePropID, f.FeaturePropID)
+                    WHERE fr.RunID = @TargetRunID
+                    ORDER BY fr.OrderNo ASC;
+                END";
+
+            try
+            {
+                using (var connection = new SqlConnection(_connectionString))
+                {
+                    await connection.OpenAsync();
+                    using (var command = new SqlCommand(query, connection))
+                    {
+                        command.Parameters.AddWithValue("@RunName", runName.Trim());
+                        using (var reader = await command.ExecuteReaderAsync())
+                        {
+                            while (await reader.ReadAsync())
+                            {
+                                var item = new InspectionFeatureInfo
+                                {
+                                    OrderNo = reader.IsDBNull(0) ? 0 : Convert.ToInt32(reader[0]),
+                                    FeatureID = reader.IsDBNull(1) ? 0 : Convert.ToInt32(reader[1]),
+                                    FeatureName = reader.IsDBNull(2) ? string.Empty : reader.GetString(2),
+                                    FeatureType = reader.IsDBNull(3) ? (short)0 : Convert.ToInt16(reader[3]),
+                                    TipoDescricao = reader.IsDBNull(4) ? string.Empty : reader.GetString(4),
+                                    Nominal = reader.IsDBNull(5) ? null : Convert.ToDouble(reader[5]),
+                                    LSL = reader.IsDBNull(6) ? null : Convert.ToDouble(reader[6]),
+                                    USL = reader.IsDBNull(7) ? null : Convert.ToDouble(reader[7]),
+                                    DecimalLength = reader.IsDBNull(8) ? null : Convert.ToInt32(reader[8])
+                                };
+                                features.Add(item);
+                            }
+                        }
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Serilog.Log.Error(ex, "Erro ao obter características da rotina de inspeção para RunName: {RunName}", runName);
+            }
+
+            return features;
+        }
+
         public async Task<List<string>> GetAllStationsAsync()
         {
             var stations = new List<string>();

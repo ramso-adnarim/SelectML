@@ -4,42 +4,85 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         mc:Ignorable="d"
-        Title="Atualização Disponível" Height="220" Width="400"
+        Title="Atualização Disponível" 
+        SizeToContent="Height"
+        Width="440"
         WindowStartupLocation="CenterOwner"
         ResizeMode="NoResize"
         ShowInTaskbar="False"
-        Background="{DynamicResource AppBackgroundBrush}"
-        Foreground="{DynamicResource TextBrush}"
+        Background="{DynamicResource Brush.Background.Base}"
+        Foreground="{DynamicResource Brush.Text.Primary}"
         Style="{StaticResource ModernWindowStyle}">
 
-    <Grid Margin="20">
+    <Grid Margin="20,15,20,20">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
-            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
             <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
 
-        <TextBlock Grid.Row="0" Text="Nova versão disponível!"
-                   FontSize="20" FontWeight="Bold"
-                   Foreground="{DynamicResource TextBrush}"
-                   HorizontalAlignment="Center" Margin="0,0,0,15"/>
+        <!-- Header: Icon + Title -->
+        <Grid Grid.Row="0" Margin="0,5,0,15">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto"/>
+                <ColumnDefinition Width="*"/>
+            </Grid.ColumnDefinitions>
 
-        <Border Grid.Row="1" Background="{DynamicResource CardBackgroundBrush}" CornerRadius="8" Padding="15" Margin="0,0,0,15">
+            <Border Grid.Column="0"
+                    Width="40" Height="40"
+                    CornerRadius="20"
+                    Margin="0,0,16,0"
+                    VerticalAlignment="Center"
+                    Background="{DynamicResource Brush.Action.Primary}">
+                <TextBlock Text="⟳"
+                           FontSize="22"
+                           FontWeight="Bold"
+                           Foreground="#FFFFFF"
+                           HorizontalAlignment="Center"
+                           VerticalAlignment="Center"/>
+            </Border>
+
+            <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                <TextBlock Text="Nova versão disponível!"
+                           FontSize="16" FontWeight="Bold"
+                           Foreground="{DynamicResource Brush.Text.Primary}"/>
+                <TextBlock Text="Uma atualização do SelectML foi identificada."
+                           FontSize="12"
+                           Foreground="{DynamicResource Brush.Text.Secondary}"
+                           Margin="0,2,0,0"/>
+            </StackPanel>
+        </Grid>
+
+        <!-- Message Card -->
+        <Border Grid.Row="1" 
+                Background="{DynamicResource Brush.Surface.Card}" 
+                BorderBrush="{DynamicResource Brush.Border.Base}"
+                BorderThickness="1"
+                CornerRadius="8" 
+                Padding="15" 
+                Margin="0,0,0,20">
              <TextBlock Text="{Binding UpdateMessage, FallbackValue='Uma nova versão está pronta para instalar.'}"
-                   TextWrapping="Wrap"
-                   Foreground="{DynamicResource TextBrush}"
-                   HorizontalAlignment="Center" TextAlignment="Center"
-                   VerticalAlignment="Center"/>
+                        TextWrapping="Wrap"
+                        FontSize="13"
+                        LineHeight="18"
+                        Foreground="{DynamicResource Brush.Text.Primary}"
+                        HorizontalAlignment="Center" 
+                        TextAlignment="Center"/>
         </Border>
 
-        <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Center">
+        <!-- Actions -->
+        <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Right">
             <Button Content="Atualizar e Reiniciar"
                     Command="{Binding ConfirmUpdateCommand}"
                     CommandParameter="{Binding RelativeSource={RelativeSource AncestorType=Window}}"
-                    Margin="0,0,15,0" Style="{DynamicResource PrimaryButton}"/>
+                    Height="30"
+                    Margin="0,0,10,0" 
+                    Style="{DynamicResource PrimaryButton}"/>
             <Button Content="Agora não"
                     Command="{Binding CancelUpdateCommand}"
                     CommandParameter="{Binding RelativeSource={RelativeSource AncestorType=Window}}"
+                    Height="30"
+                    Width="85"
                     Style="{DynamicResource GhostButton}"/>
         </StackPanel>
     </Grid>

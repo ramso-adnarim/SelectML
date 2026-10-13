@@ -1,0 +1,588 @@
+<Window x:Class="SelectML.Client.Views.TemplateConfigWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Configuração de Templates" Height="720" Width="1040"
+        MinHeight="580" MinWidth="850"
+        WindowStartupLocation="CenterOwner"
+        Style="{StaticResource ModernWindowStyle}">
+    <Window.Resources>
+        <!-- Estilo para Rótulos de Campos -->
+        <Style x:Key="LabelText" TargetType="TextBlock">
+            <Setter Property="Foreground" Value="{DynamicResource Brush.Text.Secondary}"/>
+            <Setter Property="FontSize" Value="12"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="Margin" Value="0,0,0,4"/>
+        </Style>
+    </Window.Resources>
+    <Grid Margin="15">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <!-- Header -->
+        <Grid Grid.Row="0" Margin="0,0,0,12">
+            <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                <TextBlock Text="⚙" FontSize="18" Foreground="{DynamicResource Brush.Action.Primary}" Margin="0,0,8,0" VerticalAlignment="Center"/>
+                <TextBlock Text="Configuração de Templates (Leitor de Arquivos de Texto)" 
+                           FontSize="16" FontWeight="SemiBold" 
+                           Foreground="{DynamicResource Brush.Text.Primary}" 
+                           VerticalAlignment="Center"/>
+            </StackPanel>
+        </Grid>
+
+        <!-- Main Body: Two Columns (Left: Templates Library & Preview, Right: Rules & Document) -->
+        <Grid Grid.Row="1">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="320"/>
+                <ColumnDefinition Width="15"/>
+                <ColumnDefinition Width="*"/>
+            </Grid.ColumnDefinitions>
+
+            <!-- PAINEL ESQUERDO: Biblioteca de Templates + Prévia do Resultado -->
+            <Grid Grid.Column="0">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="*"/>
+                    <RowDefinition Height="Auto"/>
+                </Grid.RowDefinitions>
+
+                <!-- CARD 1: Biblioteca de Templates -->
+                <Border Grid.Row="0" Background="{DynamicResource Brush.Surface.Card}" 
+                        BorderBrush="{DynamicResource Brush.Border.Base}" BorderThickness="1" 
+                        CornerRadius="8" Padding="12" MinHeight="140">
+                    <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="*"/>
+                        </Grid.RowDefinitions>
+
+                        <!-- Top Bar: Title & Actions -->
+                        <Grid Grid.Row="0" Margin="0,0,0,10">
+                            <TextBlock Text="Biblioteca de Templates" FontWeight="SemiBold" FontSize="13"
+                                       Foreground="{DynamicResource Brush.Text.Primary}" VerticalAlignment="Center"/>
+                            
+                            <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                                <Button Command="{Binding NewTemplateCommand}" ToolTip="Criar Novo Template"
+                                        Width="26" Height="26" Margin="0,0,4,0"
+                                        Style="{StaticResource IconButton}">
+                                    <Path Data="M 6,1 L 6,11 M 1,6 L 11,6" Stroke="{DynamicResource Brush.Action.Primary}" 
+                                          StrokeThickness="2" Width="11" Height="11" Stretch="Uniform" 
+                                          HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                </Button>
+                                <Button Command="{Binding DuplicateTemplateCommand}" ToolTip="Duplicar Template Selecionado"
+                                        Width="26" Height="26" Margin="0,0,4,0"
+                                        Style="{StaticResource IconButton}">
+                                    <Path Data="M 3,1 L 9,1 C 9.5,1 10,1.5 10,2 L 10,9 C 10,9.5 9.5,10 9,10 L 3,10 C 2.5,10 2,9.5 2,9 L 2,2 C 2,1.5 2.5,1 3,1 Z M 5,4 L 11,4 C 11.5,4 12,4.5 12,5 L 12,12 C 12,12.5 11.5,13 11,13 L 5,13 C 4.5,13 4,12.5 4,12" 
+                                          Stroke="{DynamicResource Brush.Text.Secondary}" StrokeThickness="1.2" 
+                                          Width="12" Height="12" Stretch="Uniform" 
+                                          HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                </Button>
+                                <Button Command="{Binding DeleteTemplateCommand}" ToolTip="Excluir Template Selecionado"
+                                        Width="26" Height="26"
+                                        Style="{StaticResource IconButton}">
+                                    <Path Data="M 1,3 L 11,3 M 4,3 L 4,1 L 8,1 L 8,3 M 2,3 L 3,12 C 3,12.5 3.5,13 4,13 L 8,13 C 8.5,13 9,12.5 9,12 L 10,3 M 5,6 L 5,10 M 7,6 L 7,10" 
+                                          Stroke="{DynamicResource Brush.Status.Error}" StrokeThickness="1.2" 
+                                          Width="12" Height="12" Stretch="Uniform" 
+                                          HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                </Button>
+                            </StackPanel>
+                        </Grid>
+
+                        <!-- Templates List -->
+                        <ListBox Grid.Row="1" ItemsSource="{Binding Templates}" 
+                                 SelectedItem="{Binding SelectedTemplate}"
+                                 Background="Transparent" BorderThickness="0"
+                                 ScrollViewer.HorizontalScrollBarVisibility="Disabled">
+                            <ListBox.ItemContainerStyle>
+                                <Style TargetType="ListBoxItem">
+                                    <Setter Property="Padding" Value="8,8"/>
+                                    <Setter Property="Margin" Value="0,2"/>
+                                    <Setter Property="Background" Value="Transparent"/>
+                                    <Setter Property="BorderThickness" Value="1"/>
+                                    <Setter Property="BorderBrush" Value="Transparent"/>
+                                    <Setter Property="Cursor" Value="Hand"/>
+                                    <Setter Property="Template">
+                                        <Setter.Value>
+                                            <ControlTemplate TargetType="ListBoxItem">
+                                                <Border x:Name="ItemBorder" Background="{TemplateBinding Background}" 
+                                                        BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}" 
+                                                        CornerRadius="6" Padding="{TemplateBinding Padding}">
+                                                    <ContentPresenter/>
+                                                </Border>
+                                                <ControlTemplate.Triggers>
+                                                    <Trigger Property="IsMouseOver" Value="True">
+                                                        <Setter TargetName="ItemBorder" Property="Background" Value="{DynamicResource Brush.Surface.Hover}"/>
+                                                    </Trigger>
+                                                    <Trigger Property="IsSelected" Value="True">
+                                                        <Setter TargetName="ItemBorder" Property="Background" Value="{DynamicResource Brush.Action.Primary.Soft}"/>
+                                                        <Setter TargetName="ItemBorder" Property="BorderBrush" Value="{DynamicResource Brush.Action.Primary}"/>
+                                                    </Trigger>
+                                                </ControlTemplate.Triggers>
+                                            </ControlTemplate>
+                                        </Setter.Value>
+                                    </Setter>
+                                </Style>
+                            </ListBox.ItemContainerStyle>
+                            <ListBox.ItemTemplate>
+                                <DataTemplate>
+                                    <Grid>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="Auto"/>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="Auto"/>
+                                        </Grid.ColumnDefinitions>
+                                        <Path Grid.Column="0" 
+                                              Data="M 2,1 C 1.45,1 1,1.45 1,2 L 1,14 C 1,14.55 1.45,15 2,15 L 10,15 C 10.55,15 11,14.55 11,14 L 11,5 L 7,1 L 2,1 Z M 6.5,2 L 10,5.5 L 6.5,5.5 Z" 
+                                              Fill="Transparent" 
+                                              Stroke="{DynamicResource Brush.Text.Secondary}" 
+                                              StrokeThickness="1.2" 
+                                              Width="12" Height="14" 
+                                              Stretch="Uniform" 
+                                              Margin="0,0,8,0" 
+                                              VerticalAlignment="Center"/>
+                                        <TextBlock Grid.Column="1" Text="{Binding Name}" FontWeight="Medium" FontSize="12"
+                                                   Foreground="{DynamicResource Brush.Text.Primary}" VerticalAlignment="Center"
+                                                   TextTrimming="CharacterEllipsis"/>
+                                        <Border Grid.Column="2" Background="{DynamicResource Brush.Surface.Input}" 
+                                                CornerRadius="4" Padding="5,1" Margin="4,0,0,0">
+                                            <TextBlock Text="{Binding FileExtension}" FontSize="10" 
+                                                       Foreground="{DynamicResource Brush.Text.Secondary}" VerticalAlignment="Center"/>
+                                        </Border>
+                                    </Grid>
+                                </DataTemplate>
+                            </ListBox.ItemTemplate>
+                        </ListBox>
+                    </Grid>
+                </Border>
+
+                <!-- CARD 2: Visualização / Prévia do Resultado (Apenas visível quando arquivo carregado) -->
+                <Border Grid.Row="1" Margin="0,12,0,0"
+                        Background="{DynamicResource Brush.Surface.Card}" 
+                        BorderBrush="{DynamicResource Brush.Border.Base}" BorderThickness="1" 
+                        CornerRadius="8" Padding="12"
+                        MaxHeight="360"
+                        Visibility="{Binding HasSampleFile, Converter={StaticResource BooleanToVisibilityConverter}}">
+                    <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="*"/>
+                        </Grid.RowDefinitions>
+
+                        <!-- Cabeçalho do Card: Ícone, Título e Contador -->
+                        <Grid Grid.Row="0" Margin="0,0,0,8">
+                            <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                <Path Data="M 1,6 C 3,2.5 9,2.5 11,6 C 9,9.5 3,9.5 1,6 Z M 6,4 C 4.9,4 4,4.9 4,6 C 4,7.1 4.9,8 6,8 C 7.1,8 8,7.1 8,6 C 8,4.9 7.1,4 6,4 Z" 
+                                      Stroke="{DynamicResource Brush.Action.Primary}" StrokeThickness="1.2" 
+                                      Width="13" Height="11" Stretch="Uniform" Margin="0,0,6,0" VerticalAlignment="Center"/>
+                                <TextBlock Text="Prévia do Resultado" FontWeight="SemiBold" FontSize="13"
+                                           Foreground="{DynamicResource Brush.Text.Primary}" VerticalAlignment="Center"/>
+                            </StackPanel>
+
+                            <!-- Badge de Contagem de Cotas -->
+                            <Border HorizontalAlignment="Right" Background="{DynamicResource Brush.Surface.Input}" 
+                                    CornerRadius="4" Padding="6,2" BorderBrush="{DynamicResource Brush.Border.Base}" BorderThickness="1">
+                                <TextBlock Text="{Binding PreviewItemCountDisplay}" FontSize="10" FontWeight="SemiBold"
+                                           Foreground="{DynamicResource Brush.Action.Primary}" VerticalAlignment="Center"/>
+                            </Border>
+                        </Grid>
+
+                        <!-- Campos Lado a Lado: Rotina e Corrida -->
+                        <Grid Grid.Row="1" Margin="0,0,0,8">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="8"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+
+                            <!-- Card Rotina -->
+                            <Border Grid.Column="0" Background="{DynamicResource Brush.Surface.Input}" 
+                                    BorderBrush="{DynamicResource Brush.Border.Base}" BorderThickness="1" 
+                                    CornerRadius="6" Padding="8,5">
+                                <StackPanel>
+                                    <TextBlock Text="ROTINA" FontSize="9" FontWeight="SemiBold" 
+                                               Foreground="{DynamicResource Brush.Text.Secondary}"/>
+                                    <TextBlock Text="{Binding PreviewPartName}" FontSize="11" FontWeight="SemiBold" 
+                                               Foreground="{DynamicResource Brush.Text.Primary}" 
+                                               TextTrimming="CharacterEllipsis" ToolTip="{Binding PreviewPartName}" 
+                                               Margin="0,2,0,0"/>
+                                </StackPanel>
+                            </Border>
+
+                            <!-- Card Corrida / Lote -->
+                            <Border Grid.Column="2" Background="{DynamicResource Brush.Surface.Input}" 
+                                    BorderBrush="{DynamicResource Brush.Border.Base}" BorderThickness="1" 
+                                    CornerRadius="6" Padding="8,5">
+                                <StackPanel>
+                                    <TextBlock Text="CORRIDA / LOTE" FontSize="9" FontWeight="SemiBold" 
+                                               Foreground="{DynamicResource Brush.Text.Secondary}"/>
+                                    <TextBlock Text="{Binding PreviewBatchNumber}" FontSize="11" FontWeight="SemiBold" 
+                                               Foreground="{DynamicResource Brush.Text.Primary}" 
+                                               TextTrimming="CharacterEllipsis" ToolTip="{Binding PreviewBatchNumber}" 
+                                               Margin="0,2,0,0"/>
+                                </StackPanel>
+                            </Border>
+                        </Grid>
+
+                        <!-- Tabela de Resultados ou Mensagem Informativa -->
+                        <Border Grid.Row="2" Background="{DynamicResource Brush.Surface.Input}" 
+                                BorderBrush="{DynamicResource Brush.Border.Base}" BorderThickness="1" 
+                                CornerRadius="6" MinHeight="90" MaxHeight="220">
+                            <Grid>
+                                <!-- Mensagem de Status se não houver cotas mapeadas -->
+                                <TextBlock Text="{Binding PreviewStatusMessage}" 
+                                           TextWrapping="Wrap" TextAlignment="Center"
+                                           VerticalAlignment="Center" HorizontalAlignment="Center"
+                                           Margin="10" FontSize="11"
+                                           Foreground="{DynamicResource Brush.Text.Inactive}"
+                                           Visibility="{Binding HasPreviewResults, Converter={StaticResource BooleanToVisibilityConverter}, ConverterParameter=Inverse}"/>
+
+                                <!-- Tabela de Cotas Extraídas -->
+                                <DataGrid ItemsSource="{Binding PreviewResults}" 
+                                          Style="{StaticResource ModernDataGrid}"
+                                          Foreground="{DynamicResource Brush.Text.Primary}"
+                                          RowHeight="24"
+                                          CanUserResizeRows="False"
+                                          SelectionMode="Single"
+                                          IsReadOnly="True"
+                                          HeadersVisibility="Column"
+                                          RowHeaderWidth="0"
+                                          Visibility="{Binding HasPreviewResults, Converter={StaticResource BooleanToVisibilityConverter}}">
+                                    <DataGrid.RowStyle>
+                                        <Style TargetType="DataGridRow">
+                                            <Setter Property="Background" Value="Transparent"/>
+                                            <Setter Property="Foreground" Value="{DynamicResource Brush.Text.Primary}"/>
+                                            <Setter Property="BorderThickness" Value="0"/>
+                                            <Setter Property="VerticalContentAlignment" Value="Center"/>
+                                            <Style.Triggers>
+                                                <Trigger Property="IsMouseOver" Value="True">
+                                                    <Setter Property="Background" Value="{DynamicResource Brush.Border.Base}"/> 
+                                                </Trigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </DataGrid.RowStyle>
+                                    <DataGrid.Columns>
+                                        <DataGridTextColumn Header="Característica" Binding="{Binding FeatureName}" Width="*"/>
+                                        <DataGridTemplateColumn Header="Valor" Width="95">
+                                            <DataGridTemplateColumn.CellTemplate>
+                                                <DataTemplate>
+                                                    <TextBlock Text="{Binding FormattedValue}" 
+                                                               FontFamily="Consolas" FontWeight="SemiBold" 
+                                                               Foreground="{DynamicResource Brush.Status.Success}" 
+                                                               HorizontalAlignment="Right" VerticalAlignment="Center"
+                                                               Padding="0,0,6,0"/>
+                                                </DataTemplate>
+                                            </DataGridTemplateColumn.CellTemplate>
+                                        </DataGridTemplateColumn>
+                                    </DataGrid.Columns>
+                                </DataGrid>
+                            </Grid>
+                        </Border>
+                    </Grid>
+                </Border>
+            </Grid>
+
+            <!-- PAINEL DIREITO: Metadados, Regras e Visualizador -->
+            <Grid Grid.Column="2" IsEnabled="{Binding HasSelectedTemplate}">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="12"/>
+                    <RowDefinition Height="*"/>
+                </Grid.RowDefinitions>
+
+                <!-- PARTE SUPERIOR: Metadados e Tabela de Regras -->
+                <Border Grid.Row="0" Background="{DynamicResource Brush.Surface.Card}" 
+                        BorderBrush="{DynamicResource Brush.Border.Base}" BorderThickness="1" 
+                        CornerRadius="8" Padding="14">
+                    <StackPanel>
+                        <!-- Inputs Grid -->
+                        <Grid Margin="0,0,0,12">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="2*"/>
+                                <ColumnDefinition Width="15"/>
+                                <ColumnDefinition Width="1*"/>
+                                <ColumnDefinition Width="15"/>
+                                <ColumnDefinition Width="1*"/>
+                            </Grid.ColumnDefinitions>
+
+                            <!-- Nome do Template -->
+                            <StackPanel Grid.Column="0">
+                                <TextBlock Text="Nome do Template" Style="{StaticResource LabelText}"/>
+                                <TextBox Text="{Binding TemplateName, UpdateSourceTrigger=PropertyChanged}" 
+                                         Style="{StaticResource {x:Type TextBox}}" Height="30"/>
+                            </StackPanel>
+
+                            <!-- Extensão do Arquivo -->
+                            <StackPanel Grid.Column="2">
+                                <TextBlock Text="Extensão do Arquivo" Style="{StaticResource LabelText}"/>
+                                <ComboBox ItemsSource="{Binding AvailableExtensions}" 
+                                          SelectedItem="{Binding FileExtension}" 
+                                          Style="{StaticResource {x:Type ComboBox}}" Height="30"/>
+                            </StackPanel>
+
+                            <!-- Separador Padrão -->
+                            <StackPanel Grid.Column="4">
+                                <TextBlock Text="Separador Padrão" Style="{StaticResource LabelText}"/>
+                                <ComboBox ItemsSource="{Binding AvailableSeparators}" 
+                                          SelectedItem="{Binding DefaultSeparator}" 
+                                          Style="{StaticResource {x:Type ComboBox}}" Height="30"/>
+                            </StackPanel>
+                        </Grid>
+
+                        <!-- Tabela de Regras Mapeadas -->
+                        <TextBlock Text="Regras de Interpretação Mapeadas:" FontWeight="SemiBold" FontSize="12"
+                                   Foreground="{DynamicResource Brush.Text.Primary}" Margin="0,0,0,6"/>
+
+                        <Border Background="{DynamicResource Brush.Surface.Card}" 
+                                BorderBrush="{DynamicResource Brush.Border.Base}" BorderThickness="1" 
+                                CornerRadius="6" MaxHeight="135" MinHeight="75">
+                            <DataGrid ItemsSource="{Binding CurrentRules}" 
+                                      Style="{StaticResource ModernDataGrid}"
+                                      Foreground="{DynamicResource Brush.Text.Primary}"
+                                      RowHeight="26"
+                                      CanUserResizeRows="False"
+                                      SelectionMode="Single"
+                                      IsReadOnly="True"
+                                      HeadersVisibility="Column"
+                                      RowHeaderWidth="0">
+                                <DataGrid.RowStyle>
+                                    <Style TargetType="DataGridRow">
+                                        <Setter Property="Background" Value="Transparent"/>
+                                        <Setter Property="Foreground" Value="{DynamicResource Brush.Text.Primary}"/>
+                                        <Setter Property="BorderThickness" Value="0"/>
+                                        <Setter Property="VerticalContentAlignment" Value="Center"/>
+                                        <Style.Triggers>
+                                            <Trigger Property="IsMouseOver" Value="True">
+                                                <Setter Property="Background" Value="{DynamicResource Brush.Border.Base}"/> 
+                                            </Trigger>
+                                            <Trigger Property="IsSelected" Value="True">
+                                                <Setter Property="Background" Value="{DynamicResource Brush.Surface.Popup}"/>
+                                            </Trigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </DataGrid.RowStyle>
+                                <DataGrid.Columns>
+                                    <DataGridTextColumn Header="Linha" Binding="{Binding LineDisplay}" Width="95"/>
+                                    <DataGridTextColumn Header="Função / Papel" Binding="{Binding RoleDescription}" Width="160"/>
+                                    <DataGridTextColumn Header="Detalhes da Extração" Binding="{Binding DetailsDisplay}" Width="*"/>
+                                    <DataGridTemplateColumn Width="45">
+                                        <DataGridTemplateColumn.CellTemplate>
+                                            <DataTemplate>
+                                                <Button Content="✖" Width="20" Height="20"
+                                                        Command="{Binding DataContext.RemoveRuleCommand, RelativeSource={RelativeSource AncestorType=Window}}"
+                                                        CommandParameter="{Binding}"
+                                                        Style="{StaticResource IconButton}" 
+                                                        Foreground="{DynamicResource Brush.Status.Error}"
+                                                        ToolTip="Remover esta regra"/>
+                                            </DataTemplate>
+                                        </DataGridTemplateColumn.CellTemplate>
+                                    </DataGridTemplateColumn>
+                                </DataGrid.Columns>
+                            </DataGrid>
+                        </Border>
+                    </StackPanel>
+                </Border>
+
+                <!-- PARTE INFERIOR: Visualizador de Arquivo de Amostra -->
+                <Border Grid.Row="2" Background="{DynamicResource Brush.Surface.Card}" 
+                        BorderBrush="{DynamicResource Brush.Border.Base}" BorderThickness="1" 
+                        CornerRadius="8" Padding="14">
+                    <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="*"/>
+                        </Grid.RowDefinitions>
+
+                        <!-- Top Toolbar do Arquivo de Amostra -->
+                        <Grid Grid.Row="0" Margin="0,0,0,10">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+
+                            <TextBlock Grid.Column="0" Text="Arquivo de Amostra:" FontWeight="SemiBold" FontSize="12"
+                                       Foreground="{DynamicResource Brush.Text.Primary}" VerticalAlignment="Center" Margin="0,0,10,0"/>
+
+                            <TextBox Grid.Column="1" Text="{Binding SampleFilePath}" IsReadOnly="True" 
+                                     Height="28" Style="{StaticResource {x:Type TextBox}}" 
+                                     VerticalContentAlignment="Center" Margin="0,0,8,0"/>
+
+                            <Button Grid.Column="2" Content="Procurar..." Command="{Binding BrowseSampleFileCommand}"
+                                    Width="90" Height="28" Style="{StaticResource SecondaryButton}"/>
+                        </Grid>
+
+                        <!-- Legenda de Cores para Marcação Rápida -->
+                        <Border Grid.Row="1" Background="{DynamicResource Brush.Surface.Input}" 
+                                BorderBrush="{DynamicResource Brush.Border.Base}" BorderThickness="1"
+                                CornerRadius="4" Padding="10,6" Margin="0,0,0,10">
+                            <WrapPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                <TextBlock Text="Legenda de cores:" FontWeight="SemiBold" FontSize="11" 
+                                           Foreground="{DynamicResource Brush.Text.Secondary}" Margin="0,0,12,0" VerticalAlignment="Center"/>
+                                <StackPanel Orientation="Horizontal" Margin="0,0,14,0" VerticalAlignment="Center">
+                                    <Ellipse Width="10" Height="10" Fill="#E06C75" Margin="0,0,5,0" VerticalAlignment="Center"/>
+                                    <TextBlock Text="Rotina" FontSize="11" Foreground="{DynamicResource Brush.Text.Primary}" VerticalAlignment="Center"/>
+                                </StackPanel>
+                                <StackPanel Orientation="Horizontal" Margin="0,0,14,0" VerticalAlignment="Center">
+                                    <Ellipse Width="10" Height="10" Fill="#C678DD" Margin="0,0,5,0" VerticalAlignment="Center"/>
+                                    <TextBlock Text="Corrida / Lote" FontSize="11" Foreground="{DynamicResource Brush.Text.Primary}" VerticalAlignment="Center"/>
+                                </StackPanel>
+                                <StackPanel Orientation="Horizontal" Margin="0,0,14,0" VerticalAlignment="Center">
+                                    <Ellipse Width="10" Height="10" Fill="#61AFEF" Margin="0,0,5,0" VerticalAlignment="Center"/>
+                                    <TextBlock Text="Características (ou Coluna Cota)" FontSize="11" Foreground="{DynamicResource Brush.Text.Primary}" VerticalAlignment="Center"/>
+                                </StackPanel>
+                                <StackPanel Orientation="Horizontal" Margin="0,0,14,0" VerticalAlignment="Center">
+                                    <Ellipse Width="10" Height="10" Fill="#98C379" Margin="0,0,5,0" VerticalAlignment="Center"/>
+                                    <TextBlock Text="Valores Medidos (ou Coluna Valor)" FontSize="11" Foreground="{DynamicResource Brush.Text.Primary}" VerticalAlignment="Center"/>
+                                </StackPanel>
+                                <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                    <Ellipse Width="10" Height="10" Fill="#E5C07B" Margin="0,0,5,0" VerticalAlignment="Center"/>
+                                    <TextBlock Text="Cota + Valor (Auto)" FontSize="11" Foreground="{DynamicResource Brush.Text.Primary}" VerticalAlignment="Center"/>
+                                </StackPanel>
+                            </WrapPanel>
+                        </Border>
+
+                        <!-- Área de Prévia do Arquivo com Régua de Linhas e RichTextBox Interativo -->
+                        <Border Grid.Row="2" Background="{DynamicResource Brush.Surface.Input}" 
+                                BorderBrush="{DynamicResource Brush.Border.Base}" BorderThickness="1" 
+                                CornerRadius="6" AllowDrop="True" Drop="OnSampleFileDrop" PreviewDragOver="OnSampleFileDragOver">
+                            <Grid>
+                                <!-- Mensagem de Instrução quando nenhum arquivo carregado -->
+                                <TextBlock Text="Clique em 'Procurar...' para carregar um arquivo CSV ou TXT de amostra e mapear as linhas com o mouse."
+                                           HorizontalAlignment="Center" VerticalAlignment="Center"
+                                           Foreground="{DynamicResource Brush.Text.Inactive}" FontSize="12"
+                                           Visibility="{Binding HasSampleFile, Converter={StaticResource BooleanToVisibilityConverter}, ConverterParameter=Inverse}"/>
+
+                                <!-- Editor com Régua de Numeração Lateral -->
+                                <Grid Visibility="{Binding HasSampleFile, Converter={StaticResource BooleanToVisibilityConverter}}">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="42"/>
+                                        <ColumnDefinition Width="1"/>
+                                        <ColumnDefinition Width="*"/>
+                                    </Grid.ColumnDefinitions>
+
+                                    <!-- Coluna 0: Régua de Linhas -->
+                                    <ScrollViewer x:Name="LineNumbersScroll" Grid.Column="0"
+                                                  VerticalScrollBarVisibility="Hidden" 
+                                                  HorizontalScrollBarVisibility="Disabled"
+                                                  Focusable="False">
+                                        <TextBlock x:Name="TxtLineNumbers" FontFamily="Consolas" FontSize="12"
+                                                   Foreground="{DynamicResource Brush.Text.Inactive}"
+                                                   TextAlignment="Right" Padding="0,4,6,4"
+                                                   LineHeight="20" LineStackingStrategy="BlockLineHeight"/>
+                                    </ScrollViewer>
+
+                                    <!-- Separador vertical discreto -->
+                                    <Rectangle Grid.Column="1" Fill="{DynamicResource Brush.Border.Base}"/>
+
+                                    <!-- Coluna 2: Editor Interativo de Texto -->
+                                    <RichTextBox x:Name="SampleTextEditor" Grid.Column="2"
+                                                 FontFamily="Consolas" FontSize="12"
+                                                 IsReadOnly="True" IsDocumentEnabled="True"
+                                                 BorderThickness="0" Background="Transparent"
+                                                 Foreground="{DynamicResource Brush.Text.Primary}"
+                                                 VerticalScrollBarVisibility="Auto"
+                                                 HorizontalScrollBarVisibility="Auto"
+                                                 Padding="6,4,6,4">
+                                        <RichTextBox.Resources>
+                                            <Style TargetType="{x:Type Paragraph}">
+                                                <Setter Property="Margin" Value="0"/>
+                                                <Setter Property="LineHeight" Value="20"/>
+                                                <Setter Property="LineStackingStrategy" Value="BlockLineHeight"/>
+                                            </Style>
+                                        </RichTextBox.Resources>
+                                        <RichTextBox.ContextMenu>
+                                            <ContextMenu>
+                                                <MenuItem Header="Nome da Rotina (PartName)" Click="OnMarkPartNameClick">
+                                                    <MenuItem.Icon>
+                                                        <Ellipse Width="10" Height="10" Fill="#E06C75" VerticalAlignment="Center" HorizontalAlignment="Center"/>
+                                                    </MenuItem.Icon>
+                                                </MenuItem>
+                                                <MenuItem Header="Nome da Corrida / Lote (BatchNumber)" Click="OnMarkBatchNumberClick">
+                                                    <MenuItem.Icon>
+                                                        <Ellipse Width="10" Height="10" Fill="#C678DD" VerticalAlignment="Center" HorizontalAlignment="Center"/>
+                                                    </MenuItem.Icon>
+                                                </MenuItem>
+                                                <Separator/>
+                                                <MenuItem Header="Nomes das Características (Linha Horizontal)" Click="OnMarkCharacteristicNamesClick">
+                                                    <MenuItem.Icon>
+                                                        <Ellipse Width="10" Height="10" Fill="#61AFEF" VerticalAlignment="Center" HorizontalAlignment="Center"/>
+                                                    </MenuItem.Icon>
+                                                </MenuItem>
+                                                <MenuItem Header="Valores Medidos (Linha Horizontal)" Click="OnMarkMeasuredValuesClick">
+                                                    <MenuItem.Icon>
+                                                        <Ellipse Width="10" Height="10" Fill="#98C379" VerticalAlignment="Center" HorizontalAlignment="Center"/>
+                                                    </MenuItem.Icon>
+                                                </MenuItem>
+                                                <Separator/>
+                                                <MenuItem Header="Característica Deste Trecho / Coluna (Linha a Linha)" Click="OnMarkRowFeatureColumnClick">
+                                                    <MenuItem.Icon>
+                                                        <Ellipse Width="10" Height="10" Fill="#61AFEF" VerticalAlignment="Center" HorizontalAlignment="Center"/>
+                                                    </MenuItem.Icon>
+                                                </MenuItem>
+                                                <MenuItem Header="Valor Medido Deste Trecho / Coluna (Linha a Linha)" Click="OnMarkRowValueColumnClick">
+                                                    <MenuItem.Icon>
+                                                        <Ellipse Width="10" Height="10" Fill="#98C379" VerticalAlignment="Center" HorizontalAlignment="Center"/>
+                                                    </MenuItem.Icon>
+                                                </MenuItem>
+                                                <MenuItem Header="Cota + Valor (Auto-deduzir Linha Inteira)" Click="OnMarkRowFeatureAndValueClick">
+                                                    <MenuItem.Icon>
+                                                        <Ellipse Width="10" Height="10" Fill="#E5C07B" VerticalAlignment="Center" HorizontalAlignment="Center"/>
+                                                    </MenuItem.Icon>
+                                                </MenuItem>
+                                                <Separator/>
+                                                <MenuItem Header="Remover Marcação desta Linha" Click="OnRemoveLineMarkingClick">
+                                                    <MenuItem.Icon>
+                                                        <TextBlock Text="✖" Foreground="{DynamicResource Brush.Status.Error}" FontSize="11" FontWeight="Bold" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                                    </MenuItem.Icon>
+                                                </MenuItem>
+                                            </ContextMenu>
+                                        </RichTextBox.ContextMenu>
+                                    </RichTextBox>
+                                </Grid>
+                            </Grid>
+                        </Border>
+                    </Grid>
+                </Border>
+            </Grid>
+        </Grid>
+
+        <!-- Footer / Barra de Status e Ações -->
+        <Grid Grid.Row="2" Margin="0,15,0,0">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="Auto"/>
+            </Grid.ColumnDefinitions>
+
+            <!-- Status de Validação -->
+            <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center">
+                <Ellipse Width="8" Height="8" Margin="0,0,8,0" VerticalAlignment="Center">
+                    <Ellipse.Style>
+                        <Style TargetType="Ellipse">
+                            <Setter Property="Fill" Value="{DynamicResource Brush.Status.Warning}"/>
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding IsTemplateValid}" Value="True">
+                                    <Setter Property="Fill" Value="{DynamicResource Brush.Status.Success}"/>
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </Ellipse.Style>
+                </Ellipse>
+                <TextBlock Text="{Binding ValidationMessage}" FontSize="12" 
+                           Foreground="{DynamicResource Brush.Text.Secondary}" VerticalAlignment="Center"/>
+            </StackPanel>
+
+            <!-- Botões de Ação -->
+            <StackPanel Grid.Column="1" Orientation="Horizontal">
+                <Button Content="Cancelar" Command="{Binding CancelCommand}" 
+                        Width="100" Height="32" Margin="0,0,10,0"
+                        Style="{StaticResource SecondaryButton}"/>
+                <Button Content="Salvar e Aplicar" Command="{Binding SaveAndApplyCommand}" 
+                        Width="130" Height="32"
+                        Style="{StaticResource PrimaryButton}"/>
+            </StackPanel>
+        </Grid>
+    </Grid>
+</Window>

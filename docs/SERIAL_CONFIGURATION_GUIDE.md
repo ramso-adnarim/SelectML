@@ -105,3 +105,15 @@ A partir da versão 1.2.2, o SelectML persiste as últimas configurações utili
 - **`LastSerialFeatureName`**: Salva o nome da última característica genérica selecionada.
 - **`AutoStartSerial`**: Se marcado na UI, o sistema tentará abrir a conexão serial automaticamente na inicialização do aplicativo usando as últimas configurações salvas.
 
+---
+
+## Recursos Adicionais (v1.2.8)
+
+### 1. Enfileiramento Serial Inteligente (`EnqueueSerialInput`)
+A partir da versão **V1.2.8**, a janela de configuração serial conta com um controle deslizante (*ModernToggleSwitch*):
+- **Enfileirar Medições (Ativado - Padrão):** As medições recebidas sem uma peça selecionada entram no buffer de espera ordenado, aguardando a seleção do lote/rotina para serem descarregadas.
+- **Modo Concorrente Híbrido (Desativado):** Permite inserir medições manuais na tela mesmo antes da chegada de arquivos de máquinas automáticas, facilitando a medição combinada de peças onde o operador adianta medições com paquímetro antes de a CMM finalizar seu ciclo.
+
+### 2. Comando de Desfazer Remoto (U-WAVE Undo)
+Dispositivos U-WAVE agora suportam o envio de comando de cancelamento/desfazer remoto. Ao acionar o comando de cancelamento no transmissor U-WAVE, o SelectML desfaz sequencialmente a última medição manual inserida na tela de forma 100% autônoma, sem exigir intervenção no teclado ou mouse.
+

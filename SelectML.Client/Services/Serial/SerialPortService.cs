@@ -18,6 +18,7 @@ namespace SelectML.Client.Services.Serial
         public event EventHandler<SerialMeasurement>? MeasurementReceived;
         public event EventHandler<string>? ErrorReceived;
         public event EventHandler<bool>? ConnectionStatusChanged;
+        public event EventHandler? UndoRequested;
 
         /// <summary>
         /// Construtor privado para garantir o padrão Singleton.
@@ -194,10 +195,17 @@ namespace SelectML.Client.Services.Serial
                     {
                         try 
                         {
-                            var result = _currentStrategy.Parse(line);
-                            if (result != null)
+                            if (_currentStrategy.IsUndoCommand(line))
                             {
-                                MeasurementReceived?.Invoke(this, result);
+                                UndoRequested?.Invoke(this, EventArgs.Empty);
+                            }
+                            else
+                            {
+                                var result = _currentStrategy.Parse(line);
+                                if (result != null)
+                                {
+                                    MeasurementReceived?.Invoke(this, result);
+                                }
                             }
                         }
                         catch (Exception parseEx)
