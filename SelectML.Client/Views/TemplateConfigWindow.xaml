@@ -178,19 +178,39 @@
                         <TextBlock Text="Regras de Interpretação Mapeadas:" FontWeight="SemiBold" FontSize="12"
                                    Foreground="{DynamicResource Brush.Text.Primary}" Margin="0,0,0,6"/>
 
-                        <Border Background="{DynamicResource Brush.Surface.Input}" 
+                        <Border Background="{DynamicResource Brush.Surface.Card}" 
                                 BorderBrush="{DynamicResource Brush.Border.Base}" BorderThickness="1" 
-                                CornerRadius="6" MaxHeight="130" MinHeight="70">
-                            <DataGrid ItemsSource="{Binding CurrentRules}" AutoGenerateColumns="False" 
-                                      IsReadOnly="True" HeadersVisibility="Column"
-                                      GridLinesVisibility="Horizontal" RowHeaderWidth="0"
-                                      Background="Transparent" BorderThickness="0"
-                                      HorizontalGridLinesBrush="{DynamicResource Brush.Border.Base}">
+                                CornerRadius="6" MaxHeight="135" MinHeight="75">
+                            <DataGrid ItemsSource="{Binding CurrentRules}" 
+                                      Style="{StaticResource ModernDataGrid}"
+                                      Foreground="{DynamicResource Brush.Text.Primary}"
+                                      RowHeight="26"
+                                      CanUserResizeRows="False"
+                                      SelectionMode="Single"
+                                      IsReadOnly="True"
+                                      HeadersVisibility="Column"
+                                      RowHeaderWidth="0">
+                                <DataGrid.RowStyle>
+                                    <Style TargetType="DataGridRow">
+                                        <Setter Property="Background" Value="Transparent"/>
+                                        <Setter Property="Foreground" Value="{DynamicResource Brush.Text.Primary}"/>
+                                        <Setter Property="BorderThickness" Value="0"/>
+                                        <Setter Property="VerticalContentAlignment" Value="Center"/>
+                                        <Style.Triggers>
+                                            <Trigger Property="IsMouseOver" Value="True">
+                                                <Setter Property="Background" Value="{DynamicResource Brush.Border.Base}"/> 
+                                            </Trigger>
+                                            <Trigger Property="IsSelected" Value="True">
+                                                <Setter Property="Background" Value="{DynamicResource Brush.Surface.Popup}"/>
+                                            </Trigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </DataGrid.RowStyle>
                                 <DataGrid.Columns>
-                                    <DataGridTextColumn Header="Linha" Binding="{Binding LineDisplay}" Width="100"/>
+                                    <DataGridTextColumn Header="Linha" Binding="{Binding LineDisplay}" Width="95"/>
                                     <DataGridTextColumn Header="Função / Papel" Binding="{Binding RoleDescription}" Width="160"/>
                                     <DataGridTextColumn Header="Detalhes da Extração" Binding="{Binding DetailsDisplay}" Width="*"/>
-                                    <DataGridTemplateColumn Width="40">
+                                    <DataGridTemplateColumn Width="45">
                                         <DataGridTemplateColumn.CellTemplate>
                                             <DataTemplate>
                                                 <Button Content="✖" Width="20" Height="20"
@@ -208,13 +228,19 @@
                     </StackPanel>
                 </Border>
 
-                <!-- PARTE INFERIOR: Visualizador de Arquivo de Amostra (Base para a Sprint 4) -->
+                <!-- PARTE INFERIOR: Visualizador de Arquivo de Amostra -->
                 <Border Grid.Row="2" Background="{DynamicResource Brush.Surface.Card}" 
                         BorderBrush="{DynamicResource Brush.Border.Base}" BorderThickness="1" 
                         CornerRadius="8" Padding="14">
                     <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="*"/>
+                        </Grid.RowDefinitions>
+
                         <!-- Top Toolbar do Arquivo de Amostra -->
-                        <Grid Grid.Row="0" Margin="0,0,0,8">
+                        <Grid Grid.Row="0" Margin="0,0,0,10">
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="Auto"/>
                                 <ColumnDefinition Width="*"/>
@@ -234,29 +260,30 @@
 
                         <!-- Legenda de Cores para Marcação Rápida -->
                         <Border Grid.Row="1" Background="{DynamicResource Brush.Surface.Input}" 
-                                CornerRadius="4" Padding="8,4" Margin="0,0,0,8">
+                                BorderBrush="{DynamicResource Brush.Border.Base}" BorderThickness="1"
+                                CornerRadius="4" Padding="10,6" Margin="0,0,0,10">
                             <WrapPanel Orientation="Horizontal" VerticalAlignment="Center">
-                                <TextBlock Text="Legenda (Clique com botão direito na linha ou seleção):" FontSize="11" 
-                                           Foreground="{DynamicResource Brush.Text.Secondary}" Margin="0,0,10,0" VerticalAlignment="Center"/>
-                                <StackPanel Orientation="Horizontal" Margin="0,0,12,0" VerticalAlignment="Center">
-                                    <Ellipse Width="10" Height="10" Fill="#E06C75" Margin="0,0,4,0"/>
-                                    <TextBlock Text="Rotina" FontSize="11" Foreground="{DynamicResource Brush.Text.Primary}"/>
+                                <TextBlock Text="Legenda de cores:" FontWeight="SemiBold" FontSize="11" 
+                                           Foreground="{DynamicResource Brush.Text.Secondary}" Margin="0,0,12,0" VerticalAlignment="Center"/>
+                                <StackPanel Orientation="Horizontal" Margin="0,0,14,0" VerticalAlignment="Center">
+                                    <Ellipse Width="10" Height="10" Fill="#E06C75" Margin="0,0,5,0" VerticalAlignment="Center"/>
+                                    <TextBlock Text="Rotina" FontSize="11" Foreground="{DynamicResource Brush.Text.Primary}" VerticalAlignment="Center"/>
                                 </StackPanel>
-                                <StackPanel Orientation="Horizontal" Margin="0,0,12,0" VerticalAlignment="Center">
-                                    <Ellipse Width="10" Height="10" Fill="#C678DD" Margin="0,0,4,0"/>
-                                    <TextBlock Text="Corrida/Lote" FontSize="11" Foreground="{DynamicResource Brush.Text.Primary}"/>
+                                <StackPanel Orientation="Horizontal" Margin="0,0,14,0" VerticalAlignment="Center">
+                                    <Ellipse Width="10" Height="10" Fill="#C678DD" Margin="0,0,5,0" VerticalAlignment="Center"/>
+                                    <TextBlock Text="Corrida / Lote" FontSize="11" Foreground="{DynamicResource Brush.Text.Primary}" VerticalAlignment="Center"/>
                                 </StackPanel>
-                                <StackPanel Orientation="Horizontal" Margin="0,0,12,0" VerticalAlignment="Center">
-                                    <Ellipse Width="10" Height="10" Fill="#61AFEF" Margin="0,0,4,0"/>
-                                    <TextBlock Text="Características" FontSize="11" Foreground="{DynamicResource Brush.Text.Primary}"/>
+                                <StackPanel Orientation="Horizontal" Margin="0,0,14,0" VerticalAlignment="Center">
+                                    <Ellipse Width="10" Height="10" Fill="#61AFEF" Margin="0,0,5,0" VerticalAlignment="Center"/>
+                                    <TextBlock Text="Características" FontSize="11" Foreground="{DynamicResource Brush.Text.Primary}" VerticalAlignment="Center"/>
                                 </StackPanel>
-                                <StackPanel Orientation="Horizontal" Margin="0,0,12,0" VerticalAlignment="Center">
-                                    <Ellipse Width="10" Height="10" Fill="#98C379" Margin="0,0,4,0"/>
-                                    <TextBlock Text="Valores Medidos" FontSize="11" Foreground="{DynamicResource Brush.Text.Primary}"/>
+                                <StackPanel Orientation="Horizontal" Margin="0,0,14,0" VerticalAlignment="Center">
+                                    <Ellipse Width="10" Height="10" Fill="#98C379" Margin="0,0,5,0" VerticalAlignment="Center"/>
+                                    <TextBlock Text="Valores Medidos" FontSize="11" Foreground="{DynamicResource Brush.Text.Primary}" VerticalAlignment="Center"/>
                                 </StackPanel>
                                 <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                                    <Ellipse Width="10" Height="10" Fill="#E5C07B" Margin="0,0,4,0"/>
-                                    <TextBlock Text="Cota + Valor (Linha a Linha)" FontSize="11" Foreground="{DynamicResource Brush.Text.Primary}"/>
+                                    <Ellipse Width="10" Height="10" Fill="#E5C07B" Margin="0,0,5,0" VerticalAlignment="Center"/>
+                                    <TextBlock Text="Cota + Valor (Linha a Linha)" FontSize="11" Foreground="{DynamicResource Brush.Text.Primary}" VerticalAlignment="Center"/>
                                 </StackPanel>
                             </WrapPanel>
                         </Border>
@@ -312,15 +339,39 @@
                                         </RichTextBox.Resources>
                                         <RichTextBox.ContextMenu>
                                             <ContextMenu>
-                                                <MenuItem Header="🔴  Nome da Rotina (PartName)" Click="OnMarkPartNameClick"/>
-                                                <MenuItem Header="🟣  Nome da Corrida / Lote (BatchNumber)" Click="OnMarkBatchNumberClick"/>
+                                                <MenuItem Header="Nome da Rotina (PartName)" Click="OnMarkPartNameClick">
+                                                    <MenuItem.Icon>
+                                                        <Ellipse Width="10" Height="10" Fill="#E06C75" VerticalAlignment="Center" HorizontalAlignment="Center"/>
+                                                    </MenuItem.Icon>
+                                                </MenuItem>
+                                                <MenuItem Header="Nome da Corrida / Lote (BatchNumber)" Click="OnMarkBatchNumberClick">
+                                                    <MenuItem.Icon>
+                                                        <Ellipse Width="10" Height="10" Fill="#C678DD" VerticalAlignment="Center" HorizontalAlignment="Center"/>
+                                                    </MenuItem.Icon>
+                                                </MenuItem>
                                                 <Separator/>
-                                                <MenuItem Header="🔵  Nomes das Características (Linha Horizontal)" Click="OnMarkCharacteristicNamesClick"/>
-                                                <MenuItem Header="🟢  Valores Medidos (Linha Horizontal)" Click="OnMarkMeasuredValuesClick"/>
+                                                <MenuItem Header="Nomes das Características (Linha Horizontal)" Click="OnMarkCharacteristicNamesClick">
+                                                    <MenuItem.Icon>
+                                                        <Ellipse Width="10" Height="10" Fill="#61AFEF" VerticalAlignment="Center" HorizontalAlignment="Center"/>
+                                                    </MenuItem.Icon>
+                                                </MenuItem>
+                                                <MenuItem Header="Valores Medidos (Linha Horizontal)" Click="OnMarkMeasuredValuesClick">
+                                                    <MenuItem.Icon>
+                                                        <Ellipse Width="10" Height="10" Fill="#98C379" VerticalAlignment="Center" HorizontalAlignment="Center"/>
+                                                    </MenuItem.Icon>
+                                                </MenuItem>
                                                 <Separator/>
-                                                <MenuItem Header="🔶  Cota e Valor Medido (Formato Linha por Linha)" Click="OnMarkRowFeatureAndValueClick"/>
+                                                <MenuItem Header="Cota e Valor Medido (Formato Linha por Linha)" Click="OnMarkRowFeatureAndValueClick">
+                                                    <MenuItem.Icon>
+                                                        <Ellipse Width="10" Height="10" Fill="#E5C07B" VerticalAlignment="Center" HorizontalAlignment="Center"/>
+                                                    </MenuItem.Icon>
+                                                </MenuItem>
                                                 <Separator/>
-                                                <MenuItem Header="✖  Remover Marcação desta Linha" Click="OnRemoveLineMarkingClick"/>
+                                                <MenuItem Header="Remover Marcação desta Linha" Click="OnRemoveLineMarkingClick">
+                                                    <MenuItem.Icon>
+                                                        <TextBlock Text="✖" Foreground="{DynamicResource Brush.Status.Error}" FontSize="11" FontWeight="Bold" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                                    </MenuItem.Icon>
+                                                </MenuItem>
                                             </ContextMenu>
                                         </RichTextBox.ContextMenu>
                                     </RichTextBox>
