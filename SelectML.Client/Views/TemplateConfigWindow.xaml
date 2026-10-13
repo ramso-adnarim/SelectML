@@ -5,6 +5,15 @@
         MinHeight="580" MinWidth="850"
         WindowStartupLocation="CenterOwner"
         Style="{StaticResource ModernWindowStyle}">
+    <Window.Resources>
+        <!-- Estilo para Rótulos de Campos -->
+        <Style x:Key="LabelText" TargetType="TextBlock">
+            <Setter Property="Foreground" Value="{DynamicResource Brush.Text.Secondary}"/>
+            <Setter Property="FontSize" Value="12"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="Margin" Value="0,0,0,4"/>
+        </Style>
+    </Window.Resources>
     <Grid Margin="15">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>

@@ -15,6 +15,14 @@
         </Setter>
     </Style>
 
+    <!-- Helper Style for Form Labels -->
+    <Style x:Key="LabelText" TargetType="TextBlock">
+        <Setter Property="Foreground" Value="{DynamicResource Brush.Text.Secondary}"/>
+        <Setter Property="FontSize" Value="12"/>
+        <Setter Property="FontWeight" Value="SemiBold"/>
+        <Setter Property="Margin" Value="0,0,0,4"/>
+    </Style>
+
     <!-- =================================================================== -->
     <!-- BUTTONS -->
     <!-- =================================================================== -->
@@ -119,6 +127,9 @@
             </Setter.Value>
         </Setter>
     </Style>
+
+    <!-- Secondary Button (Alias / Compatible Style) -->
+    <Style x:Key="SecondaryButton" TargetType="Button" BasedOn="{StaticResource GhostButton}"/>
 
     <!-- Danger Button (Cancel - Red) -->
     <Style x:Key="DangerButton" TargetType="Button">
