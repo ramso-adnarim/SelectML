@@ -69,6 +69,25 @@ public class CharacteristicTolerance
 }
 ```
 
+### A Interface `IConfigurableParser` (Novidade V1.2.8)
+
+A partir da versão **V1.2.8**, caso o seu plugin suporte parametrização dinâmica por meio de templates editáveis pelo usuário (como o leitor genérico de arquivos de texto `SelectML.Parsers.TextTemplate`), ele pode implementar a interface `IConfigurableParser`:
+
+```csharp
+namespace SelectML.Core
+{
+    public interface IConfigurableParser : IMachineParser, INotifyPropertyChanged
+    {
+        string ActiveTemplateName { get; }
+        TemplateDefinition? ActiveTemplate { get; }
+        void SetActiveTemplate(TemplateDefinition? template);
+        void SetActiveTemplateByName(string templateName);
+    }
+}
+```
+
+Quando um plugin implementa `IConfigurableParser`, a tela principal do SelectML exibe automaticamente um botão de engrenagem ⚙️ ao lado do seletor de plugins, permitindo que o operador abra o Configurador Visual de Templates e selecione ou edite regras de extração sem reiniciar o aplicativo.
+
 ## 3. Passo a Passo: Criando seu Primeiro Plugin
 
 ### Passo 1: Criar o Projeto

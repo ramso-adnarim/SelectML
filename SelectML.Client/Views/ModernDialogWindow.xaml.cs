@@ -61,20 +61,20 @@ namespace SelectML.Client.Views
             {
                 case ModernDialogIcon.Warning:
                     win.IconGlyph.Text = "⚠";
-                    win.IconContainer.Background = (WpfBrush)win.FindResource("Brush.Status.Warning");
+                    win.IconContainer.Background = (win.TryFindResource("Brush.Status.Warning") as WpfBrush) ?? new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromRgb(245, 158, 11));
                     break;
                 case ModernDialogIcon.Error:
                     win.IconGlyph.Text = "✕";
-                    win.IconContainer.Background = (WpfBrush)win.FindResource("Brush.Status.Error");
+                    win.IconContainer.Background = (win.TryFindResource("Brush.Status.Error") as WpfBrush) ?? new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromRgb(239, 68, 68));
                     break;
                 case ModernDialogIcon.Question:
                     win.IconGlyph.Text = "?";
-                    win.IconContainer.Background = (WpfBrush)win.FindResource("Brush.Action.Primary");
+                    win.IconContainer.Background = (win.TryFindResource("Brush.Action.Primary") as WpfBrush) ?? new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromRgb(59, 130, 246));
                     break;
                 case ModernDialogIcon.Information:
                 default:
                     win.IconGlyph.Text = "ℹ";
-                    win.IconContainer.Background = (WpfBrush)win.FindResource("Brush.Action.Primary");
+                    win.IconContainer.Background = (win.TryFindResource("Brush.Action.Primary") as WpfBrush) ?? new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromRgb(59, 130, 246));
                     break;
             }
 

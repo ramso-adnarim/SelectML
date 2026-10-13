@@ -137,32 +137,51 @@ namespace SelectML.Core.Templates
                 // 1. Suporte a extração por REGEX com grupos nomeados "feat" e "val"
                 if (!string.IsNullOrWhiteSpace(genericRule.RegexPattern))
                 {
-                    Regex regex;
+                    Regex? regex = null;
                     try
                     {
                         regex = new Regex(genericRule.RegexPattern, RegexOptions.Compiled);
                     }
                     catch
                     {
-                        regex = new Regex(genericRule.RegexPattern);
+                        try
+                        {
+                            regex = new Regex(genericRule.RegexPattern);
+                        }
+                        catch
+                        {
+                            regex = null;
+                        }
                     }
 
-                    for (int i = start; i < lines.Length; i++)
+                    if (regex != null)
                     {
-                        var line = lines[i];
-                        if (string.IsNullOrWhiteSpace(line)) continue;
-
-                        var match = regex.Match(line);
-                        if (match.Success)
+                        for (int i = start; i < lines.Length; i++)
                         {
-                            string featName = match.Groups["feat"].Success ? match.Groups["feat"].Value.Trim() : string.Empty;
-                            string rawVal = match.Groups["val"].Success ? match.Groups["val"].Value.Trim() : string.Empty;
+                            var line = lines[i];
+                            if (string.IsNullOrWhiteSpace(line)) continue;
 
-                            if (!string.IsNullOrWhiteSpace(featName) && SmartNumberParser.TryParse(rawVal, out double val))
+                            Match? match = null;
+                            try
                             {
-                                if (!results.ContainsKey(featName))
+                                match = regex.Match(line);
+                            }
+                            catch
+                            {
+                                match = null;
+                            }
+
+                            if (match != null && match.Success)
+                            {
+                                string featName = match.Groups["feat"].Success ? match.Groups["feat"].Value.Trim() : string.Empty;
+                                string rawVal = match.Groups["val"].Success ? match.Groups["val"].Value.Trim() : string.Empty;
+
+                                if (!string.IsNullOrWhiteSpace(featName) && SmartNumberParser.TryParse(rawVal, out double val))
                                 {
-                                    results.Add(featName, val);
+                                    if (!results.ContainsKey(featName))
+                                    {
+                                        results.Add(featName, val);
+                                    }
                                 }
                             }
                         }
@@ -207,8 +226,17 @@ namespace SelectML.Core.Templates
 
                     if (!string.IsNullOrWhiteSpace(rule.RegexPattern))
                     {
-                        var match = Regex.Match(line, rule.RegexPattern);
-                        if (match.Success)
+                        Match? match = null;
+                        try
+                        {
+                            match = Regex.Match(line, rule.RegexPattern);
+                        }
+                        catch
+                        {
+                            match = null;
+                        }
+
+                        if (match != null && match.Success)
                         {
                             string featName = match.Groups["feat"].Success ? match.Groups["feat"].Value.Trim() : string.Empty;
                             string rawVal = match.Groups["val"].Success ? match.Groups["val"].Value.Trim() : string.Empty;

@@ -1388,27 +1388,35 @@ namespace SelectML.Client.ViewModels
 
         private async void OnFileCreated(object sender, FileSystemEventArgs e)
         {
-            // Lógica de Buffer Reverso (Priority Queue)
-            // Se o enfileiramento serial estiver desativado (Modo Híbrido):
-            // Só deve enfileirar se já houver um arquivo carregado nesta sessão (_currentData != null)
-            // ou se já houver um arquivo sendo processado (_isProcessingFile).
-            // Caso contrário (apenas medições seriais prévias na tela aguardando arquivo complementar),
-            // o arquivo deve ser processado imediatamente.
-            // Se o enfileiramento estiver ativado (Modo Legado):
-            // Qualquer ação pendente (IsPendingAction) enfileira o arquivo no buffer.
-            bool shouldQueue = !EnqueueSerialInput
-                ? (_isProcessingFile || _currentData != null)
-                : IsPendingAction;
-
-            if (shouldQueue)
+            try
             {
-                _fileBuffer.Enqueue(e.FullPath);
-                UpdateStatus($"Arquivo em espera ({_fileBuffer.Count}): {e.Name}");
-                Log.Information("File queued in buffer: {File}", e.Name);
-                return;
-            }
+                // Lógica de Buffer Reverso (Priority Queue)
+                // Se o enfileiramento serial estiver desativado (Modo Híbrido):
+                // Só deve enfileirar se já houver um arquivo carregado nesta sessão (_currentData != null)
+                // ou se já houver um arquivo sendo processado (_isProcessingFile).
+                // Caso contrário (apenas medições seriais prévias na tela aguardando arquivo complementar),
+                // o arquivo deve ser processado imediatamente.
+                // Se o enfileiramento estiver ativado (Modo Legado):
+                // Qualquer ação pendente (IsPendingAction) enfileira o arquivo no buffer.
+                bool shouldQueue = !EnqueueSerialInput
+                    ? (_isProcessingFile || _currentData != null)
+                    : IsPendingAction;
 
-            await ProcessFile(e.FullPath, e.Name);
+                if (shouldQueue)
+                {
+                    _fileBuffer.Enqueue(e.FullPath);
+                    UpdateStatus($"Arquivo em espera ({_fileBuffer.Count}): {e.Name}");
+                    Log.Information("File queued in buffer: {File}", e.Name);
+                    return;
+                }
+
+                await ProcessFile(e.FullPath, e.Name ?? Path.GetFileName(e.FullPath));
+            }
+            catch (Exception ex)
+            {
+                Log.Error(ex, "Erro inesperado ao processar evento de criação de arquivo: {File}", e.FullPath);
+                UpdateStatus($"Erro ao detectar arquivo: {ex.Message}");
+            }
         }
 
         private async Task ProcessFile(string fullPath, string fileName)
@@ -2003,110 +2011,119 @@ namespace SelectML.Client.ViewModels
 
         private async void ExecuteSend(object obj)
         {
-            if (string.IsNullOrWhiteSpace(PartName) || string.IsNullOrWhiteSpace(BatchNumber)) return;
-
-            // Check for empty/whitespace characteristic names
-            if (MeasuredResults.Any(r => string.IsNullOrWhiteSpace(r.Characteristic)))
+            try
             {
-                StatusMessage = "Erro: Existem características sem nome na lista.";
-                ModernDialogWindow.Show("Todas as características devem possuir um nome válido antes do envio. Preencha os campos vazios.", "Erro de Validação", ModernDialogButtons.OK, ModernDialogIcon.Warning);
-                return;
-            }
+                if (string.IsNullOrWhiteSpace(PartName) || string.IsNullOrWhiteSpace(BatchNumber)) return;
 
-            // Check for duplicates in UI
-            if (MeasuredResults.Any(r => r.HasDuplicateName))
-            {
-                StatusMessage = "Erro: Nomes de características duplicados detectados.";
-                ModernDialogWindow.Show("Existem características com o mesmo nome na lista. Corrija antes de enviar.", "Erro de Validação", ModernDialogButtons.OK, ModernDialogIcon.Warning);
-                return;
-            }
-
-            // Check for unmeasured routine features
-            if (MeasuredResults.Any(r => !r.IsAttribute && !r.HasValue))
-            {
-                StatusMessage = "Aviso: Existem características aguardando medição.";
-                var promptResult = ModernDialogWindow.Show(
-                    "Existem características na rotina que ainda não foram medidas.\n\nDeseja enviar a corrida apenas com as características preenchidas? (As cotas sem medição serão desconsideradas no envio)",
-                    "Características Pendentes",
-                    ModernDialogButtons.YesNo,
-                    ModernDialogIcon.Question);
-
-                if (promptResult != MessageBoxResult.Yes)
+                // Check for empty/whitespace characteristic names
+                if (MeasuredResults.Any(r => string.IsNullOrWhiteSpace(r.Characteristic)))
                 {
+                    StatusMessage = "Erro: Existem características sem nome na lista.";
+                    ModernDialogWindow.Show("Todas as características devem possuir um nome válido antes do envio. Preencha os campos vazios.", "Erro de Validação", ModernDialogButtons.OK, ModernDialogIcon.Warning);
                     return;
                 }
-            }
 
-            bool recognizedOnly = false;
-
-            // Validation Check for unrecognized items
-            if (MeasuredResults.Any(r => !r.IsRecognized))
-            {
-                var action = _sessionConfirmationAction;
-
-                if (action == ConfirmationAction.None)
+                // Check for duplicates in UI
+                if (MeasuredResults.Any(r => r.HasDuplicateName))
                 {
-                    var dlg = new ConfirmationWindow();
-                    dlg.Owner = System.Windows.Application.Current.MainWindow;
-                    dlg.ShowDialog();
+                    StatusMessage = "Erro: Nomes de características duplicados detectados.";
+                    ModernDialogWindow.Show("Existem características com o mesmo nome na lista. Corrija antes de enviar.", "Erro de Validação", ModernDialogButtons.OK, ModernDialogIcon.Warning);
+                    return;
+                }
 
-                    action = dlg.UserChoice;
+                // Check for unmeasured routine features
+                if (MeasuredResults.Any(r => !r.IsAttribute && !r.HasValue))
+                {
+                    StatusMessage = "Aviso: Existem características aguardando medição.";
+                    var promptResult = ModernDialogWindow.Show(
+                        "Existem características na rotina que ainda não foram medidas.\n\nDeseja enviar a corrida apenas com as características preenchidas? (As cotas sem medição serão desconsideradas no envio)",
+                        "Características Pendentes",
+                        ModernDialogButtons.YesNo,
+                        ModernDialogIcon.Question);
 
-                    if (dlg.IsDontAskAgainChecked && action != ConfirmationAction.Cancel)
+                    if (promptResult != MessageBoxResult.Yes)
                     {
-                        SetConfirmationAction(action);
+                        return;
                     }
                 }
 
-                if (action == ConfirmationAction.Cancel || action == ConfirmationAction.None)
+                bool recognizedOnly = false;
+
+                // Validation Check for unrecognized items
+                if (MeasuredResults.Any(r => !r.IsRecognized))
                 {
-                    return; // User cancelled
-                }
+                    var action = _sessionConfirmationAction;
 
-                if (action == ConfirmationAction.SendRecognized)
-                {
-                    recognizedOnly = true;
-                }
-            }
-
-            MeasurementData dataToSend = BuildMeasurementDataFromUI(recognizedOnly);
-
-            if (string.IsNullOrEmpty(DetectedStationName) || DetectedStationName == "Não identificada")
-            {
-                if (!IsAutoMode)
-                {
-                    var stations = await _databaseService.GetAllStationsAsync();
-                    var dlg = new SelectML.Client.Views.StationSelectionWindow(stations);
-                    dlg.Owner = System.Windows.Application.Current.MainWindow;
-                    dlg.ShowDialog();
-
-                    if (dlg.UserChoice == SelectML.Client.Views.StationSelectionChoice.SendWithStation)
+                    if (action == ConfirmationAction.None)
                     {
-                        DetectedStationName = dlg.SelectedStation;
+                        var dlg = new ConfirmationWindow();
+                        dlg.Owner = System.Windows.Application.Current.MainWindow;
+                        dlg.ShowDialog();
+
+                        action = dlg.UserChoice;
+
+                        if (dlg.IsDontAskAgainChecked && action != ConfirmationAction.Cancel)
+                        {
+                            SetConfirmationAction(action);
+                        }
                     }
-                    else if (dlg.UserChoice == SelectML.Client.Views.StationSelectionChoice.SendUnidentified)
-                    {
-                        DetectedStationName = "Unidentified";
-                    }
-                    else
+
+                    if (action == ConfirmationAction.Cancel || action == ConfirmationAction.None)
                     {
                         return; // User cancelled
                     }
+
+                    if (action == ConfirmationAction.SendRecognized)
+                    {
+                        recognizedOnly = true;
+                    }
                 }
-                else
+
+                MeasurementData dataToSend = BuildMeasurementDataFromUI(recognizedOnly);
+
+                if (string.IsNullOrEmpty(DetectedStationName) || DetectedStationName == "Não identificada")
                 {
-                    DetectedStationName = "Unidentified";
+                    if (!IsAutoMode)
+                    {
+                        var stations = await _databaseService.GetAllStationsAsync();
+                        var dlg = new SelectML.Client.Views.StationSelectionWindow(stations);
+                        dlg.Owner = System.Windows.Application.Current.MainWindow;
+                        dlg.ShowDialog();
+
+                        if (dlg.UserChoice == SelectML.Client.Views.StationSelectionChoice.SendWithStation)
+                        {
+                            DetectedStationName = dlg.SelectedStation;
+                        }
+                        else if (dlg.UserChoice == SelectML.Client.Views.StationSelectionChoice.SendUnidentified)
+                        {
+                            DetectedStationName = "Unidentified";
+                        }
+                        else
+                        {
+                            return; // User cancelled
+                        }
+                    }
+                    else
+                    {
+                        DetectedStationName = "Unidentified";
+                    }
+                }
+
+                IsPendingAction = false;
+                Log.Information("User manually approved data for Batch {Batch}", dataToSend.BatchNumber);
+                await GenerateOutputCsv(dataToSend);
+
+                if (WasInTrayBeforeProcessing)
+                {
+                    WasInTrayBeforeProcessing = false;
+                    RequestMinimizeToTray?.Invoke();
                 }
             }
-
-            IsPendingAction = false;
-            Log.Information("User manually approved data for Batch {Batch}", dataToSend.BatchNumber);
-            await GenerateOutputCsv(dataToSend);
-
-            if (WasInTrayBeforeProcessing)
+            catch (Exception ex)
             {
-                WasInTrayBeforeProcessing = false;
-                RequestMinimizeToTray?.Invoke();
+                Log.Error(ex, "Erro inesperado ao executar envio de dados");
+                StatusMessage = $"Erro no envio: {ex.Message}";
+                ModernDialogWindow.Show($"Ocorreu um erro ao processar o envio:\n\n{ex.Message}", "Erro de Envio", ModernDialogButtons.OK, ModernDialogIcon.Error);
             }
         }
 
@@ -2198,43 +2215,57 @@ namespace SelectML.Client.ViewModels
 
         private async void ResetUI()
         {
-            _currentData = null;
-            PartName = string.Empty;
-            BatchNumber = string.Empty;
-            DetectedStationName = string.Empty;
-            MeasuredResults.Clear();
-            KnownFeatures.Clear(); // Limpa features obsoletas
-            _currentData = null;   // Reseta contexto de dados do arquivo
-            _isProcessingFile = false; // Libera o lock do Modo Arquivo
-            // IsPendingAction deve ser false aqui, a menos que reativado por dados buferizados
-            
-            // Check Buffers
-            if (_serialBuffer.Count > 0)
+            try
             {
-                 ProcessSerialBuffer();
+                _currentData = null;
+                PartName = string.Empty;
+                BatchNumber = string.Empty;
+                DetectedStationName = string.Empty;
+                MeasuredResults.Clear();
+                KnownFeatures.Clear(); // Limpa features obsoletas
+                _currentData = null;   // Reseta contexto de dados do arquivo
+                _isProcessingFile = false; // Libera o lock do Modo Arquivo
+                // IsPendingAction deve ser false aqui, a menos que reativado por dados buferizados
+                
+                // Check Buffers
+                if (_serialBuffer.Count > 0)
+                {
+                     ProcessSerialBuffer();
+                }
+                else if (_fileBuffer.Count > 0)
+                {
+                     // Small delay to ensure clean state?
+                     await Task.Delay(100);
+                     ProcessFileBuffer();
+                }
+                else
+                {
+                    // Fix: Ensure we unlock the UI state if no pending buffers
+                    IsPendingAction = false;
+                    StatusMessage = "Aguardando...";
+                }
             }
-            else if (_fileBuffer.Count > 0)
+            catch (Exception ex)
             {
-                 // Small delay to ensure clean state?
-                 await Task.Delay(100);
-                 ProcessFileBuffer();
-            }
-            else
-            {
-                // Fix: Ensure we unlock the UI state if no pending buffers
-                IsPendingAction = false;
-                StatusMessage = "Aguardando...";
+                Log.Error(ex, "Erro inesperado ao resetar UI");
             }
         }
         
         private async void ProcessFileBuffer()
         {
-            if (_fileBuffer.Count > 0)
+            try
             {
-                var file = _fileBuffer.Dequeue();
-                UpdateStatus($"Processando arquivo bufferizado ({_fileBuffer.Count} restantes)...");
-                // Need to call ProcessFile (async)
-                await ProcessFile(file, Path.GetFileName(file));
+                if (_fileBuffer.Count > 0)
+                {
+                    var file = _fileBuffer.Dequeue();
+                    UpdateStatus($"Processando arquivo bufferizado ({_fileBuffer.Count} restantes)...");
+                    // Need to call ProcessFile (async)
+                    await ProcessFile(file, Path.GetFileName(file));
+                }
+            }
+            catch (Exception ex)
+            {
+                Log.Error(ex, "Erro inesperado ao processar buffer de arquivos");
             }
         }
 

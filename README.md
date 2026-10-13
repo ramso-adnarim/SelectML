@@ -8,20 +8,26 @@
 
 # Interface de monitoramento e entrega de arquivos de medição
 
-![Version](https://img.shields.io/badge/Version-1.2.7-blue)
+![Version](https://img.shields.io/badge/Version-1.2.8-blue)
 ![Build](https://img.shields.io/badge/Build-Passing-brightgreen)
 ![Platform](https://img.shields.io/badge/Platform-Windows_WPF-blueviolet)
 
-> **Versão 1.2.7**
+> **Versão 1.2.8**
 > Novidades:
-> - **Persistência da Regra de Confirmação:** O estado da opção "Não perguntar novamente" (Enviar apenas reconhecidas / Enviar todas / Sempre perguntar) é salvo no `%AppData%` e mantido entre reinicializações.
-> - **Menu de Contexto no Botão Enviar:** Clique com o botão direito no botão "Enviar" para checar ou alterar a regra de envio direto pela interface.
-> - **Estilização Temática dos ContextMenus:** Padronização visual dos menus de contexto (DataGrid e Botão Enviar) respeitando dinamicamente as cores e contrastes do Modo Escuro e Modo Claro.
-> - **Foco Automático e Elevação de Janela:** Sobreposição temporária da janela sobre todos os programas do Windows ao receber e processar um novo arquivo.
-> - **Retorno Automático ao System Tray:** O aplicativo retorna automaticamente para a bandeja do sistema pós-envio caso tenha iniciado o processamento a partir do System Tray.
-> - **Geração de CSV Baseada na UI:** O arquivo CSV final é exportado estritamente baseado no que o usuário vê e edita na tela.
+> - **Motor Universal de Templates de Texto:** Leitor configurável de arquivos de texto com interface gráfica interativa, destaque sintático por cores, mapeamento granular de colunas e Regex com prévia em tempo real.
+> - **Listagem Completa da Rotina de Inspeção:** Consulta automática de todas as características cadastradas no MeasurLink, visualização com código de cores de tolerância (verde/vermelho) e controles adaptativos para variáveis e atributos.
+> - **Remodelagem da Fila Serial e Desfazer U-WAVE:** Modo concorrente híbrido serial configurável, barreira contra cotas vazias e suporte a comando de desfazer (*Undo*) remoto via U-WAVE.
+> - **Diálogos Modernos e Refinamentos Visuais:** Janelas de diálogo nativas estilizadas nos temas Claro e Escuro, ícones vetoriais contextuais e scrollbars modernos.
 > 
-> [Baixar última versão](https://github.com/ramso-adnarim/SelectML/releases/tag/v1.2.7) 
+> <details>
+> <summary>Histórico de versões anteriores</summary>
+> 
+> - **Versão 1.2.7:** Persistência de regras de confirmação no `%AppData%`, menu de contexto no botão Enviar, foco automático/elevação de janela e geração de CSV estritamente baseada na UI.
+> - **Versão 1.2.6:** Refinamento da Splash Screen e integridade de inicialização.
+> - **Versão 1.2.5:** Modificador dinâmico de nomes e resiliência de catálogo SQL.
+> </details>
+> 
+> [Baixar última versão](https://github.com/ramso-adnarim/SelectML/releases/tag/v1.2.8) 
 
 ## 🗺️ Mapa do repositório
 
