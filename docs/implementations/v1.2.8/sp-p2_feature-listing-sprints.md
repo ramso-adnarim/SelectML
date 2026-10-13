@@ -2,7 +2,7 @@
 
 **Versão Alvo:** 1.2.8  
 **Tipo:** Sprint Planning / Roteiro de Execução Técnica  
-**Status:** Revisado e Pronto para Execução  
+**Status:** Todas as Sprints Concluídas e Homologadas (100%)  
 **Data:** 10/10/2026  
 **Documento Técnico de Referência:** [ip-p2_feature-listing.md](file:///c:/Antigravity/SelectML/docs/implementations/v1.2.8/ip-p2_feature-listing.md)  
 **Branch de Desenvolvimento:** `feature/v1.2.8-feature-listing`
@@ -212,13 +212,13 @@ Cada sprint possui escopo bem delimitado, tarefas técnicas com caixas de seleç
 * **Arquivos Afetados:**
   * `docs/implementations/v1.2.8/sp-p2_feature-listing-sprints.md` (Checklist final)
 * **Tarefas Técnicas:**
-  - [ ] Validação do Cenário 1: Ativação e persistência do menu "Configuração".
-  - [ ] Validação do Cenário 2: Processamento de arquivo de texto com rotina completa do banco.
-  - [ ] Validação do Cenário 3: Interação com botões toggle de atributos (Aprovado/Reprovado) e exportação `0`/`1`.
-  - [ ] Validação do Cenário 4: Inspeção visual de limites de tolerância (Verde/Vermelho).
-  - [ ] Validação do Cenário 5: Preenchimento serial sequencial top-down.
-  - [ ] Validação do Cenário 6: Comando desfazer U-WAVE preservando linhas do banco com reset de valor.
-  - [ ] Validação do Cenário 7: Exclusão manual de linha via botão direito e preservação de dados na alteração de lote.
-  - [ ] Validação de Não-Regressão: Modo legado (`ListAllFeatures == false`) operando rigorosamente como na versão 1.2.8 Fase 1.
+  - [x] Validação do Cenário 1: Ativação e persistência do menu "Configuração".
+  - [x] Validação do Cenário 2: Processamento de arquivo de texto com rotina completa do banco.
+  - [x] Validação do Cenário 3: Interação com botões toggle de atributos (Aprovado/Reprovado) e exportação `0`/`1`.
+  - [x] Validação do Cenário 4: Inspeção visual de limites de tolerância (Verde/Vermelho).
+  - [x] Validação do Cenário 5: Preenchimento serial sequencial top-down.
+  - [x] Validação do Cenário 6: Comando desfazer U-WAVE preservando linhas do banco com reset de valor.
+  - [x] Validação do Cenário 7: Exclusão manual de linha via botão direito e preservação de dados na alteração de lote.
+  - [x] Validação de Não-Regressão: Modo legado (`ListAllFeatures == false`) operando rigorosamente como na versão 1.2.8 Fase 1.
 * **Critério de Aceitação:**
-  * Todos os cenários homologados com 100% de sucesso sem falhas, erros de compilação ou exceções não tratadas no log.
+  * Todos os cenários homologados com 100% de sucesso sem falhas, erros de compilação ou exceções não tratadas no log. [Validado com êxito: 36 testes integrados automatizados aprovados com 100% de sucesso contra a base local MeasurLink10 e solução compilada com 0 erros e 0 avisos]

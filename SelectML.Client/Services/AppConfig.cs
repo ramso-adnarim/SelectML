@@ -74,7 +74,11 @@ namespace SelectML.Client.Services
                     Directory.CreateDirectory(_configDirectory);
                 }
 
-                var options = new JsonSerializerOptions { WriteIndented = true };
+                var options = new JsonSerializerOptions 
+                { 
+                    WriteIndented = true,
+                    NumberHandling = System.Text.Json.Serialization.JsonNumberHandling.AllowNamedFloatingPointLiterals
+                };
                 string json = JsonSerializer.Serialize(config, options);
                 File.WriteAllText(_configPath, json);
             }
@@ -94,7 +98,11 @@ namespace SelectML.Client.Services
             try
             {
                 string json = File.ReadAllText(_configPath);
-                return JsonSerializer.Deserialize<AppConfig>(json) ?? new AppConfig();
+                var options = new JsonSerializerOptions 
+                { 
+                    NumberHandling = System.Text.Json.Serialization.JsonNumberHandling.AllowNamedFloatingPointLiterals 
+                };
+                return JsonSerializer.Deserialize<AppConfig>(json, options) ?? new AppConfig();
             }
             catch (Exception ex)
             {
