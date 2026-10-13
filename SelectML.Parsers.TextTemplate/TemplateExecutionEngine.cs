@@ -52,9 +52,9 @@ namespace SelectML.Parsers.TextTemplate
                 data.PartName = ExtractStringFromLine(lines[partRule.LineIndex - 1], partRule);
             }
 
-            if (string.IsNullOrWhiteSpace(data.PartName) && template.UseFileNameForPartName)
+            if (string.IsNullOrWhiteSpace(data.PartName))
             {
-                // Fallback automático para o nome do arquivo
+                // Fallback automático padrão para o nome do arquivo caso não demarcado no template
                 var parts = fileNameWithoutExt.Split('_');
                 data.PartName = parts.Length > 0 ? parts[0].Trim() : fileNameWithoutExt;
             }
@@ -66,9 +66,9 @@ namespace SelectML.Parsers.TextTemplate
                 data.BatchNumber = ExtractStringFromLine(lines[batchRule.LineIndex - 1], batchRule);
             }
 
-            if (string.IsNullOrWhiteSpace(data.BatchNumber) && template.UseFileNameForBatchNumber)
+            if (string.IsNullOrWhiteSpace(data.BatchNumber))
             {
-                // Fallback automático para o nome do arquivo (se houver prefixo_lote, usa o lote, senão o nome completo)
+                // Fallback automático padrão para o nome do arquivo caso não demarcado no template
                 var parts = fileNameWithoutExt.Split('_');
                 data.BatchNumber = parts.Length > 1 ? parts[1].Trim() : fileNameWithoutExt;
             }

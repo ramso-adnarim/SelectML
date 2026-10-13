@@ -1,50 +1,100 @@
 using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Linq;
+using System.Runtime.CompilerServices;
 
 namespace SelectML.Core.Templates
 {
     /// <summary>
     /// Representa a definição completa de um template para o Leitor de Arquivos de Texto.
     /// </summary>
-    public class TemplateDefinition
+    public class TemplateDefinition : INotifyPropertyChanged
     {
-        public string Id { get; set; } = Guid.NewGuid().ToString();
+        public event PropertyChangedEventHandler? PropertyChanged;
+
+        protected void OnPropertyChanged([CallerMemberName] string? propertyName = null)
+        {
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
+        }
+
+        private string _id = Guid.NewGuid().ToString();
+        private string _name = "Novo Template";
+        private string _fileExtension = ".csv";
+        private bool _useFileNameForPartName = true;
+        private bool _useFileNameForBatchNumber = true;
+        private string _defaultSeparator = ";";
+        private int _dataStartLine = 1;
+        private List<TemplateLineRule> _lineRules = new List<TemplateLineRule>();
+
+        public string Id 
+        { 
+            get => _id; 
+            set { if (_id != value) { _id = value; OnPropertyChanged(); } } 
+        }
 
         /// <summary>
         /// Nome amigável do template (ex: "Torno CNC", "Mitutoyo LH-600", "Vici CSV").
         /// </summary>
-        public string Name { get; set; } = "Novo Template";
+        public string Name 
+        { 
+            get => _name; 
+            set { if (_name != value) { _name = value; OnPropertyChanged(); } } 
+        }
 
         /// <summary>
         /// Extensão dos arquivos que este template deve ler (ex: ".csv", ".txt", ".dat", "*.*").
         /// </summary>
-        public string FileExtension { get; set; } = ".csv";
+        public string FileExtension 
+        { 
+            get => _fileExtension; 
+            set { if (_fileExtension != value) { _fileExtension = value; OnPropertyChanged(); } } 
+        }
 
         /// <summary>
         /// Caso verdadeiro, utiliza o nome do arquivo como Nome da Rotina (PartName) caso não esteja demarcado no texto.
         /// </summary>
-        public bool UseFileNameForPartName { get; set; } = true;
+        public bool UseFileNameForPartName 
+        { 
+            get => _useFileNameForPartName; 
+            set { if (_useFileNameForPartName != value) { _useFileNameForPartName = value; OnPropertyChanged(); } } 
+        }
 
         /// <summary>
         /// Caso verdadeiro, utiliza o nome do arquivo como Número de Lote (BatchNumber) caso não esteja demarcado no texto.
         /// </summary>
-        public bool UseFileNameForBatchNumber { get; set; } = true;
+        public bool UseFileNameForBatchNumber 
+        { 
+            get => _useFileNameForBatchNumber; 
+            set { if (_useFileNameForBatchNumber != value) { _useFileNameForBatchNumber = value; OnPropertyChanged(); } } 
+        }
 
         /// <summary>
         /// Separador de colunas padrão para o arquivo (ex: ";", ",", "\t").
         /// </summary>
-        public string DefaultSeparator { get; set; } = ";";
+        public string DefaultSeparator 
+        { 
+            get => _defaultSeparator; 
+            set { if (_defaultSeparator != value) { _defaultSeparator = value; OnPropertyChanged(); } } 
+        }
 
         /// <summary>
         /// Linha inicial onde os dados começam em arquivos com formato linha a linha (1-based).
         /// </summary>
-        public int DataStartLine { get; set; } = 1;
+        public int DataStartLine 
+        { 
+            get => _dataStartLine; 
+            set { if (_dataStartLine != value) { _dataStartLine = value; OnPropertyChanged(); } } 
+        }
 
         /// <summary>
         /// Lista de regras de linha configuradas pelo operador.
         /// </summary>
-        public List<TemplateLineRule> LineRules { get; set; } = new List<TemplateLineRule>();
+        public List<TemplateLineRule> LineRules 
+        { 
+            get => _lineRules; 
+            set { if (_lineRules != value) { _lineRules = value; OnPropertyChanged(); } } 
+        }
 
         /// <summary>
         /// Valida se o template possui a estrutura mínima necessária para realizar uma medição válida.

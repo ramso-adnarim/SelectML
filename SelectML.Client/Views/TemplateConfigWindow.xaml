@@ -174,26 +174,6 @@
                             </StackPanel>
                         </Grid>
 
-                        <!-- Fallback Checkboxes -->
-                        <Grid Margin="0,0,0,14">
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="*"/>
-                                <ColumnDefinition Width="*"/>
-                            </Grid.ColumnDefinitions>
-
-                            <CheckBox Grid.Column="0" IsChecked="{Binding UseFileNameForPartName}" 
-                                      VerticalAlignment="Center">
-                                <TextBlock Text="Usar nome do arquivo para Rotina se não marcado" 
-                                           Foreground="{DynamicResource Brush.Text.Primary}" FontSize="12"/>
-                            </CheckBox>
-
-                            <CheckBox Grid.Column="1" IsChecked="{Binding UseFileNameForBatchNumber}" 
-                                      VerticalAlignment="Center">
-                                <TextBlock Text="Usar nome do arquivo para Lote se não marcado" 
-                                           Foreground="{DynamicResource Brush.Text.Primary}" FontSize="12"/>
-                            </CheckBox>
-                        </Grid>
-
                         <!-- Tabela de Regras Mapeadas -->
                         <TextBlock Text="Regras de Interpretação Mapeadas:" FontWeight="SemiBold" FontSize="12"
                                    Foreground="{DynamicResource Brush.Text.Primary}" Margin="0,0,0,6"/>

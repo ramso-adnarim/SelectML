@@ -67,8 +67,6 @@ namespace SelectML.Client.ViewModels
                     OnPropertyChanged(nameof(TemplateName));
                     OnPropertyChanged(nameof(FileExtension));
                     OnPropertyChanged(nameof(DefaultSeparator));
-                    OnPropertyChanged(nameof(UseFileNameForPartName));
-                    OnPropertyChanged(nameof(UseFileNameForBatchNumber));
                     RefreshCurrentRules();
                     UpdateValidationStatus();
                 }
@@ -113,34 +111,6 @@ namespace SelectML.Client.ViewModels
                 {
                     SelectedTemplate.DefaultSeparator = value;
                     OnPropertyChanged();
-                }
-            }
-        }
-
-        public bool UseFileNameForPartName
-        {
-            get => SelectedTemplate?.UseFileNameForPartName ?? true;
-            set
-            {
-                if (SelectedTemplate != null && SelectedTemplate.UseFileNameForPartName != value)
-                {
-                    SelectedTemplate.UseFileNameForPartName = value;
-                    OnPropertyChanged();
-                    UpdateValidationStatus();
-                }
-            }
-        }
-
-        public bool UseFileNameForBatchNumber
-        {
-            get => SelectedTemplate?.UseFileNameForBatchNumber ?? true;
-            set
-            {
-                if (SelectedTemplate != null && SelectedTemplate.UseFileNameForBatchNumber != value)
-                {
-                    SelectedTemplate.UseFileNameForBatchNumber = value;
-                    OnPropertyChanged();
-                    UpdateValidationStatus();
                 }
             }
         }
@@ -273,10 +243,7 @@ namespace SelectML.Client.ViewModels
             if (SelectedTemplate.IsValid(out string error))
             {
                 IsTemplateValid = true;
-                string fallbackInfo = (SelectedTemplate.UseFileNameForPartName || SelectedTemplate.UseFileNameForBatchNumber)
-                    ? " (Rotina/Lote utilizarão nome do arquivo se não mapeados)"
-                    : "";
-                ValidationMessage = $"Template válido e pronto para uso.{fallbackInfo}";
+                ValidationMessage = "Template válido e pronto para uso.";
             }
             else
             {
