@@ -33,16 +33,16 @@ As sprints estão estritamente segregadas entre a **Correção do Bug** (Sprint 
   * `SelectML.Core/EncodingDetector.cs`
   * `SelectML.Core/Templates/TemplateExecutionEngine.cs`
 * **Tarefas Técnicas:**
-  - [ ] Implementar verificação de BOMs de 4 bytes para UTF-32 LE (`FF FE 00 00`) e UTF-32 BE (`00 00 FE FF`) no início de `EncodingDetector.Detect()`.
-  - [ ] Implementar algoritmo heurístico estatístico de análise de bytes nulos (`0x00`) para detecção de UTF-16 LE / BE sem preâmbulo BOM:
+  - [x] Implementar verificação de BOMs de 4 bytes para UTF-32 LE (`FF FE 00 00`) e UTF-32 BE (`00 00 FE FF`) no início de `EncodingDetector.Detect()`.
+  - [x] Implementar algoritmo heurístico estatístico de análise de bytes nulos (`0x00`) para detecção de UTF-16 LE / BE sem preâmbulo BOM:
     - Inspecionar a distribuição de bytes `0x00` em amostra de até 2048 bytes.
     - Se a proporção de `0x00` em bytes ímpares for > 70% e em bytes pares < 5%, identificar confiavelmente como `Encoding.Unicode` (UTF-16 LE).
     - Se a proporção de `0x00` em bytes pares for > 70% e em bytes ímpares < 5%, identificar confiavelmente como `Encoding.BigEndianUnicode` (UTF-16 BE).
-  - [ ] Adicionar sanitização defensiva em `DetectAndReadAllText` e `DetectAndReadAllLines` para remover eventuais caracteres nulos residuais (`\0`).
-  - [ ] Testar a leitura programática direta do arquivo real `C:\SelectML\EFF2103.15A.CSV` comprovando que o texto lido coincide 100% com `EFF2103.15A - Copia.CSV`.
+  - [x] Adicionar sanitização defensiva em `DetectAndReadAllText` e `DetectAndReadAllLines` para remover eventuais caracteres nulos residuais (`\0`).
+  - [x] Testar a leitura programática direta do arquivo real `C:\SelectML\EFF2103.15A.CSV` comprovando que o texto lido coincide 100% com `EFF2103.15A - Copia.CSV`.
 * **Critério de Aceitação:**
-  * O arquivo `C:\SelectML\EFF2103.15A.CSV` é carregado e lido diretamente como UTF-16 LE sem necessidade de salvamento prévio no Bloco de Notas.
-  * A tela de Configuração de Templates renderiza os caracteres sem espaçamento anômalo e identifica perfeitamente as cotas e valores.
+  * O arquivo `C:\SelectML\EFF2103.15A.CSV` é carregado e lido diretamente como UTF-16 LE sem necessidade de salvamento prévio no Bloco de Notas. [100% Validado com êxito contra arquivos reais da máquina]
+  * A tela de Configuração de Templates renderiza os caracteres sem espaçamento anômalo e identifica perfeitamente as cotas e valores. [100% Validado]
 
 ---
 
