@@ -1172,7 +1172,7 @@ namespace SelectML.Client.ViewModels
             {
                 if (string.IsNullOrWhiteSpace(WatchDirectory) || !Directory.Exists(WatchDirectory))
                 {
-                    System.Windows.MessageBox.Show("Selecione um diretório válido.", "Erro", MessageBoxButton.OK, MessageBoxImage.Error);
+                    System.Windows.MessageBox.Show("Selecione uma pasta válida.", "Erro", MessageBoxButton.OK, MessageBoxImage.Error);
                     Log.Warning("Invalid watch directory selected: {Directory}", WatchDirectory);
                     return;
                 }
@@ -1190,7 +1190,7 @@ namespace SelectML.Client.ViewModels
                 {
                     System.Windows.MessageBox.Show($"Falha de conexão com o banco de dados:\n{ex.Message}", "Erro de Conexão", MessageBoxButton.OK, MessageBoxImage.Error);
                     Log.Error(ex, "Failed to connect to database during save config");
-                    StatusMessage = "Falha ao iniciar. Verifique as configurações de banco de dados.";
+                    StatusMessage = "Falha ao iniciar - Verifique as configurações de banco de dados.";
                     return; // Return immediately, do not lock config or start monitoring!
                 }
 
@@ -1409,7 +1409,7 @@ namespace SelectML.Client.ViewModels
                             DbConnectionStatus = "Failed";
                             lastFailedState = true;
                             // Balloon tip warning is only shown ONCE when it transitions to Failed
-                            RequestShowBalloonTip?.Invoke("SelectML - Erro", "Falha de conexão com DB. Tentando reconectar...", "Error");
+                            RequestShowBalloonTip?.Invoke("SelectML - Erro", "Falha de conexão, tentando reconectar...", "Error");
                         }
 
                         if (!isReconnectingLogged)
@@ -1771,8 +1771,8 @@ namespace SelectML.Client.ViewModels
                                   StatusMessage = hasPendingRoutineItems
                                       ? "Rotina carregada com características pendentes. Preencha e clique em Enviar."
                                       : (hasUnrecognized
-                                          ? "Validação necessária. Verifique e envie."
-                                          : "Dados carregados. Verifique e clique em Enviar.");
+                                          ? "Validação necessária - Verifique e envie."
+                                          : "Dados carregados - Verifique e clique em Enviar.");
                                   RequestRestoreWindow?.Invoke();
                               }
                               else if (hasUnrecognized)
@@ -1789,7 +1789,7 @@ namespace SelectML.Client.ViewModels
                                  {
                                      // Fallback to manual if no rule established
                                      IsPendingAction = true;
-                                     StatusMessage = "Validação necessária. Verifique e envie.";
+                                     StatusMessage = "Validação necessária - Verifique e envie.";
                                      RequestRestoreWindow?.Invoke();
                                  }
                              }
@@ -1802,7 +1802,7 @@ namespace SelectML.Client.ViewModels
                          {
                              IsPendingAction = true;
                              _isProcessingFile = true; // Marca como Modo Arquivo (Bloqueia Serial)
-                             StatusMessage = "Dados carregados. Verifique e clique em Enviar.";
+                             StatusMessage = "Dados carregados - Verifique e clique em Enviar.";
                              RequestRestoreWindow?.Invoke();
                          }
                      });

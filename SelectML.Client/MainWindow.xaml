@@ -481,7 +481,7 @@
                             </StackPanel.Triggers>
                         </StackPanel>
                     </MenuItem.Header>
-                    <MenuItem Header="Ativar" ToolTip="Aplica a regra Default" IsCheckable="True" IsChecked="{Binding IsNameModifierDefaultActive}"/>
+                    <MenuItem Header="Ativar" ToolTip="Aplica a regra padrão" IsCheckable="True" IsChecked="{Binding IsNameModifierDefaultActive}"/>
                     <MenuItem Header="Desativar" IsCheckable="True" IsChecked="{Binding IsNameModifierDisabled}"/>
                     <MenuItem Header="Personalizado" IsCheckable="True" IsChecked="{Binding IsNameModifierCustomActive}" Command="{Binding OpenNameModifierConfigCommand}"/>
                 </MenuItem>
@@ -532,7 +532,7 @@
                                      VerticalContentAlignment="Center"
                                      PreviewTextInput="OnTraceabilityTextInput"
                                      DataObject.Pasting="OnTraceabilityPasting"
-                                     ToolTip="Número de Série enviado ao MeasurLink (Opcional)">
+                                     ToolTip="Preenche o campo &quot;Número de série&quot; no MeasurLink">
                                 <TextBox.Style>
                                     <Style TargetType="TextBox" BasedOn="{StaticResource {x:Type TextBox}}">
                                         <Setter Property="Background" Value="{DynamicResource Brush.Surface.Popup}"/>
@@ -543,7 +543,7 @@
                                 </TextBox.Style>
                             </TextBox>
                             <!-- Nota do Campo Fixo -->
-                            <TextBlock Text="*Inserido como “Número de Série”"
+                            <TextBlock Text="*Inserido como &quot;Número de série&quot;"
                                        FontSize="10"
                                        Foreground="{DynamicResource Brush.Text.Secondary}"
                                        Margin="2,2,0,8"
@@ -864,7 +864,7 @@
                         
                         <StackPanel Orientation="Horizontal" Margin="0,5,0,5">
                             <CheckBox IsChecked="{Binding UseOutputDirectory}" IsEnabled="{Binding IsConfigEnabled}" VerticalAlignment="Center" Margin="0,0,5,0" Foreground="{DynamicResource Brush.Text.Primary}"/>
-                            <TextBlock Text="Diretório de Saída Específico" Style="{StaticResource LabelText}" VerticalAlignment="Center" Margin="0,0,0,0"/>
+                            <TextBlock Text="Pasta de saída específica" Style="{StaticResource LabelText}" VerticalAlignment="Center" Margin="0,0,0,0"/>
                         </StackPanel>
                         <Grid IsEnabled="{Binding IsConfigEnabled}">
                             <Grid.ColumnDefinitions>
@@ -881,7 +881,7 @@
                     
                     <!-- Right: DB Config -->
                     <StackPanel Grid.Column="2">
-                        <TextBlock Text="Banco de Dados" Style="{StaticResource LabelText}"/>
+                        <TextBlock Text="Banco de dados" Style="{StaticResource LabelText}"/>
                         <Border BorderThickness="1" CornerRadius="6" Padding="10">
                             <Border.Style>
                                 <Style TargetType="Border">
@@ -937,7 +937,7 @@
                                     </StackPanel>
                                 </Grid>
                                 
-                                <TextBlock Text="Base de Dados" FontSize="11" Foreground="{DynamicResource Brush.Text.Secondary}" Margin="0,0,0,5"/>
+                                <TextBlock Text="Base de dados" FontSize="11" Foreground="{DynamicResource Brush.Text.Secondary}" Margin="0,0,0,5"/>
                                 <Grid>
                                     <Grid.ColumnDefinitions>
                                         <ColumnDefinition Width="*"/>
@@ -988,7 +988,7 @@
                     </Grid.ColumnDefinitions>
                     
                     <StackPanel Grid.Column="0">
-                        <TextBlock Text="Nome da corrida/lote" Style="{StaticResource LabelText}"/>
+                        <TextBlock Text="Nome da corrida" Style="{StaticResource LabelText}"/>
                         <TextBox Text="{Binding BatchNumber, UpdateSourceTrigger=PropertyChanged}"
                                  IsReadOnly="{Binding IsPendingAction, Converter={StaticResource InverseBooleanConverter}}"
                                  FontSize="16" FontWeight="SemiBold" Height="40">
@@ -1166,15 +1166,15 @@
                     Style="{StaticResource PrimaryButton}"
                     ContextMenuService.ShowOnDisabled="True"
                     ToolTipService.ShowOnDisabled="True"
-                    ToolTip="Clique esquerdo para Enviar. Clique direito para opções de preferências de envio.">
+                    ToolTip="Botão esquerdo para Enviar / Botão direito para opções de preferências de envio.">
                 <Button.ContextMenu>
                     <ContextMenu>
-                        <MenuItem Header="Enviar apenas reconhecidas (Sempre)" 
+                        <MenuItem Header="Sempre enviar apenas características reconhecidas" 
                                   IsCheckable="True" 
                                   IsChecked="{Binding IsConfirmationRecognizedOnly, Mode=OneWay}"
                                   Command="{Binding SetConfirmationActionCommand}"
                                   CommandParameter="SendRecognized"/>
-                        <MenuItem Header="Enviar todas as características (Sempre)" 
+                        <MenuItem Header="Sempre enviar todas as características" 
                                   IsCheckable="True" 
                                   IsChecked="{Binding IsConfirmationSendAll, Mode=OneWay}"
                                   Command="{Binding SetConfirmationActionCommand}"

@@ -1,0 +1,334 @@
+﻿<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Revisor Interativo de Textos - SelectML (v1.2.9)</title>
+    <style>
+        :root {
+            --bg-primary: #0F172A;
+            --bg-card: #1E293B;
+            --bg-input: #0F172A;
+            --border-base: #334155;
+            --text-primary: #F8FAFC;
+            --text-secondary: #94A3B8;
+            --accent: #2563EB;
+            --accent-hover: #1D4ED8;
+            --success: #10B981;
+            --badge-bg: #1E3A8A;
+            --badge-text: #93C5FD;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
+        body { background: var(--bg-primary); color: var(--text-primary); padding: 24px; }
+        .container { max-width: 1100px; margin: 0 auto; }
+        
+        header {
+            background: var(--bg-card);
+            padding: 20px 24px;
+            border-radius: 12px;
+            border: 1px solid var(--border-base);
+            margin-bottom: 24px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 16px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+        }
+        h1 { font-size: 20px; font-weight: 700; color: #FFFFFF; }
+        .subtitle { font-size: 13px; color: var(--text-secondary); margin-top: 4px; }
+
+        .actions { display: flex; gap: 12px; align-items: center; }
+        button {
+            background: var(--accent);
+            color: #FFFFFF;
+            border: none;
+            padding: 10px 18px;
+            font-size: 14px;
+            font-weight: 600;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+        button:hover { background: var(--accent-hover); transform: translateY(-1px); }
+        button.secondary { background: #334155; }
+        button.secondary:hover { background: #475569; }
+
+        .toolbar {
+            display: flex;
+            gap: 16px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+        .search-box {
+            flex: 1;
+            min-width: 250px;
+            position: relative;
+        }
+        input.search {
+            width: 100%;
+            padding: 10px 16px;
+            background: var(--bg-card);
+            border: 1px solid var(--border-base);
+            border-radius: 8px;
+            color: var(--text-primary);
+            font-size: 14px;
+        }
+        input.search:focus { outline: none; border-color: var(--accent); }
+
+        .stats-badge {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            background: var(--bg-card);
+            padding: 8px 16px;
+            border-radius: 8px;
+            border: 1px solid var(--border-base);
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--badge-text);
+        }
+
+        .items-list { display: flex; flex-direction: column; gap: 12px; }
+
+        .item-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-base);
+            border-radius: 10px;
+            padding: 16px;
+            transition: border-color 0.2s ease;
+        }
+        .item-card:focus-within {
+            border-color: var(--accent);
+            box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.25);
+        }
+        .item-card.has-change {
+            border-color: var(--success);
+        }
+
+        .item-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+            font-size: 12px;
+        }
+        .meta-badges { display: flex; gap: 8px; align-items: center; }
+        .badge {
+            background: var(--badge-bg);
+            color: var(--badge-text);
+            padding: 3px 8px;
+            border-radius: 4px;
+            font-size: 11px;
+            font-weight: 600;
+        }
+        .file-info { color: var(--text-secondary); font-family: monospace; font-size: 11px; }
+
+        .current-text-box {
+            background: #0B1120;
+            padding: 10px 14px;
+            border-radius: 6px;
+            border-left: 3px solid var(--accent);
+            margin-bottom: 10px;
+            font-size: 14px;
+            color: #E2E8F0;
+        }
+        .context-label { font-size: 11px; color: var(--text-secondary); margin-bottom: 4px; display: block; }
+
+        .input-row { display: flex; gap: 8px; align-items: center; }
+        .input-field {
+            flex: 1;
+            padding: 10px 14px;
+            background: var(--bg-input);
+            border: 1px solid var(--border-base);
+            border-radius: 6px;
+            color: #FFFFFF;
+            font-size: 14px;
+            transition: all 0.2s ease;
+        }
+        .input-field:focus { outline: none; border-color: var(--accent); background: #131E35; }
+        .input-field::placeholder { color: #64748B; font-size: 13px; }
+        .enter-tip { font-size: 11px; color: var(--text-secondary); white-space: nowrap; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <div>
+                <h1>Revisor de Textos - SelectML (v1.2.9)</h1>
+                <div class="subtitle">Digite a alteração desejada e tecle <strong>ENTER</strong> para avançar ao próximo texto automaticamente.</div>
+            </div>
+            <div class="actions">
+                <button onclick="downloadCSV()">💾 Salvar e Baixar CSV Atualizado</button>
+            </div>
+        </header>
+
+        <div class="toolbar">
+            <div class="search-box">
+                <input type="text" class="search" id="searchInput" placeholder="Buscar texto, contexto ou módulo..." oninput="filterItems()">
+            </div>
+            <div class="stats-badge" id="statsBadge">
+                Carregando...
+            </div>
+        </div>
+
+        <div class="items-list" id="itemsContainer"></div>
+    </div>
+
+    <script>
+        const initialData = [{"Id":"TXT_001","Module":"1. Tela Principal (Layout XAML)","File":"MainWindow.xaml","Line":"11","Type":"Título Janela","Context":"Título da aplicação na barra do SO","CurrentText":"SelectML","NewText":""},{"Id":"TXT_002","Module":"1. Tela Principal (Layout XAML)","File":"MainWindow.xaml","Line":"448","Type":"Rótulo (Label)","Context":"Texto estático de interface","CurrentText":"Conexão serial","NewText":""},{"Id":"TXT_003","Module":"1. Tela Principal (Layout XAML)","File":"MainWindow.xaml","Line":"468","Type":"Rótulo (Label)","Context":"Texto estático de interface","CurrentText":"Modificador de nomes","NewText":""},{"Id":"TXT_004","Module":"1. Tela Principal (Layout XAML)","File":"MainWindow.xaml","Line":"484","Type":"Dica (ToolTip)","Context":"Balão de ajuda ao passar o mouse","CurrentText":"Aplica a regra Default","NewText":""},{"Id":"TXT_005","Module":"1. Tela Principal (Layout XAML)","File":"MainWindow.xaml","Line":"484","Type":"Menu","Context":"Item do menu superior","CurrentText":"Ativar","NewText":""},{"Id":"TXT_006","Module":"1. Tela Principal (Layout XAML)","File":"MainWindow.xaml","Line":"485","Type":"Menu","Context":"Item do menu superior","CurrentText":"Desativar","NewText":""},{"Id":"TXT_007","Module":"1. Tela Principal (Layout XAML)","File":"MainWindow.xaml","Line":"486","Type":"Menu","Context":"Item do menu superior","CurrentText":"Personalizado","NewText":""},{"Id":"TXT_008","Module":"1. Tela Principal (Layout XAML)","File":"MainWindow.xaml","Line":"493","Type":"Rótulo (Label)","Context":"Texto estático de interface","CurrentText":"Rastreabilidade","NewText":""},{"Id":"TXT_009","Module":"1. Tela Principal (Layout XAML)","File":"MainWindow.xaml","Line":"498","Type":"Rótulo (Label)","Context":"Texto estático de interface","CurrentText":"Configuração","NewText":""},{"Id":"TXT_010","Module":"1. Tela Principal (Layout XAML)","File":"MainWindow.xaml","Line":"500","Type":"Menu","Context":"Item do menu superior","CurrentText":"Listar todas as características","NewText":""},{"Id":"TXT_011","Module":"1. Tela Principal (Layout XAML)","File":"MainWindow.xaml","Line":"535","Type":"Dica (ToolTip)","Context":"Balão de ajuda ao passar o mouse","CurrentText":"Número de Série enviado ao MeasurLink (Opcional)","NewText":""},{"Id":"TXT_012","Module":"1. Tela Principal (Layout XAML)","File":"MainWindow.xaml","Line":"546","Type":"Rótulo (Label)","Context":"Texto estático de interface","CurrentText":"*Inserido como “Número de Série”","NewText":""},{"Id":"TXT_013","Module":"1. Tela Principal (Layout XAML)","File":"MainWindow.xaml","Line":"560","Type":"Rótulo (Label)","Context":"Texto estático de interface","CurrentText":"Nome","NewText":""},{"Id":"TXT_014","Module":"1. Tela Principal (Layout XAML)","File":"MainWindow.xaml","Line":"562","Type":"Rótulo (Label)","Context":"Texto estático de interface","CurrentText":"Valor","NewText":""},{"Id":"TXT_015","Module":"1. Tela Principal (Layout XAML)","File":"MainWindow.xaml","Line":"635","Type":"Dica (ToolTip)","Context":"Balão de ajuda ao passar o mouse","CurrentText":"Remover esta rastreabilidade","NewText":""},{"Id":"TXT_016","Module":"1. Tela Principal (Layout XAML)","File":"MainWindow.xaml","Line":"680","Type":"Dica (ToolTip)","Context":"Balão de ajuda ao passar o mouse","CurrentText":"Adicionar nova rastreabilidade","NewText":""},{"Id":"TXT_017","Module":"1. Tela Principal (Layout XAML)","File":"MainWindow.xaml","Line":"721","Type":"Dica (ToolTip)","Context":"Balão de ajuda ao passar o mouse","CurrentText":"Alternar tema (Claro/Escuro)","NewText":""},{"Id":"TXT_018","Module":"1. Tela Principal (Layout XAML)","File":"MainWindow.xaml","Line":"752","Type":"Rótulo (Label)","Context":"Texto estático de interface","CurrentText":"Configuração","NewText":""},{"Id":"TXT_019","Module":"1. Tela Principal (Layout XAML)","File":"MainWindow.xaml","Line":"815","Type":"Rótulo (Label)","Context":"Texto estático de interface","CurrentText":"Equipamento","NewText":""},{"Id":"TXT_020","Module":"1. Tela Principal (Layout XAML)","File":"MainWindow.xaml","Line":"829","Type":"Dica (ToolTip)","Context":"Balão de ajuda ao passar o mouse","CurrentText":"Configuração de Templates","NewText":""},{"Id":"TXT_021","Module":"1. Tela Principal (Layout XAML)","File":"MainWindow.xaml","Line":"852","Type":"Rótulo (Label)","Context":"Texto estático de interface","CurrentText":"Diretório de monitoramento","NewText":""},{"Id":"TXT_022","Module":"1. Tela Principal (Layout XAML)","File":"MainWindow.xaml","Line":"859","Type":"Botão","Context":"Rótulo de botão","CurrentText":"...","NewText":""},{"Id":"TXT_023","Module":"1. Tela Principal (Layout XAML)","File":"MainWindow.xaml","Line":"867","Type":"Rótulo (Label)","Context":"Texto estático de interface","CurrentText":"Diretório de Saída Específico","NewText":""},{"Id":"TXT_024","Module":"1. Tela Principal (Layout XAML)","File":"MainWindow.xaml","Line":"875","Type":"Botão","Context":"Rótulo de botão","CurrentText":"...","NewText":""},{"Id":"TXT_025","Module":"1. Tela Principal (Layout XAML)","File":"MainWindow.xaml","Line":"884","Type":"Rótulo (Label)","Context":"Texto estático de interface","CurrentText":"Banco de Dados","NewText":""},{"Id":"TXT_026","Module":"1. Tela Principal (Layout XAML)","File":"MainWindow.xaml","Line":"915","Type":"Rótulo (Label)","Context":"Texto estático de interface","CurrentText":"Servidor","NewText":""},{"Id":"TXT_027","Module":"1. Tela Principal (Layout XAML)","File":"MainWindow.xaml","Line":"931","Type":"Rótulo (Label)","Context":"Texto estático de interface","CurrentText":"Login","NewText":""},{"Id":"TXT_028","Module":"1. Tela Principal (Layout XAML)","File":"MainWindow.xaml","Line":"935","Type":"Rótulo (Label)","Context":"Texto estático de interface","CurrentText":"Senha","NewText":""},{"Id":"TXT_029","Module":"1. Tela Principal (Layout XAML)","File":"MainWindow.xaml","Line":"940","Type":"Rótulo (Label)","Context":"Texto estático de interface","CurrentText":"Base de Dados","NewText":""},{"Id":"TXT_030","Module":"1. Tela Principal (Layout XAML)","File":"MainWindow.xaml","Line":"957","Type":"Dica (ToolTip)","Context":"Balão de ajuda ao passar o mouse","CurrentText":"Atualizar lista","NewText":""},{"Id":"TXT_031","Module":"1. Tela Principal (Layout XAML)","File":"MainWindow.xaml","Line":"991","Type":"Rótulo (Label)","Context":"Texto estático de interface","CurrentText":"Nome da corrida/lote","NewText":""},{"Id":"TXT_032","Module":"1. Tela Principal (Layout XAML)","File":"MainWindow.xaml","Line":"1049","Type":"Rótulo (Label)","Context":"Texto estático de interface","CurrentText":"Nome da peça/rotina","NewText":""},{"Id":"TXT_033","Module":"1. Tela Principal (Layout XAML)","File":"MainWindow.xaml","Line":"1107","Type":"Rótulo (Label)","Context":"Texto estático de interface","CurrentText":"Resultados:","NewText":""},{"Id":"TXT_034","Module":"1. Tela Principal (Layout XAML)","File":"MainWindow.xaml","Line":"1117","Type":"Coluna Tabela","Context":"Cabeçalho de coluna da tabela de cotas","CurrentText":"Característica","NewText":""},{"Id":"TXT_035","Module":"1. Tela Principal (Layout XAML)","File":"MainWindow.xaml","Line":"1120","Type":"Coluna Tabela","Context":"Cabeçalho de coluna da tabela de cotas","CurrentText":"Valor","NewText":""},{"Id":"TXT_036","Module":"1. Tela Principal (Layout XAML)","File":"MainWindow.xaml","Line":"1132","Type":"Menu","Context":"Item do menu superior","CurrentText":"Excluir valor","NewText":""},{"Id":"TXT_037","Module":"1. Tela Principal (Layout XAML)","File":"MainWindow.xaml","Line":"1162","Type":"Botão","Context":"Rótulo de botão","CurrentText":"Cancelar","NewText":""},{"Id":"TXT_038","Module":"1. Tela Principal (Layout XAML)","File":"MainWindow.xaml","Line":"1165","Type":"Botão","Context":"Rótulo de botão","CurrentText":"Enviar","NewText":""},{"Id":"TXT_039","Module":"1. Tela Principal (Layout XAML)","File":"MainWindow.xaml","Line":"1169","Type":"Dica (ToolTip)","Context":"Balão de ajuda ao passar o mouse","CurrentText":"Clique esquerdo para Enviar. Clique direito para opções de preferências de envio.","NewText":""},{"Id":"TXT_040","Module":"1. Tela Principal (Layout XAML)","File":"MainWindow.xaml","Line":"1172","Type":"Menu","Context":"Item do menu superior","CurrentText":"Enviar apenas reconhecidas (Sempre)","NewText":""},{"Id":"TXT_041","Module":"1. Tela Principal (Layout XAML)","File":"MainWindow.xaml","Line":"1177","Type":"Menu","Context":"Item do menu superior","CurrentText":"Enviar todas as características (Sempre)","NewText":""},{"Id":"TXT_042","Module":"1. Tela Principal (Layout XAML)","File":"MainWindow.xaml","Line":"1183","Type":"Menu","Context":"Item do menu superior","CurrentText":"Sempre perguntar ao enviar","NewText":""},{"Id":"TXT_043","Module":"2. Tela Principal (Mensagens e Alertas ViewModel)","File":"MainViewModel.cs","Line":"893","Type":"Status Barra Inferior","Context":"Mensagem exibida no rodapé da janela","CurrentText":"Reiniciando para aplicar atualização...","NewText":""},{"Id":"TXT_044","Module":"2. Tela Principal (Mensagens e Alertas ViewModel)","File":"MainViewModel.cs","Line":"1161","Type":"Texto Botão Ação","Context":"Botão Iniciar/Parar Monitoramento","CurrentText":"Salvar e Iniciar","NewText":""},{"Id":"TXT_045","Module":"2. Tela Principal (Mensagens e Alertas ViewModel)","File":"MainViewModel.cs","Line":"1162","Type":"Status Barra Inferior","Context":"Mensagem exibida no rodapé da janela","CurrentText":"Monitoramento pausado. Edite as configurações.","NewText":""},{"Id":"TXT_046","Module":"2. Tela Principal (Mensagens e Alertas ViewModel)","File":"MainViewModel.cs","Line":"1175","Type":"Caixa Alerta (MessageBox)","Context":"Mensagem de diálogo modal","CurrentText":"Selecione um diretório válido.","NewText":""},{"Id":"TXT_047","Module":"2. Tela Principal (Mensagens e Alertas ViewModel)","File":"MainViewModel.cs","Line":"1175","Type":"Título Alerta (MessageBox)","Context":"Título do diálogo modal","CurrentText":"Erro","NewText":""},{"Id":"TXT_048","Module":"2. Tela Principal (Mensagens e Alertas ViewModel)","File":"MainViewModel.cs","Line":"1180","Type":"Status Barra Inferior","Context":"Mensagem exibida no rodapé da janela","CurrentText":"Validando conexão com o banco de dados...","NewText":""},{"Id":"TXT_049","Module":"2. Tela Principal (Mensagens e Alertas ViewModel)","File":"MainViewModel.cs","Line":"1193","Type":"Status Barra Inferior","Context":"Mensagem exibida no rodapé da janela","CurrentText":"Falha ao iniciar. Verifique as configurações de banco de dados.","NewText":""},{"Id":"TXT_050","Module":"2. Tela Principal (Mensagens e Alertas ViewModel)","File":"MainViewModel.cs","Line":"1225","Type":"Texto Botão Ação","Context":"Botão Iniciar/Parar Monitoramento","CurrentText":"Editar","NewText":""},{"Id":"TXT_051","Module":"2. Tela Principal (Mensagens e Alertas ViewModel)","File":"MainViewModel.cs","Line":"1234","Type":"Status Barra Inferior","Context":"Mensagem exibida no rodapé da janela","CurrentText":"Listando bases de dados...","NewText":""},{"Id":"TXT_052","Module":"2. Tela Principal (Mensagens e Alertas ViewModel)","File":"MainViewModel.cs","Line":"1271","Type":"Status Barra Inferior","Context":"Mensagem exibida no rodapé da janela","CurrentText":"Lista de bases de dados atualizada.","NewText":""},{"Id":"TXT_053","Module":"2. Tela Principal (Mensagens e Alertas ViewModel)","File":"MainViewModel.cs","Line":"1276","Type":"Status Barra Inferior","Context":"Mensagem exibida no rodapé da janela","CurrentText":"Erro ao conectar no banco de dados.","NewText":""},{"Id":"TXT_054","Module":"2. Tela Principal (Mensagens e Alertas ViewModel)","File":"MainViewModel.cs","Line":"1308","Type":"Status Barra Inferior","Context":"Mensagem exibida no rodapé da janela","CurrentText":"Monitoramento de arquivo: Desativado (Modo Serial)","NewText":""},{"Id":"TXT_055","Module":"2. Tela Principal (Mensagens e Alertas ViewModel)","File":"MainViewModel.cs","Line":"1388","Type":"Notificação Tray Título","Context":"Título da notificação do Windows","CurrentText":"SelectML - Sucesso","NewText":""},{"Id":"TXT_056","Module":"2. Tela Principal (Mensagens e Alertas ViewModel)","File":"MainViewModel.cs","Line":"1388","Type":"Notificação Tray Mensagem","Context":"Corpo da notificação do Windows","CurrentText":"Conexão com o banco de dados reestabelecida.","NewText":""},{"Id":"TXT_057","Module":"2. Tela Principal (Mensagens e Alertas ViewModel)","File":"MainViewModel.cs","Line":"1412","Type":"Notificação Tray Título","Context":"Título da notificação do Windows","CurrentText":"SelectML - Erro","NewText":""},{"Id":"TXT_058","Module":"2. Tela Principal (Mensagens e Alertas ViewModel)","File":"MainViewModel.cs","Line":"1412","Type":"Notificação Tray Mensagem","Context":"Corpo da notificação do Windows","CurrentText":"Falha de conexão com DB. Tentando reconectar...","NewText":""},{"Id":"TXT_059","Module":"2. Tela Principal (Mensagens e Alertas ViewModel)","File":"MainViewModel.cs","Line":"1792","Type":"Status Barra Inferior","Context":"Mensagem exibida no rodapé da janela","CurrentText":"Validação necessária. Verifique e envie.","NewText":""},{"Id":"TXT_060","Module":"2. Tela Principal (Mensagens e Alertas ViewModel)","File":"MainViewModel.cs","Line":"1805","Type":"Status Barra Inferior","Context":"Mensagem exibida no rodapé da janela","CurrentText":"Dados carregados. Verifique e clique em Enviar.","NewText":""},{"Id":"TXT_061","Module":"2. Tela Principal (Mensagens e Alertas ViewModel)","File":"MainViewModel.cs","Line":"2127","Type":"Status Barra Inferior","Context":"Mensagem exibida no rodapé da janela","CurrentText":"Erro: Existem características sem nome na lista.","NewText":""},{"Id":"TXT_062","Module":"2. Tela Principal (Mensagens e Alertas ViewModel)","File":"MainViewModel.cs","Line":"2135","Type":"Status Barra Inferior","Context":"Mensagem exibida no rodapé da janela","CurrentText":"Erro: Nomes de características duplicados detectados.","NewText":""},{"Id":"TXT_063","Module":"2. Tela Principal (Mensagens e Alertas ViewModel)","File":"MainViewModel.cs","Line":"2143","Type":"Status Barra Inferior","Context":"Mensagem exibida no rodapé da janela","CurrentText":"Aviso: Existem características aguardando medição.","NewText":""},{"Id":"TXT_064","Module":"2. Tela Principal (Mensagens e Alertas ViewModel)","File":"MainViewModel.cs","Line":"2240","Type":"Status Barra Inferior","Context":"Mensagem exibida no rodapé da janela","CurrentText":"Salvando dados...","NewText":""},{"Id":"TXT_065","Module":"2. Tela Principal (Mensagens e Alertas ViewModel)","File":"MainViewModel.cs","Line":"2385","Type":"Status Barra Inferior","Context":"Mensagem exibida no rodapé da janela","CurrentText":"Aguardando...","NewText":""},{"Id":"TXT_066","Module":"2. Tela Principal (Mensagens e Alertas ViewModel)","File":"MainViewModel.cs","Line":"2448","Type":"Status Barra Inferior","Context":"Mensagem exibida no rodapé da janela","CurrentText":"Dados seriais recuperados do buffer.","NewText":""},{"Id":"TXT_067","Module":"2. Tela Principal (Mensagens e Alertas ViewModel)","File":"MainViewModel.cs","Line":"2505","Type":"Status Barra Inferior","Context":"Mensagem exibida no rodapé da janela","CurrentText":"Recebendo dados seriais...","NewText":""},{"Id":"TXT_068","Module":"2. Tela Principal (Mensagens e Alertas ViewModel)","File":"MainViewModel.cs","Line":"2546","Type":"Status Barra Inferior","Context":"Mensagem exibida no rodapé da janela","CurrentText":"Recebendo dados seriais...","NewText":""},{"Id":"TXT_069","Module":"2. Tela Principal (Mensagens e Alertas ViewModel)","File":"MainViewModel.cs","Line":"2650","Type":"Status Barra Inferior","Context":"Mensagem exibida no rodapé da janela","CurrentText":"Iniciando monitoramento automático...","NewText":""},{"Id":"TXT_070","Module":"2. Tela Principal (Mensagens e Alertas ViewModel)","File":"MainViewModel.cs","Line":"2653","Type":"Texto Botão Ação","Context":"Botão Iniciar/Parar Monitoramento","CurrentText":"Editar","NewText":""},{"Id":"TXT_071","Module":"3. Configuração Serial (U-WAVE / Porta COM)","File":"SerialConfigWindow.xaml","Line":"5","Type":"Título Janela","Context":"Título na barra de janelas","CurrentText":"Conexão serial","NewText":""},{"Id":"TXT_072","Module":"3. Configuração Serial (U-WAVE / Porta COM)","File":"SerialConfigWindow.xaml","Line":"65","Type":"Rótulo (Label)","Context":"Texto estático","CurrentText":"Configuração do Dispositivo","NewText":""},{"Id":"TXT_073","Module":"3. Configuração Serial (U-WAVE / Porta COM)","File":"SerialConfigWindow.xaml","Line":"69","Type":"Rótulo (Label)","Context":"Texto estático","CurrentText":"Porta COM:","NewText":""},{"Id":"TXT_074","Module":"3. Configuração Serial (U-WAVE / Porta COM)","File":"SerialConfigWindow.xaml","Line":"76","Type":"Rótulo (Label)","Context":"Texto estático","CurrentText":"Dispositivo:","NewText":""},{"Id":"TXT_075","Module":"3. Configuração Serial (U-WAVE / Porta COM)","File":"SerialConfigWindow.xaml","Line":"91","Type":"Rótulo (Label)","Context":"Texto estático","CurrentText":"Nome padrão de característica:","NewText":""},{"Id":"TXT_076","Module":"3. Configuração Serial (U-WAVE / Porta COM)","File":"SerialConfigWindow.xaml","Line":"98","Type":"Botão","Context":"Rótulo de botão","CurrentText":"Editar JSON","NewText":""},{"Id":"TXT_077","Module":"3. Configuração Serial (U-WAVE / Porta COM)","File":"SerialConfigWindow.xaml","Line":"118","Type":"Rótulo (Label)","Context":"Texto estático","CurrentText":"Enfileirar dados de entrada","NewText":""},{"Id":"TXT_078","Module":"3. Configuração Serial (U-WAVE / Porta COM)","File":"SerialConfigWindow.xaml","Line":"143","Type":"Botão","Context":"Rótulo de botão","CurrentText":"Desconectar","NewText":""},{"Id":"TXT_079","Module":"3. Configuração Serial (U-WAVE / Porta COM)","File":"SerialConfigWindow.xaml","Line":"147","Type":"Botão","Context":"Rótulo de botão","CurrentText":"Conectar","NewText":""},{"Id":"TXT_080","Module":"3. Configuração Serial (U-WAVE / Porta COM)","File":"SerialConfigWindow.xaml","Line":"151","Type":"Botão","Context":"Rótulo de botão","CurrentText":"Fechar","NewText":""},{"Id":"TXT_081","Module":"4. Modificador de Nomes de Características","File":"NameModifierConfigWindow.xaml","Line":"4","Type":"Título Janela","Context":"Título na barra de janelas","CurrentText":"Configuração de Nomes","NewText":""},{"Id":"TXT_082","Module":"4. Modificador de Nomes de Características","File":"NameModifierConfigWindow.xaml","Line":"17","Type":"Rótulo (Label)","Context":"Texto estático","CurrentText":"Formato do Nome da Característica:","NewText":""},{"Id":"TXT_083","Module":"4. Modificador de Nomes de Características","File":"NameModifierConfigWindow.xaml","Line":"50","Type":"Botão","Context":"Rótulo de botão","CurrentText":"Nominal","NewText":""},{"Id":"TXT_084","Module":"4. Modificador de Nomes de Características","File":"NameModifierConfigWindow.xaml","Line":"51","Type":"Botão","Context":"Rótulo de botão","CurrentText":"Tolerância","NewText":""},{"Id":"TXT_085","Module":"4. Modificador de Nomes de Características","File":"NameModifierConfigWindow.xaml","Line":"63","Type":"Rótulo (Label)","Context":"Texto estático","CurrentText":"Casas decimais:","NewText":""},{"Id":"TXT_086","Module":"4. Modificador de Nomes de Características","File":"NameModifierConfigWindow.xaml","Line":"74","Type":"Rótulo (Label)","Context":"Texto estático","CurrentText":"Exemplo Gerado:","NewText":""},{"Id":"TXT_087","Module":"4. Modificador de Nomes de Características","File":"NameModifierConfigWindow.xaml","Line":"79","Type":"Botão","Context":"Rótulo de botão","CurrentText":"Cancelar","NewText":""},{"Id":"TXT_088","Module":"4. Modificador de Nomes de Características","File":"NameModifierConfigWindow.xaml","Line":"80","Type":"Botão","Context":"Rótulo de botão","CurrentText":"Salvar","NewText":""},{"Id":"TXT_089","Module":"5. Editor e Configuração de Templates","File":"TemplateConfigViewModel.cs","Line":"31","Type":"Status / Erro","Context":"Mensagem de status na tela","CurrentText":"Mapeie características e valores para visualizar o resultado.","NewText":""},{"Id":"TXT_090","Module":"5. Editor e Configuração de Templates","File":"TemplateConfigViewModel.cs","Line":"468","Type":"Status / Erro","Context":"Mensagem de status na tela","CurrentText":"Carregue um arquivo de amostra para visualizar o resultado.","NewText":""},{"Id":"TXT_091","Module":"5. Editor e Configuração de Templates","File":"TemplateConfigWindow.xaml","Line":"4","Type":"Título Janela","Context":"Título na barra de janelas","CurrentText":"Configuração de Templates","NewText":""},{"Id":"TXT_092","Module":"5. Editor e Configuração de Templates","File":"TemplateConfigWindow.xaml","Line":"28","Type":"Rótulo (Label)","Context":"Texto estático","CurrentText":"Configuração de Templates (Leitor de Arquivos de Texto)","NewText":""},{"Id":"TXT_093","Module":"5. Editor e Configuração de Templates","File":"TemplateConfigWindow.xaml","Line":"62","Type":"Rótulo (Label)","Context":"Texto estático","CurrentText":"Biblioteca de Templates","NewText":""},{"Id":"TXT_094","Module":"5. Editor e Configuração de Templates","File":"TemplateConfigWindow.xaml","Line":"66","Type":"Dica (ToolTip)","Context":"Balão de ajuda","CurrentText":"Criar Novo Template","NewText":""},{"Id":"TXT_095","Module":"5. Editor e Configuração de Templates","File":"TemplateConfigWindow.xaml","Line":"73","Type":"Dica (ToolTip)","Context":"Balão de ajuda","CurrentText":"Duplicar Template Selecionado","NewText":""},{"Id":"TXT_096","Module":"5. Editor e Configuração de Templates","File":"TemplateConfigWindow.xaml","Line":"81","Type":"Dica (ToolTip)","Context":"Balão de ajuda","CurrentText":"Excluir Template Selecionado","NewText":""},{"Id":"TXT_097","Module":"5. Editor e Configuração de Templates","File":"TemplateConfigWindow.xaml","Line":"179","Type":"Rótulo (Label)","Context":"Texto estático","CurrentText":"Prévia do Resultado","NewText":""},{"Id":"TXT_098","Module":"5. Editor e Configuração de Templates","File":"TemplateConfigWindow.xaml","Line":"204","Type":"Rótulo (Label)","Context":"Texto estático","CurrentText":"ROTINA","NewText":""},{"Id":"TXT_099","Module":"5. Editor e Configuração de Templates","File":"TemplateConfigWindow.xaml","Line":"208","Type":"Dica (ToolTip)","Context":"Balão de ajuda","CurrentText":"{Binding PreviewPartName}","NewText":""},{"Id":"TXT_100","Module":"5. Editor e Configuração de Templates","File":"TemplateConfigWindow.xaml","Line":"218","Type":"Rótulo (Label)","Context":"Texto estático","CurrentText":"CORRIDA / LOTE","NewText":""},{"Id":"TXT_101","Module":"5. Editor e Configuração de Templates","File":"TemplateConfigWindow.xaml","Line":"222","Type":"Dica (ToolTip)","Context":"Balão de ajuda","CurrentText":"{Binding PreviewBatchNumber}","NewText":""},{"Id":"TXT_102","Module":"5. Editor e Configuração de Templates","File":"TemplateConfigWindow.xaml","Line":"267","Type":"Menu / Aba / Coluna","Context":"Cabeçalho de elemento","CurrentText":"Valor","NewText":""},{"Id":"TXT_103","Module":"5. Editor e Configuração de Templates","File":"TemplateConfigWindow.xaml","Line":"311","Type":"Rótulo (Label)","Context":"Texto estático","CurrentText":"Nome do Template","NewText":""},{"Id":"TXT_104","Module":"5. Editor e Configuração de Templates","File":"TemplateConfigWindow.xaml","Line":"318","Type":"Rótulo (Label)","Context":"Texto estático","CurrentText":"Extensão do Arquivo","NewText":""},{"Id":"TXT_105","Module":"5. Editor e Configuração de Templates","File":"TemplateConfigWindow.xaml","Line":"326","Type":"Rótulo (Label)","Context":"Texto estático","CurrentText":"Separador Padrão","NewText":""},{"Id":"TXT_106","Module":"5. Editor e Configuração de Templates","File":"TemplateConfigWindow.xaml","Line":"334","Type":"Rótulo (Label)","Context":"Texto estático","CurrentText":"Regras de Interpretação Mapeadas:","NewText":""},{"Id":"TXT_107","Module":"5. Editor e Configuração de Templates","File":"TemplateConfigWindow.xaml","Line":"377","Type":"Dica (ToolTip)","Context":"Balão de ajuda","CurrentText":"Remover esta regra","NewText":""},{"Id":"TXT_108","Module":"5. Editor e Configuração de Templates","File":"TemplateConfigWindow.xaml","Line":"406","Type":"Rótulo (Label)","Context":"Texto estático","CurrentText":"Arquivo de Amostra:","NewText":""},{"Id":"TXT_109","Module":"5. Editor e Configuração de Templates","File":"TemplateConfigWindow.xaml","Line":"413","Type":"Botão","Context":"Rótulo de botão","CurrentText":"Procurar...","NewText":""},{"Id":"TXT_110","Module":"5. Editor e Configuração de Templates","File":"TemplateConfigWindow.xaml","Line":"422","Type":"Rótulo (Label)","Context":"Texto estático","CurrentText":"Legenda de cores:","NewText":""},{"Id":"TXT_111","Module":"5. Editor e Configuração de Templates","File":"TemplateConfigWindow.xaml","Line":"426","Type":"Rótulo (Label)","Context":"Texto estático","CurrentText":"Rotina","NewText":""},{"Id":"TXT_112","Module":"5. Editor e Configuração de Templates","File":"TemplateConfigWindow.xaml","Line":"430","Type":"Rótulo (Label)","Context":"Texto estático","CurrentText":"Corrida / Lote","NewText":""},{"Id":"TXT_113","Module":"5. Editor e Configuração de Templates","File":"TemplateConfigWindow.xaml","Line":"434","Type":"Rótulo (Label)","Context":"Texto estático","CurrentText":"Características (ou Coluna Cota)","NewText":""},{"Id":"TXT_114","Module":"5. Editor e Configuração de Templates","File":"TemplateConfigWindow.xaml","Line":"438","Type":"Rótulo (Label)","Context":"Texto estático","CurrentText":"Valores Medidos (ou Coluna Valor)","NewText":""},{"Id":"TXT_115","Module":"5. Editor e Configuração de Templates","File":"TemplateConfigWindow.xaml","Line":"442","Type":"Rótulo (Label)","Context":"Texto estático","CurrentText":"Cota + Valor (Auto)","NewText":""},{"Id":"TXT_116","Module":"5. Editor e Configuração de Templates","File":"TemplateConfigWindow.xaml","Line":"453","Type":"Rótulo (Label)","Context":"Texto estático","CurrentText":"Clique em 'Procurar...' para carregar um arquivo CSV ou TXT de amostra e mapear as linhas com o mouse.","NewText":""},{"Id":"TXT_117","Module":"5. Editor e Configuração de Templates","File":"TemplateConfigWindow.xaml","Line":"498","Type":"Menu / Aba / Coluna","Context":"Cabeçalho de elemento","CurrentText":"Nome da Rotina (PartName)","NewText":""},{"Id":"TXT_118","Module":"5. Editor e Configuração de Templates","File":"TemplateConfigWindow.xaml","Line":"503","Type":"Menu / Aba / Coluna","Context":"Cabeçalho de elemento","CurrentText":"Nome da Corrida / Lote (BatchNumber)","NewText":""},{"Id":"TXT_119","Module":"5. Editor e Configuração de Templates","File":"TemplateConfigWindow.xaml","Line":"509","Type":"Menu / Aba / Coluna","Context":"Cabeçalho de elemento","CurrentText":"Nomes das Características (Linha Horizontal)","NewText":""},{"Id":"TXT_120","Module":"5. Editor e Configuração de Templates","File":"TemplateConfigWindow.xaml","Line":"514","Type":"Menu / Aba / Coluna","Context":"Cabeçalho de elemento","CurrentText":"Valores Medidos (Linha Horizontal)","NewText":""},{"Id":"TXT_121","Module":"5. Editor e Configuração de Templates","File":"TemplateConfigWindow.xaml","Line":"520","Type":"Menu / Aba / Coluna","Context":"Cabeçalho de elemento","CurrentText":"Característica Deste Trecho / Coluna (Linha a Linha)","NewText":""},{"Id":"TXT_122","Module":"5. Editor e Configuração de Templates","File":"TemplateConfigWindow.xaml","Line":"525","Type":"Menu / Aba / Coluna","Context":"Cabeçalho de elemento","CurrentText":"Valor Medido Deste Trecho / Coluna (Linha a Linha)","NewText":""},{"Id":"TXT_123","Module":"5. Editor e Configuração de Templates","File":"TemplateConfigWindow.xaml","Line":"530","Type":"Menu / Aba / Coluna","Context":"Cabeçalho de elemento","CurrentText":"Cota + Valor (Auto-deduzir Linha Inteira)","NewText":""},{"Id":"TXT_124","Module":"5. Editor e Configuração de Templates","File":"TemplateConfigWindow.xaml","Line":"536","Type":"Menu / Aba / Coluna","Context":"Cabeçalho de elemento","CurrentText":"Remover Marcação desta Linha","NewText":""},{"Id":"TXT_125","Module":"5. Editor e Configuração de Templates","File":"TemplateConfigWindow.xaml","Line":"579","Type":"Botão","Context":"Rótulo de botão","CurrentText":"Cancelar","NewText":""},{"Id":"TXT_126","Module":"5. Editor e Configuração de Templates","File":"TemplateConfigWindow.xaml","Line":"582","Type":"Botão","Context":"Rótulo de botão","CurrentText":"Salvar e Aplicar","NewText":""},{"Id":"TXT_127","Module":"6. Seleção Manual de Estação / Máquina","File":"StationSelectionWindow.xaml","Line":"4","Type":"Título Janela","Context":"Título na barra de janelas","CurrentText":"Seleção de Estação","NewText":""},{"Id":"TXT_128","Module":"6. Seleção Manual de Estação / Máquina","File":"StationSelectionWindow.xaml","Line":"16","Type":"Rótulo (Label)","Context":"Texto estático","CurrentText":"Nome da corrida não encontrado, deseja identificar a estação?","NewText":""},{"Id":"TXT_129","Module":"6. Seleção Manual de Estação / Máquina","File":"StationSelectionWindow.xaml","Line":"22","Type":"Botão","Context":"Rótulo de botão","CurrentText":"Enviar","NewText":""},{"Id":"TXT_130","Module":"6. Seleção Manual de Estação / Máquina","File":"StationSelectionWindow.xaml","Line":"23","Type":"Botão","Context":"Rótulo de botão","CurrentText":"Não","NewText":""},{"Id":"TXT_131","Module":"6. Seleção Manual de Estação / Máquina","File":"StationSelectionWindow.xaml","Line":"24","Type":"Botão","Context":"Rótulo de botão","CurrentText":"Cancelar","NewText":""},{"Id":"TXT_132","Module":"6. Seleção Manual de Estação / Máquina","File":"StationSelectionWindow.xaml.cs","Line":"51","Type":"Caixa Alerta (MessageBox)","Context":"Mensagem de alerta","CurrentText":"Selecione uma estação primeiro.","NewText":""},{"Id":"TXT_133","Module":"6. Seleção Manual de Estação / Máquina","File":"StationSelectionWindow.xaml.cs","Line":"51","Type":"Título Alerta (MessageBox)","Context":"Título do alerta","CurrentText":"Aviso","NewText":""},{"Id":"TXT_134","Module":"7. Diálogos de Confirmação e Modern Dialogs","File":"ConfirmationWindow.xaml","Line":"4","Type":"Título Janela","Context":"Título na barra de janelas","CurrentText":"Confirmação","NewText":""},{"Id":"TXT_135","Module":"7. Diálogos de Confirmação e Modern Dialogs","File":"ConfirmationWindow.xaml","Line":"15","Type":"Rótulo (Label)","Context":"Texto estático","CurrentText":"Existem características não reconhecidas na corrida. Como deseja prosseguir?","NewText":""},{"Id":"TXT_136","Module":"7. Diálogos de Confirmação e Modern Dialogs","File":"ConfirmationWindow.xaml","Line":"21","Type":"Botão","Context":"Rótulo de botão","CurrentText":"Enviar todas","NewText":""},{"Id":"TXT_137","Module":"7. Diálogos de Confirmação e Modern Dialogs","File":"ConfirmationWindow.xaml","Line":"22","Type":"Botão","Context":"Rótulo de botão","CurrentText":"Apenas reconhecidas","NewText":""},{"Id":"TXT_138","Module":"7. Diálogos de Confirmação e Modern Dialogs","File":"ConfirmationWindow.xaml","Line":"23","Type":"Botão","Context":"Rótulo de botão","CurrentText":"Cancelar","NewText":""},{"Id":"TXT_139","Module":"7. Diálogos de Confirmação e Modern Dialogs","File":"ModernDialogWindow.xaml","Line":"4","Type":"Título Janela","Context":"Título na barra de janelas","CurrentText":"Aviso","NewText":""},{"Id":"TXT_140","Module":"8. Atualizador Automático (Velopack)","File":"UpdateWindow.xaml","Line":"7","Type":"Título Janela","Context":"Título na barra de janelas","CurrentText":"Atualização Disponível","NewText":""},{"Id":"TXT_141","Module":"8. Atualizador Automático (Velopack)","File":"UpdateWindow.xaml","Line":"46","Type":"Rótulo (Label)","Context":"Texto estático","CurrentText":"Nova versão disponível!","NewText":""},{"Id":"TXT_142","Module":"8. Atualizador Automático (Velopack)","File":"UpdateWindow.xaml","Line":"49","Type":"Rótulo (Label)","Context":"Texto estático","CurrentText":"Uma atualização do SelectML foi identificada.","NewText":""},{"Id":"TXT_143","Module":"8. Atualizador Automático (Velopack)","File":"UpdateWindow.xaml","Line":"75","Type":"Botão","Context":"Rótulo de botão","CurrentText":"Atualizar e Reiniciar","NewText":""},{"Id":"TXT_144","Module":"8. Atualizador Automático (Velopack)","File":"UpdateWindow.xaml","Line":"81","Type":"Botão","Context":"Rótulo de botão","CurrentText":"Agora não","NewText":""},{"Id":"TXT_145","Module":"9. Leitores e Mensagens dos Parsers","File":"TextTemplateParser.cs","Line":"88","Type":"Exceção ao Operador","Context":"Mensagem de erro de operação","CurrentText":"Nenhum template configurado ou ativo para o Leitor de Arquivos de Texto. Clique no ícone de engrenagem para configurar um template.","NewText":""}];
+        let items = JSON.parse(localStorage.getItem("selectml_review_data") || "null") || initialData;
+
+        function renderList() {
+            const container = document.getElementById("itemsContainer");
+            container.innerHTML = "";
+            const query = (document.getElementById("searchInput").value || "").toLowerCase();
+
+            let visibleCount = 0;
+            let modifiedCount = 0;
+
+            items.forEach((item, index) => {
+                const isModified = item.NewText && item.NewText.trim().length > 0;
+                if (isModified) modifiedCount++;
+
+                const matchQuery = !query ||
+                    item.CurrentText.toLowerCase().includes(query) ||
+                    (item.NewText && item.NewText.toLowerCase().includes(query)) ||
+                    item.Context.toLowerCase().includes(query) ||
+                    item.Module.toLowerCase().includes(query) ||
+                    item.Id.toLowerCase().includes(query);
+
+                if (!matchQuery) return;
+                visibleCount++;
+
+                const card = document.createElement("div");
+                card.className = "item-card" + (isModified ? " has-change" : "");
+                card.id = "card-" + index;
+
+                card.innerHTML = `
+                    <div class="item-header">
+                        <div class="meta-badges">
+                            <span class="badge">${item.Id}</span>
+                            <span class="badge" style="background:#334155;color:#E2E8F0;">${item.Type}</span>
+                            <span style="color:#CBD5E1;font-weight:600;">${item.Module}</span>
+                        </div>
+                        <span class="file-info">${item.File}:${item.Line}</span>
+                    </div>
+                    <span class="context-label">Local / Contexto: <strong>${item.Context}</strong></span>
+                    <div class="current-text-box">
+                        ${escapeHtml(item.CurrentText)}
+                    </div>
+                    <div class="input-row">
+                        <input type="text" 
+                               class="input-field" 
+                               id="input-${index}" 
+                               data-index="${index}" 
+                               value="${escapeHtml(item.NewText || '')}" 
+                               placeholder="Deixe em branco para manter original, ou digite o novo texto..." 
+                               oninput="onTextChange(${index}, this.value)"
+                               onkeydown="onInputKeyDown(event, ${index})">
+                        <span class="enter-tip">↵ Enter avança</span>
+                    </div>
+                `;
+                container.appendChild(card);
+            });
+
+            document.getElementById("statsBadge").innerHTML = `
+                <span>${modifiedCount} alterados</span> | <span>${items.length} total</span>
+            `;
+        }
+
+        function onTextChange(index, val) {
+            items[index].NewText = val;
+            const card = document.getElementById("card-" + index);
+            if (val && val.trim().length > 0) {
+                card.classList.add("has-change");
+            } else {
+                card.classList.remove("has-change");
+            }
+            localStorage.setItem("selectml_review_data", JSON.stringify(items));
+            updateStatsOnly();
+        }
+
+        function updateStatsOnly() {
+            let modifiedCount = items.filter(i => i.NewText && i.NewText.trim().length > 0).length;
+            document.getElementById("statsBadge").innerHTML = `
+                <span>${modifiedCount} alterados</span> | <span>${items.length} total</span>
+            `;
+        }
+
+        function onInputKeyDown(e, currentIndex) {
+            if (e.key === "Enter") {
+                e.preventDefault();
+                // Find next visible input
+                const inputs = Array.from(document.querySelectorAll(".input-field"));
+                const currentPos = inputs.indexOf(document.getElementById("input-" + currentIndex));
+                if (currentPos >= 0 && currentPos < inputs.length - 1) {
+                    inputs[currentPos + 1].focus();
+                    inputs[currentPos + 1].select();
+                }
+            } else if (e.key === "ArrowUp" && e.altKey) {
+                const inputs = Array.from(document.querySelectorAll(".input-field"));
+                const currentPos = inputs.indexOf(document.getElementById("input-" + currentIndex));
+                if (currentPos > 0) {
+                    inputs[currentPos - 1].focus();
+                    inputs[currentPos - 1].select();
+                }
+            }
+        }
+
+        function filterItems() {
+            renderList();
+        }
+
+        function escapeHtml(text) {
+            if (!text) return "";
+            return text
+                .replace(/&/g, "&amp;")
+                .replace(/</g, "&lt;")
+                .replace(/>/g, "&gt;")
+                .replace(/"/g, "&quot;")
+                .replace(/'/g, "&#039;");
+        }
+
+        function downloadCSV() {
+            let csv = "\uFEFF"; // UTF-8 BOM para Excel
+            csv += "ID;Modulo;Arquivo;Linha;Tipo;Contexto;Texto_Atual;Novo_Texto\r\n";
+
+            function escapeCsv(val) {
+                if (!val) return '""';
+                return '"' + String(val).replace(/"/g, '""') + '"';
+            }
+
+            items.forEach(item => {
+                csv += [
+                    escapeCsv(item.Id),
+                    escapeCsv(item.Module),
+                    escapeCsv(item.File),
+                    escapeCsv(item.Line),
+                    escapeCsv(item.Type),
+                    escapeCsv(item.Context),
+                    escapeCsv(item.CurrentText),
+                    escapeCsv(item.NewText || "")
+                ].join(";") + "\r\n";
+            });
+
+            const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement("a");
+            a.href = url;
+            a.download = "revisao-de-textos-v1.2.9.csv";
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+            alert("Arquivo CSV gerado e baixado com sucesso!\nVocê também pode salvar o CSV diretamente em docs/reviews/revisao-de-textos-v1.2.9.csv.");
+        }
+
+        renderList();
+    </script>
+</body>
+</html>
