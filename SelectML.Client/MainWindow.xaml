@@ -503,7 +503,7 @@
                 </MenuItem>
             </Menu>
 
-            <!-- Popup do Mecanismo de Rastreabilidade (conforme IMG3) -->
+            <!-- Popup do Mecanismo de Rastreabilidade (conforme IMG4) -->
             <Popup x:Name="TraceabilityPopup"
                    PlacementTarget="{Binding ElementName=TraceabilityMenuItem}"
                    Placement="Bottom"
@@ -512,192 +512,205 @@
                    IsOpen="{Binding IsTraceabilityMenuOpen, Mode=TwoWay}"
                    PopupAnimation="Fade"
                    PreviewKeyDown="OnTraceabilityPopupPreviewKeyDown">
-                <Border Background="Transparent" Padding="0,6,0,0">
+                <Border Background="Transparent" Padding="0,4,0,0">
                     <Border.Effect>
-                        <DropShadowEffect BlurRadius="18" Color="#000000" Opacity="0.5" ShadowDepth="4"/>
+                        <DropShadowEffect BlurRadius="16" Color="#000000" Opacity="0.45" ShadowDepth="3"/>
                     </Border.Effect>
-                    <Grid Width="290">
-                        <Grid.RowDefinitions>
-                            <RowDefinition Height="Auto"/>
-                            <RowDefinition Height="Auto"/>
-                        </Grid.RowDefinitions>
+                    <!-- Cartão Compacto sem Cabeçalho (IMG4) -->
+                    <Border Width="255"
+                            Background="{DynamicResource Brush.Surface.Card}"
+                            BorderBrush="{DynamicResource Brush.Border.Base}"
+                            BorderThickness="1"
+                            CornerRadius="8"
+                            Padding="10">
+                        <StackPanel>
+                            <!-- Campo Fixo: Número de Série (MeasurLink NS) -->
+                            <TextBox Text="{Binding SerialNumberTraceability, UpdateSourceTrigger=PropertyChanged}"
+                                     Height="24"
+                                     Padding="5,2"
+                                     FontSize="11.5"
+                                     VerticalContentAlignment="Center"
+                                     PreviewTextInput="OnTraceabilityTextInput"
+                                     DataObject.Pasting="OnTraceabilityPasting"
+                                     ToolTip="Número de Série enviado ao MeasurLink (Opcional)">
+                                <TextBox.Style>
+                                    <Style TargetType="TextBox" BasedOn="{StaticResource {x:Type TextBox}}">
+                                        <Setter Property="Background" Value="{DynamicResource Brush.Surface.Popup}"/>
+                                        <Setter Property="Foreground" Value="{DynamicResource Brush.Text.Primary}"/>
+                                        <Setter Property="BorderBrush" Value="{DynamicResource Brush.Border.Base}"/>
+                                        <Setter Property="BorderThickness" Value="1"/>
+                                    </Style>
+                                </TextBox.Style>
+                            </TextBox>
+                            <!-- Nota do Campo Fixo -->
+                            <TextBlock Text="*Inserido como “Número de Série”"
+                                       FontSize="10"
+                                       Foreground="{DynamicResource Brush.Text.Secondary}"
+                                       Margin="2,2,0,8"
+                                       HorizontalAlignment="Left"/>
 
-                        <!-- Cabeçalho Azul com Cantos Arredondados (IMG3) -->
-                        <Border Grid.Row="0"
-                                Background="{DynamicResource Brush.Action.Primary}"
-                                CornerRadius="8,8,0,0"
-                                Padding="12,10">
-                            <TextBlock Text="Rastreabilidade"
-                                       Foreground="{DynamicResource Brush.Action.Primary.Foreground}"
-                                       FontWeight="Bold"
-                                       FontSize="16"
-                                       HorizontalAlignment="Center"
-                                       VerticalAlignment="Center"/>
-                        </Border>
+                            <!-- Títulos das Colunas: Nome e Valor -->
+                            <Grid Margin="0,0,0,4">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="6"/>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="22"/>
+                                </Grid.ColumnDefinitions>
+                                <TextBlock Grid.Column="0" Text="Nome" FontWeight="SemiBold" FontSize="12"
+                                           Foreground="{DynamicResource Brush.Text.Primary}" HorizontalAlignment="Center"/>
+                                <TextBlock Grid.Column="2" Text="Valor" FontWeight="SemiBold" FontSize="12"
+                                           Foreground="{DynamicResource Brush.Text.Primary}" HorizontalAlignment="Center"/>
+                            </Grid>
 
-                        <!-- Corpo do Painel (IMG3) -->
-                        <Border Grid.Row="1"
-                                Background="{DynamicResource Brush.Surface.Card}"
-                                BorderBrush="{DynamicResource Brush.Border.Base}"
-                                BorderThickness="1,0,1,1"
-                                CornerRadius="0,0,8,8"
-                                Padding="12,12,12,12">
-                            <StackPanel>
-                                <!-- Títulos das Colunas: Nome e Valor -->
-                                <Grid Margin="0,0,0,8">
-                                    <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="*"/>
-                                        <ColumnDefinition Width="8"/>
-                                        <ColumnDefinition Width="*"/>
-                                        <ColumnDefinition Width="26"/>
-                                    </Grid.ColumnDefinitions>
-                                    <TextBlock Grid.Column="0" Text="Nome" FontWeight="Bold" FontSize="14"
-                                               Foreground="{DynamicResource Brush.Text.Primary}" HorizontalAlignment="Center"/>
-                                    <TextBlock Grid.Column="2" Text="Valor" FontWeight="Bold" FontSize="14"
-                                               Foreground="{DynamicResource Brush.Text.Primary}" HorizontalAlignment="Center"/>
-                                </Grid>
+                            <!-- Lista Dinâmica de Linhas de Rastreabilidade -->
+                            <ScrollViewer MaxHeight="220" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+                                <ItemsControl ItemsSource="{Binding TraceabilityItems}">
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate>
+                                            <Grid Margin="0,2.5,0,2.5">
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="*"/>
+                                                    <ColumnDefinition Width="6"/>
+                                                    <ColumnDefinition Width="*"/>
+                                                    <ColumnDefinition Width="22"/>
+                                                </Grid.ColumnDefinitions>
 
-                                <!-- Lista Dinâmica de Linhas de Rastreabilidade -->
-                                <ScrollViewer MaxHeight="260" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
-                                    <ItemsControl ItemsSource="{Binding TraceabilityItems}">
-                                        <ItemsControl.ItemTemplate>
-                                            <DataTemplate>
-                                                <Grid Margin="0,4,0,4">
-                                                    <Grid.ColumnDefinitions>
-                                                        <ColumnDefinition Width="*"/>
-                                                        <ColumnDefinition Width="8"/>
-                                                        <ColumnDefinition Width="*"/>
-                                                        <ColumnDefinition Width="26"/>
-                                                    </Grid.ColumnDefinitions>
+                                                <!-- Campo Nome -->
+                                                <TextBox Grid.Column="0"
+                                                         Text="{Binding Key, UpdateSourceTrigger=PropertyChanged}"
+                                                         Height="24"
+                                                         Padding="4,2"
+                                                         FontSize="11.5"
+                                                         VerticalContentAlignment="Center"
+                                                         PreviewTextInput="OnTraceabilityTextInput"
+                                                         DataObject.Pasting="OnTraceabilityPasting">
+                                                    <TextBox.Style>
+                                                        <Style TargetType="TextBox" BasedOn="{StaticResource {x:Type TextBox}}">
+                                                            <Setter Property="Background" Value="{DynamicResource Brush.Surface.Popup}"/>
+                                                            <Setter Property="Foreground" Value="{DynamicResource Brush.Text.Primary}"/>
+                                                            <Setter Property="BorderBrush" Value="{DynamicResource Brush.Border.Base}"/>
+                                                            <Setter Property="BorderThickness" Value="1"/>
+                                                            <Style.Triggers>
+                                                                <DataTrigger Binding="{Binding IsKeyInvalid}" Value="True">
+                                                                    <Setter Property="BorderBrush" Value="{DynamicResource Brush.Status.Error}"/>
+                                                                    <Setter Property="Background" Value="{DynamicResource Brush.Status.Error.Background}"/>
+                                                                    <Setter Property="ToolTip" Value="Preenchimento do Nome obrigatório quando o Valor for informado."/>
+                                                                </DataTrigger>
+                                                            </Style.Triggers>
+                                                        </Style>
+                                                    </TextBox.Style>
+                                                </TextBox>
 
-                                                    <!-- Campo Nome -->
-                                                    <TextBox Grid.Column="0"
-                                                             Text="{Binding Key, UpdateSourceTrigger=PropertyChanged}"
-                                                             Height="28"
-                                                             Padding="6,4"
-                                                             FontSize="12"
-                                                             VerticalContentAlignment="Center"
-                                                             PreviewTextInput="OnTraceabilityTextInput"
-                                                             DataObject.Pasting="OnTraceabilityPasting">
-                                                        <TextBox.Style>
-                                                            <Style TargetType="TextBox" BasedOn="{StaticResource {x:Type TextBox}}">
-                                                                <Setter Property="Background" Value="{DynamicResource Brush.Surface.Popup}"/>
-                                                                <Setter Property="Foreground" Value="{DynamicResource Brush.Text.Primary}"/>
-                                                                <Setter Property="BorderBrush" Value="{DynamicResource Brush.Border.Base}"/>
-                                                                <Setter Property="BorderThickness" Value="1"/>
-                                                                <Style.Triggers>
-                                                                    <DataTrigger Binding="{Binding IsKeyInvalid}" Value="True">
-                                                                        <Setter Property="BorderBrush" Value="{DynamicResource Brush.Status.Error}"/>
-                                                                        <Setter Property="Background" Value="{DynamicResource Brush.Status.Error.Background}"/>
-                                                                        <Setter Property="ToolTip" Value="Preenchimento do Nome obrigatório quando o Valor for informado."/>
-                                                                    </DataTrigger>
-                                                                </Style.Triggers>
-                                                            </Style>
-                                                        </TextBox.Style>
-                                                    </TextBox>
+                                                <!-- Campo Valor -->
+                                                <TextBox Grid.Column="2"
+                                                         Text="{Binding Value, UpdateSourceTrigger=PropertyChanged}"
+                                                         Height="24"
+                                                         Padding="4,2"
+                                                         FontSize="11.5"
+                                                         VerticalContentAlignment="Center"
+                                                         PreviewTextInput="OnTraceabilityTextInput"
+                                                         DataObject.Pasting="OnTraceabilityPasting">
+                                                    <TextBox.Style>
+                                                        <Style TargetType="TextBox" BasedOn="{StaticResource {x:Type TextBox}}">
+                                                            <Setter Property="Background" Value="{DynamicResource Brush.Surface.Popup}"/>
+                                                            <Setter Property="Foreground" Value="{DynamicResource Brush.Text.Primary}"/>
+                                                            <Setter Property="BorderBrush" Value="{DynamicResource Brush.Border.Base}"/>
+                                                            <Setter Property="BorderThickness" Value="1"/>
+                                                            <Style.Triggers>
+                                                                <DataTrigger Binding="{Binding IsValueInvalid}" Value="True">
+                                                                    <Setter Property="BorderBrush" Value="{DynamicResource Brush.Status.Error}"/>
+                                                                    <Setter Property="Background" Value="{DynamicResource Brush.Status.Error.Background}"/>
+                                                                    <Setter Property="ToolTip" Value="Preenchimento do Valor obrigatório quando o Nome for informado."/>
+                                                                </DataTrigger>
+                                                            </Style.Triggers>
+                                                        </Style>
+                                                    </TextBox.Style>
+                                                </TextBox>
 
-                                                    <!-- Campo Valor -->
-                                                    <TextBox Grid.Column="2"
-                                                             Text="{Binding Value, UpdateSourceTrigger=PropertyChanged}"
-                                                             Height="28"
-                                                             Padding="6,4"
-                                                             FontSize="12"
-                                                             VerticalContentAlignment="Center"
-                                                             PreviewTextInput="OnTraceabilityTextInput"
-                                                             DataObject.Pasting="OnTraceabilityPasting">
-                                                        <TextBox.Style>
-                                                            <Style TargetType="TextBox" BasedOn="{StaticResource {x:Type TextBox}}">
-                                                                <Setter Property="Background" Value="{DynamicResource Brush.Surface.Popup}"/>
-                                                                <Setter Property="Foreground" Value="{DynamicResource Brush.Text.Primary}"/>
-                                                                <Setter Property="BorderBrush" Value="{DynamicResource Brush.Border.Base}"/>
-                                                                <Setter Property="BorderThickness" Value="1"/>
-                                                                <Style.Triggers>
-                                                                    <DataTrigger Binding="{Binding IsValueInvalid}" Value="True">
-                                                                        <Setter Property="BorderBrush" Value="{DynamicResource Brush.Status.Error}"/>
-                                                                        <Setter Property="Background" Value="{DynamicResource Brush.Status.Error.Background}"/>
-                                                                        <Setter Property="ToolTip" Value="Preenchimento do Valor obrigatório quando o Nome for informado."/>
-                                                                    </DataTrigger>
-                                                                </Style.Triggers>
-                                                            </Style>
-                                                        </TextBox.Style>
-                                                    </TextBox>
+                                                <!-- Botão Excluir Linha (✕) -->
+                                                <Button Grid.Column="3"
+                                                        Command="{Binding DataContext.RemoveTraceabilityCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
+                                                        CommandParameter="{Binding}"
+                                                        ToolTip="Remover esta rastreabilidade"
+                                                        Background="Transparent"
+                                                        BorderThickness="0"
+                                                        Cursor="Hand"
+                                                        Width="18"
+                                                        Height="18"
+                                                        HorizontalAlignment="Center"
+                                                        VerticalAlignment="Center">
+                                                    <Button.Style>
+                                                        <Style TargetType="Button">
+                                                            <Setter Property="Opacity" Value="0.6"/>
+                                                            <Setter Property="Template">
+                                                                <Setter.Value>
+                                                                    <ControlTemplate TargetType="Button">
+                                                                        <Border Background="Transparent" CornerRadius="2" x:Name="bdr">
+                                                                            <TextBlock Text="✕" FontSize="10" FontWeight="Bold"
+                                                                                       Foreground="{DynamicResource Brush.Text.Secondary}"
+                                                                                       HorizontalAlignment="Center" VerticalAlignment="Center" x:Name="txt"/>
+                                                                        </Border>
+                                                                        <ControlTemplate.Triggers>
+                                                                            <Trigger Property="IsMouseOver" Value="True">
+                                                                                <Setter TargetName="txt" Property="Foreground" Value="{DynamicResource Brush.Status.Error}"/>
+                                                                                <Setter TargetName="bdr" Property="Background" Value="{DynamicResource Brush.Status.Error.Background}"/>
+                                                                                <Setter Property="Opacity" Value="1.0"/>
+                                                                            </Trigger>
+                                                                        </ControlTemplate.Triggers>
+                                                                    </ControlTemplate>
+                                                                </Setter.Value>
+                                                            </Setter>
+                                                        </Style>
+                                                    </Button.Style>
+                                                </Button>
+                                            </Grid>
+                                        </DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
+                            </ScrollViewer>
 
-                                                    <!-- Botão Excluir Linha (✕) -->
-                                                    <Button Grid.Column="3"
-                                                            Command="{Binding DataContext.RemoveTraceabilityCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
-                                                            CommandParameter="{Binding}"
-                                                            ToolTip="Remover esta rastreabilidade"
-                                                            Background="Transparent"
-                                                            BorderThickness="0"
-                                                            Cursor="Hand"
-                                                            Width="22"
-                                                            Height="22"
-                                                            HorizontalAlignment="Center"
-                                                            VerticalAlignment="Center">
-                                                        <Button.Style>
-                                                            <Style TargetType="Button">
-                                                                <Setter Property="Opacity" Value="0.6"/>
-                                                                <Setter Property="Template">
-                                                                    <Setter.Value>
-                                                                        <ControlTemplate TargetType="Button">
-                                                                            <Border Background="Transparent" CornerRadius="3" x:Name="bdr">
-                                                                                <TextBlock Text="✕" FontSize="11" FontWeight="Bold"
-                                                                                           Foreground="{DynamicResource Brush.Text.Secondary}"
-                                                                                           HorizontalAlignment="Center" VerticalAlignment="Center" x:Name="txt"/>
-                                                                            </Border>
-                                                                            <ControlTemplate.Triggers>
-                                                                                <Trigger Property="IsMouseOver" Value="True">
-                                                                                    <Setter TargetName="txt" Property="Foreground" Value="{DynamicResource Brush.Status.Error}"/>
-                                                                                    <Setter TargetName="bdr" Property="Background" Value="{DynamicResource Brush.Status.Error.Background}"/>
-                                                                                    <Setter Property="Opacity" Value="1.0"/>
-                                                                                </Trigger>
-                                                                            </ControlTemplate.Triggers>
-                                                                        </ControlTemplate>
-                                                                    </Setter.Value>
-                                                                </Setter>
-                                                            </Style>
-                                                        </Button.Style>
-                                                    </Button>
-                                                </Grid>
-                                            </DataTemplate>
-                                        </ItemsControl.ItemTemplate>
-                                    </ItemsControl>
-                                </ScrollViewer>
-
-                                <!-- Botão Adicionar Linha (+) -->
-                                <Button Command="{Binding AddTraceabilityCommand}"
-                                        Cursor="Hand"
-                                        Background="Transparent"
-                                        BorderThickness="0"
-                                        HorizontalAlignment="Center"
-                                        Margin="0,10,0,2"
-                                        ToolTip="Adicionar nova rastreabilidade">
-                                    <Button.Style>
-                                        <Style TargetType="Button">
-                                            <Setter Property="Template">
-                                                <Setter.Value>
-                                                    <ControlTemplate TargetType="Button">
-                                                        <Border Width="34" Height="34" CornerRadius="17" Background="Transparent" x:Name="btnBorder">
-                                                            <TextBlock Text="+" FontSize="24" FontWeight="Bold"
-                                                                       Foreground="{DynamicResource Brush.Text.Primary}"
-                                                                       HorizontalAlignment="Center" VerticalAlignment="Center"
-                                                                       Margin="0,-3,0,0" x:Name="btnText"/>
-                                                        </Border>
-                                                        <ControlTemplate.Triggers>
-                                                            <Trigger Property="IsMouseOver" Value="True">
-                                                                <Setter TargetName="btnBorder" Property="Background" Value="{DynamicResource Brush.Action.Primary}"/>
-                                                                <Setter TargetName="btnText" Property="Foreground" Value="{DynamicResource Brush.Action.Primary.Foreground}"/>
-                                                            </Trigger>
-                                                        </ControlTemplate.Triggers>
-                                                    </ControlTemplate>
-                                                </Setter.Value>
-                                            </Setter>
-                                        </Style>
-                                    </Button.Style>
-                                </Button>
-                            </StackPanel>
-                        </Border>
-                    </Grid>
+                            <!-- Botão Adicionar Linha (+) Perfeitamente Centralizado (IMG4) -->
+                            <Button Command="{Binding AddTraceabilityCommand}"
+                                    Cursor="Hand"
+                                    Background="Transparent"
+                                    BorderThickness="0"
+                                    HorizontalAlignment="Center"
+                                    Margin="0,8,0,2"
+                                    ToolTip="Adicionar nova rastreabilidade">
+                                <Button.Style>
+                                    <Style TargetType="Button">
+                                        <Setter Property="Template">
+                                            <Setter.Value>
+                                                <ControlTemplate TargetType="Button">
+                                                    <Border Width="26" Height="26" CornerRadius="13" 
+                                                            Background="{DynamicResource Brush.Action.Primary}" 
+                                                            x:Name="btnBorder">
+                                                        <Path Data="M 0 5 L 10 5 M 5 0 L 5 10" 
+                                                              Stroke="{DynamicResource Brush.Action.Primary.Foreground}" 
+                                                              StrokeThickness="2" 
+                                                              StrokeStartLineCap="Round" 
+                                                              StrokeEndLineCap="Round"
+                                                              HorizontalAlignment="Center" 
+                                                              VerticalAlignment="Center"
+                                                              SnapsToDevicePixels="True"/>
+                                                    </Border>
+                                                    <ControlTemplate.Triggers>
+                                                        <Trigger Property="IsMouseOver" Value="True">
+                                                            <Setter TargetName="btnBorder" Property="Background" Value="{DynamicResource Brush.Action.Primary.Hover}"/>
+                                                        </Trigger>
+                                                        <Trigger Property="IsPressed" Value="True">
+                                                            <Setter TargetName="btnBorder" Property="Opacity" Value="0.8"/>
+                                                        </Trigger>
+                                                    </ControlTemplate.Triggers>
+                                                </ControlTemplate>
+                                            </Setter.Value>
+                                        </Setter>
+                                    </Style>
+                                </Button.Style>
+                            </Button>
+                        </StackPanel>
+                    </Border>
                 </Border>
             </Popup>
 

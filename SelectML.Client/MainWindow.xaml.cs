@@ -415,7 +415,7 @@ namespace SelectML.Client
 
         private void OnTraceabilityTextInput(object sender, TextCompositionEventArgs e)
         {
-            if (e.Text.Contains(';') || e.Text.Contains('\r') || e.Text.Contains('\n'))
+            if (e.Text.Contains(';') || e.Text.Contains('|') || e.Text.Contains('\r') || e.Text.Contains('\n'))
             {
                 e.Handled = true;
             }
@@ -426,7 +426,7 @@ namespace SelectML.Client
             if (e.DataObject.GetDataPresent(System.Windows.DataFormats.UnicodeText, true))
             {
                 string text = (string)e.DataObject.GetData(System.Windows.DataFormats.UnicodeText);
-                if (text != null && (text.Contains(';') || text.Contains('\r') || text.Contains('\n')))
+                if (text != null && (text.Contains(';') || text.Contains('|') || text.Contains('\r') || text.Contains('\n')))
                 {
                     e.CancelCommand();
                 }

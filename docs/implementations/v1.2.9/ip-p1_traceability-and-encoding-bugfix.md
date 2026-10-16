@@ -75,25 +75,31 @@ Para solucionar o problema de forma definitiva e imune a quaisquer variações d
 2. **Interface Direta por Submenu Dinâmico (Sem Abertura de Janela Separada):**
    * Conforme especificado pelo usuário e exemplificado na *IMG3*, o clique no menu não abre uma janela modal intermediária.
    * Abre diretamente um painel suspenso ancorado (Submenu / Popover) que permite rápida visualização e preenchimento direto.
-3. **Estrutura Visual do Painel Conforme IMG3:**
-   * **Cabeçalho Azul Superior:** Banner estilizado com bordas arredondadas no topo, fundo azul primário (`Brush.Action.Primary` / `#2563EB`) e texto branco em negrito centralizado: **"Rastreabilidade"**.
-   * **Corpo Escuro com Lista Flexível de Pares:**
-     * Colunas: **"Nome"** e **"Valor"**.
-     * Linhas com campos de entrada (`TextBox`) padronizados, com visual moderno e tema responsivo.
-     * Botão de exclusão (`✕` ou 🗑️) em cada linha para remoção limpa de entradas individuais.
-     * Botão inferior centralizado **`+`** para inclusão dinâmica de novas linhas.
+3. **Estrutura Visual do Painel Conforme IMG4:**
+   * **Remoção do Cabeçalho Superior:** Eliminado o banner azul com texto repetitivo "Rastreabilidade", tornando o cartão compacto com cantos arredondados e sombra suave.
+   * **Campo Fixo de "Número de Série" (Superior):**
+     * Caixa de texto de largura total fixada no topo do painel.
+     * Não permite exclusão (permanente na interface). Preenchimento opcional pelo operador.
+     * Nota em rodapé do campo em tipografia reduzida e discreta: `*Inserido como “Número de Série”`.
+   * **Corpo com Dimensões Compactas e Lista Flexível de Pares:**
+     * Colunas: **"Nome"** e **"Valor"** com fontes e caixas de texto com altura reduzida (mais compactas e elegantes).
+     * Botão de exclusão (`✕`) em cada linha para remoção limpa de entradas individuais.
+     * Botão inferior centralizado **`+`**:
+       * Círculo azul compacto (`Brush.Action.Primary`) com o glifo `+` perfeitamente centralizado geometricamente.
 4. **Estilo Visual do Menu:**
    * Menu limpo sem indicador pulsante, mantendo harmonia com o menu superior.
-5. **Persistência das Rastreabilidades:**
-   * Os dados preenchidos pelo operador são salvos automaticamente no `appsettings.json` na propriedade `Traceabilities`.
+5. **Persistência das Rastreabilidades e Número de Série:**
+   * Os dados preenchidos pelo operador são salvos automaticamente no `appsettings.json` nas propriedades `Traceabilities` e `SerialNumberTraceability`.
    * São mantidos entre reinicializações da aplicação e aplicados para todos os processamentos de novos arquivos recebidos.
-6. **Formato do Arquivo CSV Exportado para o MeasurLink:**
-   * O arquivo CSV passa a contar **sempre** com uma linha dedicada exclusivamente à rastreabilidade na **terceira linha**:
-     * **Linha 1:** Identificação da Rotina (`data.PartName`)
-     * **Linha 2:** Identificação da Corrida / Lote (`data.BatchNumber`)
-     * **Linha 3 (Sempre Presente):** Rastreabilidades completas (`<nome>;<valor>;<nome>;<valor>;...`) ou linha vazia caso nenhum par esteja preenchido.
-     * **Linha 4:** Nomes das Características medidas (`Cota1;Cota2;...`)
-     * **Linha 5:** Leituras / Valores medidos (`Val1;Val2;...`)
+6. **Formato do Arquivo CSV Exportado para o MeasurLink (Modelo por Keywords):**
+   * A fim de otimizar a importação no MeasurLink (.itpl) e permitir que linhas ausentes não quebrem o processamento, adota-se o formato baseado em palavras-chave delimitadas por `|` no início da linha:
+     * `ROTINA|<Rotina>`
+     * `CORRIDA|<Corrida>`
+     * `NS|<Número de Série>` *(omitido caso não seja preenchido)*
+     * `RASTREABILIDADE|<Nome 1>;<Valor 1>` *(uma linha para cada par completo)*
+     * `RASTREABILIDADE|<Nome 2>;<Valor 2>`
+     * `DADO|<Nome característica 1>;<Valor medido 1>` *(uma linha para cada cota)*
+     * `DADO|<Nome característica 2>;<Valor medido 2>`
 
 ---
 
@@ -101,22 +107,22 @@ Para solucionar o problema de forma definitiva e imune a quaisquer variações d
 
 Todas as diretrizes foram alinhadas e aprovadas para o desenvolvimento da versão 1.2.9:
 
-### 🎯 Decisão 1 (D1): Linha 3 Dedicada e Sempre Presente (Opção 1B Aprovada)
-* O arquivo CSV gerado terá **sempre uma linha dedicada à rastreabilidade (Linha 3)**, mesmo que o usuário não tenha cadastrado itens ou nenhum campo esteja preenchido (gerando linha em branco).
-* O template `.itpl` do MeasurLink será configurado para mapear a Linha 3 permanentemente como rastreabilidade (`[T<;>]***`), garantindo que as Características estejam sempre na Linha 4 (`[C<;>]***`) e as Leituras na Linha 5 (`[A<;>]***`).
+### 🎯 Decisão 1 (D1 - Atualizada): Formato por Palavras-Chave (Keywords) com Delimitador `|`
+* O arquivo CSV gerado utiliza o formato flexível por palavras-chave (`ROTINA|`, `CORRIDA|`, `NS|`, `RASTREABILIDADE|`, `DADO|`).
+* O template `.itpl` do MeasurLink buscará essas palavras-chave no início de cada linha, conferindo robustez contra linhas vazias ou campos opcionais omitidos (ex: ausência de número de série ou de rastreabilidades adicionais).
 
-### 🎯 Decisão 2 (D2): Comportamento do Submenu / Popover Dinâmico
-* Interface ancorada ao menu superior com `Popup` / controle estilizado que previne fechamento involuntário durante a digitação de texto nos TextBoxes ou cliques no botão `+`.
-* Navegação ergonômica com a tecla `Tab` entre campo *Nome* e *Valor*.
-* Cada linha dispõe de um botão de exclusão (`✕`) para remoção ágil e o rodapé conta com o botão `+` para nova adição. Fechamento suave apenas com clique fora ou tecla `Esc`.
+### 🎯 Decisão 2 (D2 - Atualizada): Comportamento do Popover Compacto (IMG4)
+* Cartão compacto sem cabeçalho azul redundante, com campo fixo superior para "Número de Série" (acompanhado da nota explicativa `*Inserido como “Número de Série”`), grade de colunas Nome/Valor com dimensões compactas e botão `+` circular perfeitamente centralizado.
+* Resiliência de foco: não fecha ao digitar, tabular ou clicar em `+` ou `✕`, fechando ao clicar fora ou teclar `Esc`.
 
 ### 🎯 Decisão 3 (D3): Bloqueio Prévio de Caracteres Reservados na Digitação
-* O usuário será **estritamente impedido** de digitar ou colar caracteres reservados (ponto e vírgula `;` e quebras de linha `\r`, `\n`) diretamente nos campos de texto de Nome e Valor.
-* Interceptação via eventos `PreviewTextInput` e comando de colar (`DataObject.AddPastingHandler`), eliminando riscos de quebra de colunas no CSV sem necessidade de mensagens de alerta.
+* O usuário é estritamente impedido de digitar ou colar caracteres reservados (`;`, `|`, `\r`, `\n`) em qualquer campo de texto de rastreabilidade ou número de série.
+* Interceptação via eventos `PreviewTextInput` e comando de colar (`DataObject.AddPastingHandler`), além de sanitização defensiva nos modelos.
 
 ### 🎯 Decisão 4 (D4): Validação Visual e Exportação de Pares Completos
-* Apenas os pares que tiverem **ambos os campos (Nome E Valor)** preenchidos serão exportados para o CSV na Linha 3.
-* Se uma linha possuir apenas um campo preenchido e o outro vazio, o campo incompleto receberá destaque visual com borda/fundo vermelho (estilo padrão de validação do SelectML), informando sutilmente a pendência ao operador sem abrir diálogos modais de erro.
+* Apenas os pares que tiverem **ambos os campos (Nome E Valor)** preenchidos serão exportados em linhas `RASTREABILIDADE|...`.
+* O campo fixo "Número de Série" é opcional; quando preenchido, gera a linha `NS|<valor>`. Se vazio, a linha `NS|` é omitida.
+* Linhas dinâmicas com apenas um campo preenchido exibem destaque com borda vermelha suave.
 
 ### 🎯 Adicional 1: Menu Limpo
 * Conforme alinhado, o menu de Rastreabilidade não utilizará círculo pulsante, mantendo um leiaute discreto e limpo.

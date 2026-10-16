@@ -258,6 +258,22 @@ namespace SelectML.Client.ViewModels
         public ObservableCollection<string> AvailableDatabases { get; set; }
         public ObservableCollection<ResultItem> MeasuredResults { get; set; }
         public ObservableCollection<string> KnownFeatures { get; set; } = new ObservableCollection<string>();
+        private string _serialNumberTraceability = string.Empty;
+        public string SerialNumberTraceability
+        {
+            get => _serialNumberTraceability;
+            set
+            {
+                var sanitized = SanitizeTraceabilityToken(value);
+                if (_serialNumberTraceability != sanitized)
+                {
+                    _serialNumberTraceability = sanitized;
+                    OnPropertyChanged();
+                    SaveTraceabilities();
+                }
+            }
+        }
+
         public ObservableCollection<TraceabilityItem> TraceabilityItems { get; set; } = new ObservableCollection<TraceabilityItem>();
 
         private bool _isTraceabilityMenuOpen;
@@ -1000,6 +1016,7 @@ namespace SelectML.Client.ViewModels
             try
             {
                 var cfg = _configService.Load();
+                cfg.SerialNumberTraceability = SerialNumberTraceability;
                 cfg.Traceabilities = TraceabilityItems
                     .Select(t => new TraceabilityItem(t.Key, t.Value))
                     .ToList();
@@ -1120,6 +1137,9 @@ namespace SelectML.Client.ViewModels
             OnPropertyChanged(nameof(IsListAllFeaturesActive));
 
             // Carregamento de Rastreabilidades (V1.2.9)
+            _serialNumberTraceability = config.SerialNumberTraceability ?? string.Empty;
+            OnPropertyChanged(nameof(SerialNumberTraceability));
+
             TraceabilityItems.Clear();
             if (config.Traceabilities != null)
             {
@@ -2236,33 +2256,33 @@ namespace SelectML.Client.ViewModels
                 string fileName = $"Result_{data.PartName}_{DateTime.Now:yyyyMMdd_HHmmss}.csv";
                 string fullPath = Path.Combine(targetPath, fileName);
 
+                // Geração do CSV no formato de Palavras-Chave (Keywords com separador '|')
                 var sb = new StringBuilder();
-                sb.AppendLine(data.PartName);
-                sb.AppendLine(data.BatchNumber);
+                sb.AppendLine($"ROTINA|{SanitizeTraceabilityToken(data.PartName)}");
+                sb.AppendLine($"CORRIDA|{SanitizeTraceabilityToken(data.BatchNumber)}");
 
-                // Linha 3: Rastreabilidade dedicada permanente (Opção 1B)
-                // Apenas pares completos (Nome e Valor preenchidos) são exportados (D4)
+                // Linha NS (Número de Série - Opcional): emitida apenas quando preenchida
+                if (!string.IsNullOrWhiteSpace(SerialNumberTraceability))
+                {
+                    sb.AppendLine($"NS|{SanitizeTraceabilityToken(SerialNumberTraceability)}");
+                }
+
+                // Linhas RASTREABILIDADE: emitida uma linha para cada par completo (Nome e Valor)
                 var validTraceabilities = TraceabilityItems
                     .Where(t => t != null && t.IsComplete)
                     .ToList();
 
-                if (validTraceabilities.Count > 0)
+                foreach (var trace in validTraceabilities)
                 {
-                    var traceTokens = validTraceabilities
-                        .SelectMany(t => new[] { SanitizeTraceabilityToken(t.Key), SanitizeTraceabilityToken(t.Value) });
-                    sb.AppendLine(string.Join(";", traceTokens));
-                }
-                else
-                {
-                    sb.AppendLine(string.Empty);
+                    sb.AppendLine($"RASTREABILIDADE|{SanitizeTraceabilityToken(trace.Key)};{SanitizeTraceabilityToken(trace.Value)}");
                 }
 
-                // Linha 4: Nomes das Características
-                sb.AppendLine(string.Join(";", data.Results.Keys));
-
-                // Linha 5: Leituras / Valores Medidos
-                var values = data.Results.Values.Select(v => v.ToString(System.Globalization.CultureInfo.InvariantCulture));
-                sb.AppendLine(string.Join(";", values));
+                // Linhas DADO: emitida uma linha para cada característica medida
+                foreach (var kvp in data.Results)
+                {
+                    string formattedValue = kvp.Value.ToString(System.Globalization.CultureInfo.InvariantCulture);
+                    sb.AppendLine($"DADO|{SanitizeTraceabilityToken(kvp.Key)};{formattedValue}");
+                }
 
                 await File.WriteAllTextAsync(fullPath, sb.ToString(), new UTF8Encoding(true));
 
@@ -2298,6 +2318,7 @@ namespace SelectML.Client.ViewModels
 
             return text
                 .Replace(";", "-")
+                .Replace("|", "-")
                 .Replace("\r", string.Empty)
                 .Replace("\n", string.Empty)
                 .Trim();

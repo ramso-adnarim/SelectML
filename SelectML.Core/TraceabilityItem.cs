@@ -70,7 +70,10 @@ namespace SelectML.Core
             if (string.IsNullOrEmpty(text))
                 return string.Empty;
 
-            return text.Replace(";", string.Empty).Replace("\r", string.Empty).Replace("\n", string.Empty);
+            return text.Replace(";", string.Empty)
+                       .Replace("|", string.Empty)
+                       .Replace("\r", string.Empty)
+                       .Replace("\n", string.Empty);
         }
 
         /// <summary>

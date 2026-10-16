@@ -46,6 +46,7 @@ namespace SelectML.Client.Services
         public bool ListAllFeatures { get; set; } = false;
 
         // Traceability (V1.2.9)
+        public string SerialNumberTraceability { get; set; } = string.Empty;
         public List<TraceabilityItem> Traceabilities { get; set; } = new();
 
         // UI, Theme & Window Geometry Persistence

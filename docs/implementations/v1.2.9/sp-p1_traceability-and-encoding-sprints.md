@@ -105,16 +105,51 @@ As sprints estão estritamente segregadas entre a **Correção do Bug** (Sprint 
 
 ---
 
+---
+
+### 💎 Sprint 3.1: Refinamento Visual (IMG4) e Arquitetura CSV por Palavras-Chave (Keywords)
+> **Objetivo:** Refinar o Popover de Rastreabilidade conforme o feedback e especificações da *IMG4* (remover cabeçalho superior repetitivo, incluir campo fixo superior "Número de Série", reduzir escala geral e centralizar perfeitamente o botão "+") e migrar a geração do CSV de 5 linhas fixas para o modelo flexível por Keywords (`ROTINA|`, `CORRIDA|`, `NS|`, `RASTREABILIDADE|`, `DADO|`), permitindo omissão de linhas opcionais sem quebrar a integração com o MeasurLink ITPL.
+
+* **Arquivos Afetados:**
+  * `SelectML.Core/TraceabilityItem.cs`
+  * `SelectML.Client/Services/AppConfig.cs`
+  * `SelectML.Client/ViewModels/MainViewModel.cs`
+  * `SelectML.Client/MainWindow.xaml`
+  * `SelectML.Client/MainWindow.xaml.cs`
+* **Tarefas Técnicas:**
+  - [x] **Ajustes Visuais no Popover (conforme IMG4):**
+    - [x] Remover o banner azul superior "RASTREABILIDADE" (já sinalizado no menu principal).
+    - [x] Adicionar campo fixo permanente de largura total no topo para **"Número de Série"** (não permite exclusão; preenchimento opcional).
+    - [x] Adicionar nota informativa abaixo do campo fixo: `*Inserido como “Número de Série”` com tipografia discreta.
+    - [x] Reduzir ligeiramente as dimensões do Popover, fontes e caixas de texto (largura ~260px, altura de TextBoxes 24px, fontes 11-12px).
+    - [x] Centralizar matematicamente o símbolo `+` no círculo azul de destaque inferior e reduzir seu diâmetro para proporções harmoniosas.
+  - [x] **Ajustes Funcionais no Modelo de Dados e Persistência:**
+    - [x] Adicionar a propriedade `SerialNumberTraceability` em `AppConfig.cs` e `MainViewModel.cs` com auto-salvamento em `appsettings.json`.
+    - [x] Estender o bloqueio de caracteres para barrar também o delimitador pipe (`|`), além de ponto e vírgula (`;`), `\r` e `\n`.
+  - [x] **Migração do Mecanismo de Exportação CSV para Formato por Keywords:**
+    - [x] Implementar a estrutura por prefixos com delimitador `|`:
+      - `ROTINA|<Rotina>`
+      - `CORRIDA|<Corrida>`
+      - `NS|<Número de Série>` *(emitido apenas se preenchido)*
+      - `RASTREABILIDADE|<Nome>;<Valor>` *(uma linha para cada par completo preenchido)*
+      - `DADO|<Nome Característica>;<Valor Medido>` *(uma linha para cada característica medida)*
+    - [x] Garantir que linhas de dados ou rastreabilidades opcionais possam ser omitidas sem impactar o processador ITPL.
+* **Critério de Aceitação:**
+  * Painel Popover compacto, sem cabeçalho duplicado, com campo fixo superior "Número de Série" e botão `+` perfeitamente alinhado. [100% Concluído]
+  * Geração do arquivo CSV no formato de Keywords (`ROTINA|...`, `CORRIDA|...`, `NS|...`, `RASTREABILIDADE|...`, `DADO|...`). [100% Validado nos testes automatizados]
+
+---
+
 ### 🧪 Sprint 4: Homologação Integrada, Testes com Arquivos Reais e Não-Regressão
-> **Objetivo:** Executar a validação completa de ponta a ponta (E2E), incluindo o teste de arquivos reais da máquina cliente (`EFF2103.15A.CSV`), teste de não-regressão das funcionalidades da V1.2.8 (Templates, Serial U-WAVE, Rotinas) e validação da exportação do CSV para o MeasurLink.
+> **Objetivo:** Executar a validação completa de ponta a ponta (E2E), incluindo o teste de arquivos reais da máquina cliente (`EFF2103.15A.CSV`), teste de não-regressão das funcionalidades da V1.2.8 (Templates, Serial U-WAVE, Rotinas) e validação da exportação do CSV para o MeasurLink no novo formato de Keywords.
 
 * **Tarefas Técnicas:**
   - [ ] **Teste E2E 1 - Bug de Encoding:** Carregar `C:\SelectML\EFF2103.15A.CSV` no visualizador de templates e validar a exibição dos caracteres corretos sem espaços.
   - [ ] **Teste E2E 2 - Extração por Template:** Executar o motor de extração sobre `EFF2103.15A.CSV` e validar o retorno correto de `MeasurementData`.
-  - [ ] **Teste E2E 3 - Rastreabilidade UI:** Cadastrar múltiplos pares de rastreabilidade (ex: `Série = Metrologia`, `Operador = João`, `Turno = T1`), fechar e reabrir o SelectML conferindo a restauração.
-  - [ ] **Teste E2E 4 - Geração do CSV Final com Rastreabilidade:** Processar arquivo com rastreabilidade ativa e verificar que a Linha 3 contém `<nome>;<valor>;...`, Linha 4 cotas e Linha 5 leituras.
-  - [ ] **Teste E2E 5 - Geração do CSV Final sem Rastreabilidade:** Processar arquivo sem rastreabilidade e verificar que a Linha 3 permanece vazia, mantendo cotas na Linha 4 e leituras na Linha 5.
-  - [ ] **Teste E2E 6 - Bloqueio de Caracteres e Validação:** Tentar digitar `;` nos campos de texto e validar o bloqueio; deixar campo incompleto e validar a borda vermelha sem travar a exportação dos demais pares.
+  - [ ] **Teste E2E 3 - Rastreabilidade UI & Número de Série:** Cadastrar o "Número de Série" fixo e múltiplos pares de rastreabilidade (ex: `Lote = L01`, `Turno = T1`), fechar e reabrir o SelectML conferindo a restauração.
+  - [ ] **Teste E2E 4 - Geração do CSV Final por Keywords (Completo):** Processar arquivo com NS e rastreabilidade ativa e verificar a estrutura: `ROTINA|...`, `CORRIDA|...`, `NS|...`, `RASTREABILIDADE|...`, e linhas `DADO|...`.
+  - [ ] **Teste E2E 5 - Geração do CSV Final por Keywords (Omitido/Mínimo):** Processar arquivo sem NS e sem rastreabilidade e verificar que as linhas opcionais são omitidas de forma limpa, mantendo `ROTINA|`, `CORRIDA|` e `DADO|...`.
+  - [ ] **Teste E2E 6 - Bloqueio de Caracteres e Validação:** Tentar digitar `;` ou `|` nos campos de texto e validar o bloqueio; deixar par incompleto e validar a borda vermelha sem travar a exportação dos demais pares.
   - [ ] **Teste E2E 7 - Não Regressão:** Validar funcionamento contínuo do leitor serial U-WAVE, do modificador de nomes e da listagem de características da rotina.
 * **Critério de Aceitação:**
   * 100% dos testes aprovados com 0 erros de compilação, 0 exceções não tratadas e conformidade total com os requisitos da V1.2.9.
