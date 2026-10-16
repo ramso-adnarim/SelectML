@@ -78,10 +78,10 @@ As sprints estão estritamente segregadas entre a **Correção do Bug** (Sprint 
   * `SelectML.Client/MainWindow.xaml`
   * `SelectML.Client/ViewModels/MainViewModel.cs`
 * **Tarefas Técnicas:**
-  - [ ] Atualizar a barra de menus em `MainWindow.xaml`:
+  - [x] Atualizar a barra de menus em `MainWindow.xaml`:
     - Reposicionar os menus: `Porta Serial`, `Modificador de nomes`, **`Rastreabilidade`**, `Configuração`.
     - Manter o menu com visual limpo e sem círculo pulsante.
-  - [ ] Desenvolver o componente Popover / Submenu suspenso ancorado:
+  - [x] Desenvolver o componente Popover / Submenu suspenso ancorado:
     - **Banner Superior:** Fundo azul primário (`#2563EB`), cantos superiores arredondados e texto em negrito "Rastreabilidade".
     - **Cabeçalhos de Coluna:** Rótulos "Nome" e "Valor" com tipografia nítida e espaçamento proporcional.
     - **Linhas Dinâmicas:** `ItemsControl` bindado à `ObservableCollection<TraceabilityItem>` do `MainViewModel`.
@@ -92,9 +92,9 @@ As sprints estão estritamente segregadas entre a **Correção do Bug** (Sprint 
       - Destaque com borda/fundo vermelho no campo incompleto (caso um campo esteja preenchido e o outro vazio), sem exibir caixas de diálogo modais.
     - **Botão de Exclusão (✕):** Botão discreto à direita de cada linha para remoção do item da coleção.
     - **Botão de Adição (+):** Botão estilizado centralizado no rodapé do painel para inclusão de nova linha de rastreabilidade.
-  - [ ] Garantir resiliência de foco:
+  - [x] Garantir resiliência de foco:
     - O submenu deve permanecer aberto durante a digitação e cliques nos botões internos (`+` e `✕`), fechando apenas ao clicar fora do componente ou pressionar `Esc`.
-  - [ ] Persistência em tempo real:
+  - [x] Persistência em tempo real:
     - Qualquer inclusão, alteração de texto ou remoção atualiza a coleção e aciona a gravação automática no `appsettings.json`.
 * **Critério de Aceitação:**
   * O menu superior exibe "Rastreabilidade" com leiaute limpo.

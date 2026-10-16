@@ -19,8 +19,8 @@ namespace SelectML.Core
 
         public TraceabilityItem(string key, string value)
         {
-            _key = key ?? string.Empty;
-            _value = value ?? string.Empty;
+            _key = Sanitize(key);
+            _value = Sanitize(value);
         }
 
         /// <summary>
@@ -31,9 +31,10 @@ namespace SelectML.Core
             get => _key;
             set
             {
-                if (_key != value)
+                var sanitized = Sanitize(value);
+                if (_key != sanitized)
                 {
-                    _key = value ?? string.Empty;
+                    _key = sanitized;
                     OnPropertyChanged();
                     OnPropertyChanged(nameof(IsComplete));
                     OnPropertyChanged(nameof(IsEmpty));
@@ -51,9 +52,10 @@ namespace SelectML.Core
             get => _value;
             set
             {
-                if (_value != value)
+                var sanitized = Sanitize(value);
+                if (_value != sanitized)
                 {
-                    _value = value ?? string.Empty;
+                    _value = sanitized;
                     OnPropertyChanged();
                     OnPropertyChanged(nameof(IsComplete));
                     OnPropertyChanged(nameof(IsEmpty));
@@ -61,6 +63,14 @@ namespace SelectML.Core
                     OnPropertyChanged(nameof(IsValueInvalid));
                 }
             }
+        }
+
+        private static string Sanitize(string? text)
+        {
+            if (string.IsNullOrEmpty(text))
+                return string.Empty;
+
+            return text.Replace(";", string.Empty).Replace("\r", string.Empty).Replace("\n", string.Empty);
         }
 
         /// <summary>

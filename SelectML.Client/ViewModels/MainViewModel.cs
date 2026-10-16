@@ -169,6 +169,7 @@ namespace SelectML.Client.ViewModels
             ClearParserCommand = new RelayCommand(obj => SelectedParser = null, CanChangeConfig);
             AddTraceabilityCommand = new RelayCommand(ExecuteAddTraceability);
             RemoveTraceabilityCommand = new RelayCommand(ExecuteRemoveTraceability);
+            ToggleTraceabilityMenuCommand = new RelayCommand(obj => IsTraceabilityMenuOpen = !IsTraceabilityMenuOpen);
 
             LoadParsers();
             LoadConfiguration();
@@ -258,6 +259,24 @@ namespace SelectML.Client.ViewModels
         public ObservableCollection<ResultItem> MeasuredResults { get; set; }
         public ObservableCollection<string> KnownFeatures { get; set; } = new ObservableCollection<string>();
         public ObservableCollection<TraceabilityItem> TraceabilityItems { get; set; } = new ObservableCollection<TraceabilityItem>();
+
+        private bool _isTraceabilityMenuOpen;
+        public bool IsTraceabilityMenuOpen
+        {
+            get => _isTraceabilityMenuOpen;
+            set
+            {
+                if (_isTraceabilityMenuOpen != value)
+                {
+                    _isTraceabilityMenuOpen = value;
+                    OnPropertyChanged();
+                    if (_isTraceabilityMenuOpen && TraceabilityItems.Count == 0)
+                    {
+                        ExecuteAddTraceability(null);
+                    }
+                }
+            }
+        }
 
         public bool IsConfigLocked
         {
@@ -793,6 +812,7 @@ namespace SelectML.Client.ViewModels
         public RelayCommand ClearParserCommand { get; }
         public RelayCommand AddTraceabilityCommand { get; }
         public RelayCommand RemoveTraceabilityCommand { get; }
+        public RelayCommand ToggleTraceabilityMenuCommand { get; }
 
         // --- Métodos de Configuração e Watcher ---
 
