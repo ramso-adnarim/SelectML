@@ -167,6 +167,8 @@ namespace SelectML.Client.ViewModels
             OpenNameModifierConfigCommand = new RelayCommand(ExecuteOpenNameModifierConfig);
             OpenTemplateConfigCommand = new RelayCommand(ExecuteOpenTemplateConfig, CanChangeConfig);
             ClearParserCommand = new RelayCommand(obj => SelectedParser = null, CanChangeConfig);
+            AddTraceabilityCommand = new RelayCommand(ExecuteAddTraceability);
+            RemoveTraceabilityCommand = new RelayCommand(ExecuteRemoveTraceability);
 
             LoadParsers();
             LoadConfiguration();
@@ -255,6 +257,7 @@ namespace SelectML.Client.ViewModels
         public ObservableCollection<string> AvailableDatabases { get; set; }
         public ObservableCollection<ResultItem> MeasuredResults { get; set; }
         public ObservableCollection<string> KnownFeatures { get; set; } = new ObservableCollection<string>();
+        public ObservableCollection<TraceabilityItem> TraceabilityItems { get; set; } = new ObservableCollection<TraceabilityItem>();
 
         public bool IsConfigLocked
         {
@@ -788,6 +791,8 @@ namespace SelectML.Client.ViewModels
         public RelayCommand OpenNameModifierConfigCommand { get; }
         public RelayCommand OpenTemplateConfigCommand { get; }
         public RelayCommand ClearParserCommand { get; }
+        public RelayCommand AddTraceabilityCommand { get; }
+        public RelayCommand RemoveTraceabilityCommand { get; }
 
         // --- Métodos de Configuração e Watcher ---
 
@@ -937,6 +942,55 @@ namespace SelectML.Client.ViewModels
             }
         }
 
+        private void ExecuteAddTraceability(object? obj)
+        {
+            var newItem = new TraceabilityItem();
+            HookTraceabilityItem(newItem);
+            TraceabilityItems.Add(newItem);
+            SaveTraceabilities();
+        }
+
+        private void ExecuteRemoveTraceability(object? obj)
+        {
+            if (obj is TraceabilityItem item)
+            {
+                UnhookTraceabilityItem(item);
+                TraceabilityItems.Remove(item);
+                SaveTraceabilities();
+            }
+        }
+
+        private void HookTraceabilityItem(TraceabilityItem item)
+        {
+            item.PropertyChanged += OnTraceabilityItemPropertyChanged;
+        }
+
+        private void UnhookTraceabilityItem(TraceabilityItem item)
+        {
+            item.PropertyChanged -= OnTraceabilityItemPropertyChanged;
+        }
+
+        private void OnTraceabilityItemPropertyChanged(object? sender, PropertyChangedEventArgs e)
+        {
+            SaveTraceabilities();
+        }
+
+        private void SaveTraceabilities()
+        {
+            try
+            {
+                var cfg = _configService.Load();
+                cfg.Traceabilities = TraceabilityItems
+                    .Select(t => new TraceabilityItem(t.Key, t.Value))
+                    .ToList();
+                _configService.Save(cfg);
+            }
+            catch (Exception ex)
+            {
+                Log.Warning(ex, "Falha ao salvar configurações de rastreabilidade.");
+            }
+        }
+
         private void LoadParsers()
         {
             var path = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Plugins");
@@ -1044,6 +1098,18 @@ namespace SelectML.Client.ViewModels
 
             _isListAllFeaturesActive = config.ListAllFeatures;
             OnPropertyChanged(nameof(IsListAllFeaturesActive));
+
+            // Carregamento de Rastreabilidades (V1.2.9)
+            TraceabilityItems.Clear();
+            if (config.Traceabilities != null)
+            {
+                foreach (var item in config.Traceabilities)
+                {
+                    var traceItem = new TraceabilityItem(item.Key, item.Value);
+                    HookTraceabilityItem(traceItem);
+                    TraceabilityItems.Add(traceItem);
+                }
+            }
         }
 
         private async void ExecuteSaveConfig(object obj)
@@ -2153,7 +2219,28 @@ namespace SelectML.Client.ViewModels
                 var sb = new StringBuilder();
                 sb.AppendLine(data.PartName);
                 sb.AppendLine(data.BatchNumber);
+
+                // Linha 3: Rastreabilidade dedicada permanente (Opção 1B)
+                // Apenas pares completos (Nome e Valor preenchidos) são exportados (D4)
+                var validTraceabilities = TraceabilityItems
+                    .Where(t => t != null && t.IsComplete)
+                    .ToList();
+
+                if (validTraceabilities.Count > 0)
+                {
+                    var traceTokens = validTraceabilities
+                        .SelectMany(t => new[] { SanitizeTraceabilityToken(t.Key), SanitizeTraceabilityToken(t.Value) });
+                    sb.AppendLine(string.Join(";", traceTokens));
+                }
+                else
+                {
+                    sb.AppendLine(string.Empty);
+                }
+
+                // Linha 4: Nomes das Características
                 sb.AppendLine(string.Join(";", data.Results.Keys));
+
+                // Linha 5: Leituras / Valores Medidos
                 var values = data.Results.Values.Select(v => v.ToString(System.Globalization.CultureInfo.InvariantCulture));
                 sb.AppendLine(string.Join(";", values));
 
@@ -2182,6 +2269,18 @@ namespace SelectML.Client.ViewModels
                     System.Windows.MessageBox.Show($"Erro ao salvar: {ex.Message}", "Erro", MessageBoxButton.OK, MessageBoxImage.Error);
                 }
             }
+        }
+
+        private static string SanitizeTraceabilityToken(string? text)
+        {
+            if (string.IsNullOrWhiteSpace(text))
+                return string.Empty;
+
+            return text
+                .Replace(";", "-")
+                .Replace("\r", string.Empty)
+                .Replace("\n", string.Empty)
+                .Trim();
         }
 
         private void ExecuteCancel(object obj)

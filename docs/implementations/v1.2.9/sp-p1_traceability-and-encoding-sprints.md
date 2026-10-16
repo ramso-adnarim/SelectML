@@ -54,20 +54,20 @@ As sprints estão estritamente segregadas entre a **Correção do Bug** (Sprint 
   * `SelectML.Client/Services/AppConfig.cs`
   * `SelectML.Client/ViewModels/MainViewModel.cs`
 * **Tarefas Técnicas:**
-  - [ ] Criar a classe de modelo `TraceabilityItem` em `SelectML.Core`:
+  - [x] Criar a classe de modelo `TraceabilityItem` em `SelectML.Core`:
     - Propriedades `Key` (Nome) e `Value` (Valor), com suporte a `INotifyPropertyChanged` para atualização instantânea na UI.
     - Propriedades de validação visual (`IsKeyInvalid`, `IsValueInvalid`) acionadas quando apenas um dos campos estiver preenchido.
-  - [ ] Atualizar `AppConfig.cs`:
+  - [x] Atualizar `AppConfig.cs`:
     - Adicionar propriedade `public List<TraceabilityItem> Traceabilities { get; set; } = new();`.
     - Garantir compatibilidade retroativa para JSONs legados sem a chave.
-  - [ ] Atualizar o gerador de CSV em `MainViewModel.GenerateOutputCsv`:
+  - [x] Atualizar o gerador de CSV em `MainViewModel.GenerateOutputCsv`:
     - Filtrar apenas os pares completos que contenham **ambos os campos preenchidos** (`Key` e `Value`).
     - Injetar **sempre uma linha dedicada à rastreabilidade na Linha 3**:
       - Se houver pares completos: `<nome>;<valor>;<nome>;<valor>;...`
       - Se nenhum par estiver completo (ou lista vazia): linha vazia (`""`).
     - Posicionar permanentemente as características na **Linha 4** e as leituras na **Linha 5**.
 * **Critério de Aceitação:**
-  * Ao processar qualquer medição, o CSV gerado contém rigorosamente 5 linhas: Linha 1 (Rotina), Linha 2 (Corrida), Linha 3 (Rastreabilidade preenchida ou vazia), Linha 4 (Características) e Linha 5 (Leituras).
+  * Ao processar qualquer medição, o CSV gerado contém rigorosamente 5 linhas: Linha 1 (Rotina), Linha 2 (Corrida), Linha 3 (Rastreabilidade preenchida ou vazia), Linha 4 (Características) e Linha 5 (Leituras). [100% Validado com êxito na suíte automatizada de testes]
 
 ---
 
