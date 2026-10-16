@@ -144,12 +144,12 @@ As sprints estão estritamente segregadas entre a **Correção do Bug** (Sprint 
 > **Objetivo:** Executar a validação completa de ponta a ponta (E2E), incluindo o teste de arquivos reais da máquina cliente (`EFF2103.15A.CSV`), teste de não-regressão das funcionalidades da V1.2.8 (Templates, Serial U-WAVE, Rotinas) e validação da exportação do CSV para o MeasurLink no novo formato de Keywords.
 
 * **Tarefas Técnicas:**
-  - [ ] **Teste E2E 1 - Bug de Encoding:** Carregar `C:\SelectML\EFF2103.15A.CSV` no visualizador de templates e validar a exibição dos caracteres corretos sem espaços.
-  - [ ] **Teste E2E 2 - Extração por Template:** Executar o motor de extração sobre `EFF2103.15A.CSV` e validar o retorno correto de `MeasurementData`.
-  - [ ] **Teste E2E 3 - Rastreabilidade UI & Número de Série:** Cadastrar o "Número de Série" fixo e múltiplos pares de rastreabilidade (ex: `Lote = L01`, `Turno = T1`), fechar e reabrir o SelectML conferindo a restauração.
-  - [ ] **Teste E2E 4 - Geração do CSV Final por Keywords (Completo):** Processar arquivo com NS e rastreabilidade ativa e verificar a estrutura: `ROTINA|...`, `CORRIDA|...`, `NS|...`, `RASTREABILIDADE|...`, e linhas `DADO|...`.
-  - [ ] **Teste E2E 5 - Geração do CSV Final por Keywords (Omitido/Mínimo):** Processar arquivo sem NS e sem rastreabilidade e verificar que as linhas opcionais são omitidas de forma limpa, mantendo `ROTINA|`, `CORRIDA|` e `DADO|...`.
-  - [ ] **Teste E2E 6 - Bloqueio de Caracteres e Validação:** Tentar digitar `;` ou `|` nos campos de texto e validar o bloqueio; deixar par incompleto e validar a borda vermelha sem travar a exportação dos demais pares.
-  - [ ] **Teste E2E 7 - Não Regressão:** Validar funcionamento contínuo do leitor serial U-WAVE, do modificador de nomes e da listagem de características da rotina.
+  - [x] **Teste E2E 1 - Bug de Encoding:** Carregar `C:\SelectML\EFF2103.15A.CSV` no visualizador de templates e validar a exibição dos caracteres corretos sem espaços.
+  - [x] **Teste E2E 2 - Extração por Template:** Executar o motor de extração sobre `EFF2103.15A.CSV` e validar o retorno correto de `MeasurementData`.
+  - [x] **Teste E2E 3 - Rastreabilidade UI & Número de Série:** Cadastrar o "Número de Série" fixo e múltiplos pares de rastreabilidade (ex: `Lote = L01`, `Turno = T1`), fechar e reabrir o SelectML conferindo a restauração.
+  - [x] **Teste E2E 4 - Geração do CSV Final por Keywords (Completo):** Processar arquivo com NS e rastreabilidade ativa e verificar a estrutura: `ROTINA|...`, `CORRIDA|...`, `NS|...`, `RASTREABILIDADE|...`, e linhas `DADO|...`.
+  - [x] **Teste E2E 5 - Geração do CSV Final por Keywords (Omitido/Mínimo):** Processar arquivo sem NS e sem rastreabilidade e verificar que as linhas opcionais são omitidas de forma limpa, mantendo `ROTINA|`, `CORRIDA|` e `DADO|...`.
+  - [x] **Teste E2E 6 - Bloqueio de Caracteres e Validação:** Tentar digitar `;` ou `|` nos campos de texto e validar o bloqueio; deixar par incompleto e validar a borda vermelha sem travar a exportação dos demais pares.
+  - [x] **Teste E2E 7 - Não Regressão:** Validar funcionamento contínuo do leitor serial U-WAVE, do modificador de nomes e da listagem de características da rotina.
 * **Critério de Aceitação:**
-  * 100% dos testes aprovados com 0 erros de compilação, 0 exceções não tratadas e conformidade total com os requisitos da V1.2.9.
+  * 100% dos testes aprovados com 0 erros de compilação, 0 exceções não tratadas e conformidade total com os requisitos da V1.2.9. [100% Homologado e Aprovado nos Testes]
