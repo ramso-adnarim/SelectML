@@ -56,23 +56,23 @@ As sprints estão estritamente segregadas entre a **Correção do Bug** (Sprint 
 * **Tarefas Técnicas:**
   - [ ] Criar a classe de modelo `TraceabilityItem` em `SelectML.Core`:
     - Propriedades `Key` (Nome) e `Value` (Valor), com suporte a `INotifyPropertyChanged` para atualização instantânea na UI.
+    - Propriedades de validação visual (`IsKeyInvalid`, `IsValueInvalid`) acionadas quando apenas um dos campos estiver preenchido.
   - [ ] Atualizar `AppConfig.cs`:
     - Adicionar propriedade `public List<TraceabilityItem> Traceabilities { get; set; } = new();`.
     - Garantir compatibilidade retroativa para JSONs legados sem a chave.
   - [ ] Atualizar o gerador de CSV em `MainViewModel.GenerateOutputCsv`:
-    - Avaliar se existem rastreabilidades cadastradas com `Key` não vazio.
-    - Se existirem, sanitizar delimitadores proibidos (substituir `;` e remover quebras de linha `\r\n`).
-    - Injetar a linha de rastreabilidade na **Linha 3**:  
-      `<nome>;<valor>;<nome>;<valor>;...`
-    - Deslocar a linha de características para a **Linha 4** e a de leituras para a **Linha 5**.
-    - Se a lista estiver vazia, manter a estrutura legada de 4 linhas (conforme Decisão D1 do Plano de Implementação).
+    - Filtrar apenas os pares completos que contenham **ambos os campos preenchidos** (`Key` e `Value`).
+    - Injetar **sempre uma linha dedicada à rastreabilidade na Linha 3**:
+      - Se houver pares completos: `<nome>;<valor>;<nome>;<valor>;...`
+      - Se nenhum par estiver completo (ou lista vazia): linha vazia (`""`).
+    - Posicionar permanentemente as características na **Linha 4** e as leituras na **Linha 5**.
 * **Critério de Aceitação:**
-  * Ao processar uma medição com rastreabilidades cadastradas, o CSV gerado contém a linha 3 exatamente no padrão `<nome>;<valor>;...`, sem corrupção de delimitadores.
+  * Ao processar qualquer medição, o CSV gerado contém rigorosamente 5 linhas: Linha 1 (Rotina), Linha 2 (Corrida), Linha 3 (Rastreabilidade preenchida ou vazia), Linha 4 (Características) e Linha 5 (Leituras).
 
 ---
 
 ### 🎨 Sprint 3: Nova Funcionalidade - Menu Superior "Rastreabilidade" e Painel Popover
-> **Objetivo:** Implementar o menu "Rastreabilidade" na barra superior de `MainWindow.xaml` (à direita de "Modificador de nomes" e antes de "Configuração"), com painel suspenso (Popover) interativo estritamente fiel ao design da *IMG3* (cabeçalho azul, grade com colunas Nome e Valor, botões de exclusão e botão de adição `+`).
+> **Objetivo:** Implementar o menu "Rastreabilidade" na barra superior de `MainWindow.xaml` (à direita de "Modificador de nomes" e antes de "Configuração"), com menu limpo (sem círculo pulsante) e painel suspenso (Popover) interativo estritamente fiel ao design da *IMG3* (cabeçalho azul, grade com colunas Nome e Valor, botões de exclusão, botão de adição `+`, bloqueio estrito de caracteres reservados na digitação e destaque visual vermelho para campos incompletos).
 
 * **Arquivos Afetados:**
   * `SelectML.Client/MainWindow.xaml`
@@ -80,12 +80,16 @@ As sprints estão estritamente segregadas entre a **Correção do Bug** (Sprint 
 * **Tarefas Técnicas:**
   - [ ] Atualizar a barra de menus em `MainWindow.xaml`:
     - Reposicionar os menus: `Porta Serial`, `Modificador de nomes`, **`Rastreabilidade`**, `Configuração`.
-    - Adicionar o indicador luminoso circular verde (`TraceabilityIndicator`) ativado quando houver itens válidos preenchidos.
+    - Manter o menu com visual limpo e sem círculo pulsante.
   - [ ] Desenvolver o componente Popover / Submenu suspenso ancorado:
     - **Banner Superior:** Fundo azul primário (`#2563EB`), cantos superiores arredondados e texto em negrito "Rastreabilidade".
     - **Cabeçalhos de Coluna:** Rótulos "Nome" e "Valor" com tipografia nítida e espaçamento proporcional.
     - **Linhas Dinâmicas:** `ItemsControl` bindado à `ObservableCollection<TraceabilityItem>` do `MainViewModel`.
-    - **Campos de Entrada:** `TextBox` estilizador para digitação rápida de Nome e Valor com navegação por tecla `Tab`.
+    - **Campos de Entrada com Bloqueio de Caracteres Reservados:**
+      - Bloqueio estrito de digitação e colagem de ponto e vírgula (`;`) e quebras de linha (`\r`, `\n`).
+      - Navegação rápida via tecla `Tab`.
+    - **Validação Visual Não-Intrusiva:**
+      - Destaque com borda/fundo vermelho no campo incompleto (caso um campo esteja preenchido e o outro vazio), sem exibir caixas de diálogo modais.
     - **Botão de Exclusão (✕):** Botão discreto à direita de cada linha para remoção do item da coleção.
     - **Botão de Adição (+):** Botão estilizado centralizado no rodapé do painel para inclusão de nova linha de rastreabilidade.
   - [ ] Garantir resiliência de foco:
@@ -93,9 +97,10 @@ As sprints estão estritamente segregadas entre a **Correção do Bug** (Sprint 
   - [ ] Persistência em tempo real:
     - Qualquer inclusão, alteração de texto ou remoção atualiza a coleção e aciona a gravação automática no `appsettings.json`.
 * **Critério de Aceitação:**
-  * O menu superior exibe "Rastreabilidade" na posição solicitada.
+  * O menu superior exibe "Rastreabilidade" com leiaute limpo.
   * O clique abre o painel conforme o leiaute da *IMG3*.
-  * O operador adiciona, digita e remove itens de rastreabilidade de forma fluida e sem fechamento prematuro do menu.
+  * O operador não consegue digitar nem colar ponto e vírgula `;` ou quebras de linha nos campos.
+  * Linhas com preenchimento incompleto exibem a sinalização visual vermelha suave.
   * Ao reiniciar a aplicação, os valores digitados continuam intactos.
 
 ---
@@ -107,8 +112,9 @@ As sprints estão estritamente segregadas entre a **Correção do Bug** (Sprint 
   - [ ] **Teste E2E 1 - Bug de Encoding:** Carregar `C:\SelectML\EFF2103.15A.CSV` no visualizador de templates e validar a exibição dos caracteres corretos sem espaços.
   - [ ] **Teste E2E 2 - Extração por Template:** Executar o motor de extração sobre `EFF2103.15A.CSV` e validar o retorno correto de `MeasurementData`.
   - [ ] **Teste E2E 3 - Rastreabilidade UI:** Cadastrar múltiplos pares de rastreabilidade (ex: `Série = Metrologia`, `Operador = João`, `Turno = T1`), fechar e reabrir o SelectML conferindo a restauração.
-  - [ ] **Teste E2E 4 - Geração do CSV Final:** Processar arquivo com rastreabilidade ativa e verificar que a Linha 3 contém `<nome>;<valor>;...` e que as linhas de cotas e leituras estão nas posições 4 e 5.
-  - [ ] **Teste E2E 5 - Modo Legado sem Rastreabilidade:** Processar arquivo sem rastreabilidade e verificar a preservação do layout legado de 4 linhas.
-  - [ ] **Teste E2E 6 - Não Regressão:** Validar funcionamento contínuo do leitor serial U-WAVE, do modificador de nomes e da listagem de características da rotina.
+  - [ ] **Teste E2E 4 - Geração do CSV Final com Rastreabilidade:** Processar arquivo com rastreabilidade ativa e verificar que a Linha 3 contém `<nome>;<valor>;...`, Linha 4 cotas e Linha 5 leituras.
+  - [ ] **Teste E2E 5 - Geração do CSV Final sem Rastreabilidade:** Processar arquivo sem rastreabilidade e verificar que a Linha 3 permanece vazia, mantendo cotas na Linha 4 e leituras na Linha 5.
+  - [ ] **Teste E2E 6 - Bloqueio de Caracteres e Validação:** Tentar digitar `;` nos campos de texto e validar o bloqueio; deixar campo incompleto e validar a borda vermelha sem travar a exportação dos demais pares.
+  - [ ] **Teste E2E 7 - Não Regressão:** Validar funcionamento contínuo do leitor serial U-WAVE, do modificador de nomes e da listagem de características da rotina.
 * **Critério de Aceitação:**
   * 100% dos testes aprovados com 0 erros de compilação, 0 exceções não tratadas e conformidade total com os requisitos da V1.2.9.

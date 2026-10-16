@@ -82,56 +82,44 @@ Para solucionar o problema de forma definitiva e imune a quaisquer variações d
      * Linhas com campos de entrada (`TextBox`) padronizados, com visual moderno e tema responsivo.
      * Botão de exclusão (`✕` ou 🗑️) em cada linha para remoção limpa de entradas individuais.
      * Botão inferior centralizado **`+`** para inclusão dinâmica de novas linhas.
-4. **Indicador Visual de Atividade:**
-   * Ponto circular luminoso (verde) ao lado do título *"Rastreabilidade"* no menu principal, ativo quando houver ao menos um campo preenchido.
+4. **Estilo Visual do Menu:**
+   * Menu limpo sem indicador pulsante, mantendo harmonia com o menu superior.
 5. **Persistência das Rastreabilidades:**
    * Os dados preenchidos pelo operador são salvos automaticamente no `appsettings.json` na propriedade `Traceabilities`.
    * São mantidos entre reinicializações da aplicação e aplicados para todos os processamentos de novos arquivos recebidos.
 6. **Formato do Arquivo CSV Exportado para o MeasurLink:**
-   * Os dados de rastreabilidade cadastrados são injetados na **terceira linha do arquivo CSV gerado**:
+   * O arquivo CSV passa a contar **sempre** com uma linha dedicada exclusivamente à rastreabilidade na **terceira linha**:
      * **Linha 1:** Identificação da Rotina (`data.PartName`)
      * **Linha 2:** Identificação da Corrida / Lote (`data.BatchNumber`)
-     * **Linha 3:** Rastreabilidades: `<nome>;<valor>;<nome>;<valor>;...`
+     * **Linha 3 (Sempre Presente):** Rastreabilidades completas (`<nome>;<valor>;<nome>;<valor>;...`) ou linha vazia caso nenhum par esteja preenchido.
      * **Linha 4:** Nomes das Características medidas (`Cota1;Cota2;...`)
      * **Linha 5:** Leituras / Valores medidos (`Val1;Val2;...`)
 
 ---
 
-## 4. Análise de Conflitos, Trade-Offs e Guia de Decisões de Projeto
+## 4. Diretrizes Arquiteturais e Decisões Alinhadas
 
-Abaixo estão os pontos de atenção e escolhas arquiteturais identificadas durante a elaboração deste plano, com a nossa recomendação técnica e o guia para direcionamento:
+Todas as diretrizes foram alinhadas e aprovadas para o desenvolvimento da versão 1.2.9:
 
-### ⚖️ Decisão 1 (D1): Comportamento do CSV quando a lista de rastreabilidades estiver vazia
-* **Contexto:** Na versão atual, o CSV gerado possui 4 linhas (Linha 1: Rotina, Linha 2: Corrida, Linha 3: Características, Linha 4: Leituras). O template de importação padrão do MeasurLink (`SELECTML.itpl`) espera `[C<;>]***` na Linha 3 e `[A<;>]***` na Linha 4.
-* **Opção 1A (Recomendada): Injeção Condicional:**
-  * Se o usuário **não** cadastrou rastreabilidades (ou todos os campos estiverem em branco), a Linha 3 de rastreabilidade é omitida e o arquivo mantém as 4 linhas legadas.
-  * Se o usuário cadastrou ao menos uma rastreabilidade válida, a linha `<nome>;<valor>;...` é injetada na Linha 3, empurrando as características para a Linha 4 e leituras para a Linha 5.
-* **Opção 1B: Linha 3 Fixa Sempre Presente:**
-  * Mesmo sem rastreabilidades, gera uma Linha 3 vazia (apenas `\r\n`).
-  * *Risco:* Pode quebrar templates do MeasurLink que esperam cotas na Linha 3 quando o usuário não estiver usando rastreabilidade.
-* **Recomendação:** **Opção 1A**, acompanhada de documentação de configuração do template `.itpl` do MeasurLink para receber a linha de rastreabilidade `[T<;>]***`.
+### 🎯 Decisão 1 (D1): Linha 3 Dedicada e Sempre Presente (Opção 1B Aprovada)
+* O arquivo CSV gerado terá **sempre uma linha dedicada à rastreabilidade (Linha 3)**, mesmo que o usuário não tenha cadastrado itens ou nenhum campo esteja preenchido (gerando linha em branco).
+* O template `.itpl` do MeasurLink será configurado para mapear a Linha 3 permanentemente como rastreabilidade (`[T<;>]***`), garantindo que as Características estejam sempre na Linha 4 (`[C<;>]***`) e as Leituras na Linha 5 (`[A<;>]***`).
 
-### ⚖️ Decisão 2 (D2): Comportamento do Submenu / Popover do WPF durante a digitação
-* **Contexto:** Menus nativos do WPF (`MenuItem`) tendem a fechar automaticamente quando o foco se desloca ou quando o usuário clica dentro de controles filhos como `TextBox` e `Button`.
-* **Abordagem Técnica Recomendada:**
-  * Implementar o painel suspenso utilizando um controle estilizado acoplado ao menu com `Popup` (`StaysOpen="False"` ou manipulador de cliques fora da área), permitindo:
-    * Digitação fluida nos TextBoxes sem fechamento prematuro.
-    * Navegação com tecla `Tab` entre campo *Nome* e campo *Valor*.
-    * Adição contínua via botão `+` mantendo o painel aberto e visível.
-    * Fechamento automático natural apenas ao clicar fora do painel ou teclar `Esc`.
+### 🎯 Decisão 2 (D2): Comportamento do Submenu / Popover Dinâmico
+* Interface ancorada ao menu superior com `Popup` / controle estilizado que previne fechamento involuntário durante a digitação de texto nos TextBoxes ou cliques no botão `+`.
+* Navegação ergonômica com a tecla `Tab` entre campo *Nome* e *Valor*.
+* Cada linha dispõe de um botão de exclusão (`✕`) para remoção ágil e o rodapé conta com o botão `+` para nova adição. Fechamento suave apenas com clique fora ou tecla `Esc`.
 
-### ⚖️ Decisão 3 (D3): Tratamento de Caracteres Reservados no Nome e Valor
-* **Contexto:** O CSV gerado é delimitado por ponto e vírgula (`;`) e quebras de linha (`\r\n`).
-* **Tratamento:** Se o usuário digitar acidentalmente um `;` ou der quebra de linha no nome ou valor da rastreabilidade (ex: `Nome = "Lote;Op"`), as colunas do CSV seriam fragmentadas.
-* **Solução:** Aplicar sanitização preventiva no momento da exportação:
-  * Substituição de `;` por hífen `-` ou espaço.
-  * Remoção estrita de quebras de linha (`\r` e `\n`).
+### 🎯 Decisão 3 (D3): Bloqueio Prévio de Caracteres Reservados na Digitação
+* O usuário será **estritamente impedido** de digitar ou colar caracteres reservados (ponto e vírgula `;` e quebras de linha `\r`, `\n`) diretamente nos campos de texto de Nome e Valor.
+* Interceptação via eventos `PreviewTextInput` e comando de colar (`DataObject.AddPastingHandler`), eliminando riscos de quebra de colunas no CSV sem necessidade de mensagens de alerta.
 
-### ⚖️ Decisão 4 (D4): Validação de Pares Incompletos
-* **Contexto:** Usuário cria uma linha e preenche o Nome (ex: `Operador`), mas deixa o Valor em branco (ou cria a linha e deixa ambos em branco).
-* **Solução Recomendada:**
-  * Itens com *Nome* e *Valor* totalmente vazios são ignorados na exportação.
-  * Itens com *Nome* preenchido e *Valor* vazio são exportados normalmente como `<nome>;` (respeitando o layout do MeasurLink).
+### 🎯 Decisão 4 (D4): Validação Visual e Exportação de Pares Completos
+* Apenas os pares que tiverem **ambos os campos (Nome E Valor)** preenchidos serão exportados para o CSV na Linha 3.
+* Se uma linha possuir apenas um campo preenchido e o outro vazio, o campo incompleto receberá destaque visual com borda/fundo vermelho (estilo padrão de validação do SelectML), informando sutilmente a pendência ao operador sem abrir diálogos modais de erro.
+
+### 🎯 Adicional 1: Menu Limpo
+* Conforme alinhado, o menu de Rastreabilidade não utilizará círculo pulsante, mantendo um leiaute discreto e limpo.
 
 ---
 
@@ -151,20 +139,22 @@ graph TD
     end
 
     subgraph "Mecanismo de Rastreabilidade (UI & Persistência)"
-        MenuTrace["Menu Superior 'Rastreabilidade'"] --> Dropdown["Painel Suspenso (Conforme IMG3)"]
+        MenuTrace["Menu Superior 'Rastreabilidade'"] --> Dropdown["Painel Suspenso Popover (IMG3)"]
         Dropdown --> HeaderBlue["Cabeçalho Azul 'Rastreabilidade'"]
         Dropdown --> Rows["Lista Dinâmica (Nome | Valor)"]
+        Rows --> InputFilter["Bloqueio de ';' e Quebras de Linha"]
+        Rows --> Validation["Validação Visual Vermelha se Incompleto"]
         Rows --> BtnAdd["Botão (+) Adicionar Linha"]
         Rows --> BtnDel["Botão (✕) Excluir Linha"]
         Dropdown --> SaveConfig["Auto-Save em %APPDATA%/SelectML/appsettings.json"]
-        SaveConfig --> Indicator["Ponto Verde Luminoso no Menu"]
     end
 
     subgraph "Geração do CSV para MeasurLink (MainViewModel)"
-        MeasData["MeasurementData Recebido"] --> HasTrace{"Possui Rastreabilidades Válidas?"}
-        HasTrace -->|Sim| BuildCSVWithTrace["Linha 1: PartName<br/>Linha 2: BatchNumber<br/>Linha 3: Nome;Valor;Nome;Valor;...<br/>Linha 4: Características<br/>Linha 5: Leituras"]
-        HasTrace -->|Não| BuildCSVLegacy["Linha 1: PartName<br/>Linha 2: BatchNumber<br/>Linha 3: Características<br/>Linha 4: Leituras"]
+        MeasData["MeasurementData Recebido"] --> FilterComplete["Filtra Pares Completos (Nome E Valor)"]
+        FilterComplete --> HasValid{"Existem Pares Válidos?"}
+        HasValid -->|Sim| BuildCSVWithTrace["Linha 1: PartName<br/>Linha 2: BatchNumber<br/>Linha 3: Nome;Valor;Nome;Valor;...<br/>Linha 4: Características<br/>Linha 5: Leituras"]
+        HasValid -->|Não| BuildCSVEmptyLine["Linha 1: PartName<br/>Linha 2: BatchNumber<br/>Linha 3: (Vazia)<br/>Linha 4: Características<br/>Linha 5: Leituras"]
         BuildCSVWithTrace --> ExportCSV["Grava Arquivo UTF-8 com BOM no Diretório Output"]
-        BuildCSVLegacy --> ExportCSV
+        BuildCSVEmptyLine --> ExportCSV
     end
 ```
