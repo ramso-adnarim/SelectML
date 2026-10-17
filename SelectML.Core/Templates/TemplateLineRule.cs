@@ -89,13 +89,13 @@ namespace SelectML.Core.Templates
         /// </summary>
         public string RoleDescription => Role switch
         {
-            LineRuleRole.PartName => "Nome da Rotina / Peça",
-            LineRuleRole.BatchNumber => "Nome da Corrida / Lote",
-            LineRuleRole.CharacteristicNames => "Características (Nomes)",
-            LineRuleRole.MeasuredValues => "Valores Medidos",
-            LineRuleRole.RowFeatureAndValue => "Cota + Valor (Linha a Linha)",
+            LineRuleRole.PartName => "Rotina",
+            LineRuleRole.BatchNumber => "Corrida",
+            LineRuleRole.CharacteristicNames => "Características",
+            LineRuleRole.MeasuredValues => "Valores",
+            LineRuleRole.RowFeatureAndValue => "Característica + Valor",
             LineRuleRole.RowFeatureColumn => "Coluna de Característica",
-            LineRuleRole.RowValueColumn => "Coluna de Valor Medido",
+            LineRuleRole.RowValueColumn => "Coluna de Valor",
             _ => Role.ToString()
         };
 
@@ -120,7 +120,7 @@ namespace SelectML.Core.Templates
 
                     string featText = FeatureColumnIndex >= 0 ? $"Col. {FeatureColumnIndex + 1}" : "(Pendente)";
                     string valText = ValueColumnIndex >= 0 ? $"Col. {ValueColumnIndex + 1}" : "(Pendente)";
-                    return $"Cota: {featText}, Valor: {valText} (Sep: '{Separator}')";
+                    return $"{featText} + {valText} (Sep: '{Separator}')";
                 }
                 if (Role == LineRuleRole.PartName || Role == LineRuleRole.BatchNumber)
                 {

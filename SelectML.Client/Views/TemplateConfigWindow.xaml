@@ -364,8 +364,8 @@
                                 </DataGrid.RowStyle>
                                 <DataGrid.Columns>
                                     <DataGridTextColumn Header="Linha" Binding="{Binding LineDisplay}" Width="95"/>
-                                    <DataGridTextColumn Header="Função / Papel" Binding="{Binding RoleDescription}" Width="160"/>
-                                    <DataGridTextColumn Header="Detalhes da Extração" Binding="{Binding DetailsDisplay}" Width="*"/>
+                                    <DataGridTextColumn Header="Função" Binding="{Binding RoleDescription}" Width="160"/>
+                                    <DataGridTextColumn Header="Composição" Binding="{Binding DetailsDisplay}" Width="*"/>
                                     <DataGridTemplateColumn Width="45">
                                         <DataGridTemplateColumn.CellTemplate>
                                             <DataTemplate>
@@ -500,7 +500,7 @@
                                                         <Ellipse Width="10" Height="10" Fill="#E06C75" VerticalAlignment="Center" HorizontalAlignment="Center"/>
                                                     </MenuItem.Icon>
                                                 </MenuItem>
-                                                <MenuItem Header="Nome da Corrida (BatchNumber)" Click="OnMarkBatchNumberClick">
+                                                <MenuItem Header="Corrida" Click="OnMarkBatchNumberClick">
                                                     <MenuItem.Icon>
                                                         <Ellipse Width="10" Height="10" Fill="#C678DD" VerticalAlignment="Center" HorizontalAlignment="Center"/>
                                                     </MenuItem.Icon>

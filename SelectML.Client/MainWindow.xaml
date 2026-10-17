@@ -595,7 +595,7 @@
                                                                 <DataTrigger Binding="{Binding IsKeyInvalid}" Value="True">
                                                                     <Setter Property="BorderBrush" Value="{DynamicResource Brush.Status.Error}"/>
                                                                     <Setter Property="Background" Value="{DynamicResource Brush.Status.Error.Background}"/>
-                                                                    <Setter Property="ToolTip" Value="Preenchimento do Nome obrigatório quando o Valor for informado."/>
+                                                                    <Setter Property="ToolTip" Value="Preenchimento obrigatório."/>
                                                                 </DataTrigger>
                                                             </Style.Triggers>
                                                         </Style>
@@ -621,7 +621,7 @@
                                                                 <DataTrigger Binding="{Binding IsValueInvalid}" Value="True">
                                                                     <Setter Property="BorderBrush" Value="{DynamicResource Brush.Status.Error}"/>
                                                                     <Setter Property="Background" Value="{DynamicResource Brush.Status.Error.Background}"/>
-                                                                    <Setter Property="ToolTip" Value="Preenchimento do Valor obrigatório quando o Nome for informado."/>
+                                                                    <Setter Property="ToolTip" Value="Preenchimento obrigatório."/>
                                                                 </DataTrigger>
                                                             </Style.Triggers>
                                                         </Style>
@@ -849,7 +849,7 @@
                     
                     <!-- Left: Folder -->
                     <StackPanel Grid.Column="0">
-                        <TextBlock Text="Diretório de monitoramento" Style="{StaticResource LabelText}"/>
+                        <TextBlock Text="Pasta de monitoramento" Style="{StaticResource LabelText}"/>
                         <Grid Margin="0,0,0,15">
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="*"/>
@@ -1032,7 +1032,7 @@
                                                     <DataTrigger Binding="{Binding IsBatchNumberValid}" Value="False">
                                                         <Setter Property="BorderBrush" TargetName="border" Value="{DynamicResource Brush.Status.Error}"/>
                                                         <Setter Property="BorderThickness" TargetName="border" Value="2"/>
-                                                        <Setter Property="ToolTip" Value="Corrida/Lote não encontrado no banco de dados."/>
+                                                        <Setter Property="ToolTip" Value="Corrida não encontrada no banco de dados."/>
                                                     </DataTrigger>
                                                 </ControlTemplate.Triggers>
                                             </ControlTemplate>

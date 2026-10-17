@@ -2398,7 +2398,7 @@ namespace SelectML.Client.ViewModels
                 if (_fileBuffer.Count > 0)
                 {
                     var file = _fileBuffer.Dequeue();
-                    UpdateStatus($"Processando arquivo bufferizado ({_fileBuffer.Count} restantes)...");
+                    UpdateStatus($"Processando arquivo na fila ({_fileBuffer.Count} restantes)...");
                     // Need to call ProcessFile (async)
                     await ProcessFile(file, Path.GetFileName(file));
                 }
@@ -2445,7 +2445,7 @@ namespace SelectML.Client.ViewModels
                 TriggerValidation();
                 // Lock UI for the new serial data
                 IsPendingAction = true;
-                StatusMessage = "Dados seriais recuperados do buffer.";
+                StatusMessage = "Dados seriais recuperados da fila.";
                 RequestRestoreWindow?.Invoke();
             }
         }
@@ -2461,7 +2461,7 @@ namespace SelectML.Client.ViewModels
                     {
                         // Cenário de colisão com arquivo sendo processado
                         _serialBuffer.Enqueue(e);
-                        StatusMessage = $"Dado serial em buffer ({_serialBuffer.Count})...";
+                        StatusMessage = $"Dado serial na fila ({_serialBuffer.Count})...";
                         return;
                     }
 
@@ -2513,7 +2513,7 @@ namespace SelectML.Client.ViewModels
                     {
                         // Cenário A: Colisão. Enfileirar no Buffer Reverso.
                         _serialBuffer.Enqueue(e);
-                        StatusMessage = $"Dado serial em buffer ({_serialBuffer.Count})...";
+                        StatusMessage = $"Dado serial na fila ({_serialBuffer.Count})...";
                     }
                     else
                     {
@@ -2568,7 +2568,7 @@ namespace SelectML.Client.ViewModels
                 list.RemoveAt(list.Count - 1);
                 _serialBuffer = new Queue<SerialMeasurement>(list);
                 UpdateStatus(_serialBuffer.Count > 0 
-                    ? $"Dado serial em buffer desfeito ({_serialBuffer.Count} restantes)..."
+                    ? $"Dado serial na fila desfeito ({_serialBuffer.Count} restantes)..."
                     : "Dados seriais em buffer desfeitos.");
                 Log.Information("Serial buffer item undone via hardware trigger");
                 return;
@@ -2889,7 +2889,7 @@ namespace SelectML.Client.ViewModels
         private void ExecuteSelectOutputDirectory(object obj)
         {
             var dlg = new System.Windows.Forms.FolderBrowserDialog();
-            dlg.Description = "Selecione o diretório de Saída";
+            dlg.Description = "Selecione a pasta de saída";
             if (dlg.ShowDialog() == System.Windows.Forms.DialogResult.OK)
             {
                 OutputDirectory = dlg.SelectedPath;
