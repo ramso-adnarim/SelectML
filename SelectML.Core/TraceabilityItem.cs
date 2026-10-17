@@ -98,6 +98,7 @@ namespace SelectML.Core
             OnPropertyChanged(nameof(IsStrictSelection));
             OnPropertyChanged(nameof(IsSelectionWithAdditions));
             OnPropertyChanged(nameof(SampleMask));
+            OnPropertyChanged(nameof(HasSampleMask));
             NotifyAllStateChanged();
         }
 
@@ -142,6 +143,12 @@ namespace SelectML.Core
         /// </summary>
         [JsonIgnore]
         public string? SampleMask => _definition?.Mask?.SampleMask;
+
+        /// <summary>
+        /// Indica se há texto de exemplo/máscara configurado.
+        /// </summary>
+        [JsonIgnore]
+        public bool HasSampleMask => !string.IsNullOrEmpty(SampleMask);
 
         /// <summary>
         /// Indica se o valor digitado desrespeita a máscara Regex configurada no MeasurLink.
@@ -238,6 +245,18 @@ namespace SelectML.Core
         [JsonIgnore]
         public bool IsValueInvalid => !string.IsNullOrWhiteSpace(_key) && string.IsNullOrWhiteSpace(_value);
 
+        /// <summary>
+        /// Destaque de erro visual para a coluna Nome (Nome vazio enquanto Valor está preenchido).
+        /// </summary>
+        [JsonIgnore]
+        public bool HasKeyError => IsKeyInvalid;
+
+        /// <summary>
+        /// Destaque de erro visual para a coluna Valor (Valor vazio com Nome preenchido OU máscara Regex desrespeitada).
+        /// </summary>
+        [JsonIgnore]
+        public bool HasValueError => IsValueInvalid || IsMaskInvalid;
+
         private void NotifyAllStateChanged()
         {
             OnPropertyChanged(nameof(IsComplete));
@@ -245,6 +264,8 @@ namespace SelectML.Core
             OnPropertyChanged(nameof(IsKeyInvalid));
             OnPropertyChanged(nameof(IsValueInvalid));
             OnPropertyChanged(nameof(IsMaskInvalid));
+            OnPropertyChanged(nameof(HasKeyError));
+            OnPropertyChanged(nameof(HasValueError));
             OnPropertyChanged(nameof(HasError));
             OnPropertyChanged(nameof(HasWarning));
             OnPropertyChanged(nameof(ValidationToolTip));

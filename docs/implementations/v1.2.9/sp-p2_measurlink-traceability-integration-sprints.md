@@ -94,25 +94,25 @@ graph LR
   * `SelectML.Client/Themes/Dark.xaml`
   * `SelectML.Client/Themes/Light.xaml`
 * **Tarefas Técnicas:**
-  - [ ] Atualizar coluna "Nome" em `MainWindow.xaml`:
+  - [x] Atualizar coluna "Nome" em `MainWindow.xaml`:
     - Implementar `ComboBox` editável (`IsEditable="True"`), estilizado conforme o padrão de controles da aplicação.
     - Vincular `ItemsSource` à lista de nomes de rastreabilidades disponíveis e `Text` ao `Key`.
-  - [ ] Atualizar coluna "Valor" em `MainWindow.xaml`:
+  - [x] Atualizar coluna "Valor" em `MainWindow.xaml`:
     - Implementar controle reativo:
       - Quando houver opções (`HasPredefinedOptions`): renderizar `ComboBox` com `ItemsSource="{Binding PredefinedOptions}"` e `IsEditable` conforme o `ItemType`.
       - Quando não houver opções: renderizar `TextBox` com suporte a placeholder/watermark exibindo `SampleMask` quando disponível.
-  - [ ] Implementar triggers de estilo visual de validação:
+  - [x] Implementar triggers de estilo visual de validação:
     - Borda Vermelha (`Brush.Status.Error`) e fundo de erro para `HasError == true` (campo incompleto ou máscara inválida).
     - Borda Âmbar/Amarela (`Brush.Status.Warning`) para `HasWarning == true` (rastreabilidade não mapeada na corrida).
-    - ToolTips contextuais informando a causa exata do destaque (ex: `"Formato exigido: 00'00''"` ou `"Esta rastreabilidade não está mapeada nesta corrida"`).
-  - [ ] Inserir novo item no Menu `Configuração`:
+    - ToolTips contextuais informando a causa exata do destaque (ex: `"Formato exigido: 00'00''"` ou `"Esta rastreabilidade não está mapeada nesta corrida no MeasurLink."`).
+  - [x] Inserir novo item no Menu `Configuração`:
     - `<MenuItem Header="Enviar apenas rastreabilidades mapeadas" IsCheckable="True" IsChecked="{Binding IsOnlyMappedTraceabilitiesActive}"/>`
-  - [ ] Manter restrições de entrada:
+  - [x] Manter restrições de entrada:
     - Bloqueio de `;`, `|`, `\r` e `\n` em digitação e colagem em todos os campos.
 * **Critério de Aceitação:**
-  * O Popover exibe ComboBox editável na coluna "Nome" e adapta dinamicamente a coluna "Valor".
-  * Campos inválidos ganham borda vermelha e campos não mapeados na corrida ganham borda amarela.
-  * O menu `Configuração` exibe o novo checkbox persistente.
+  * O Popover exibe ComboBox editável na coluna "Nome" e adapta dinamicamente a coluna "Valor". [100% Concluído e Validado]
+  * Campos inválidos ganham borda vermelha e campos não mapeados na corrida ganham borda amarela. [100% Concluído e Validado]
+  * O menu `Configuração` exibe o novo checkbox persistente. [100% Concluído e Validado]
 
 ---
 
