@@ -275,6 +275,9 @@ namespace SelectML.Client.ViewModels
         }
 
         public ObservableCollection<TraceabilityItem> TraceabilityItems { get; set; } = new ObservableCollection<TraceabilityItem>();
+        public ObservableCollection<string> AvailableTraceabilityNames { get; set; } = new ObservableCollection<string>();
+        private List<TraceabilityFieldDefinition> _availableTraceabilities = new();
+        private HashSet<string> _activeRunTraceabilities = new(StringComparer.OrdinalIgnoreCase);
 
         private bool _isTraceabilityMenuOpen;
         public bool IsTraceabilityMenuOpen
@@ -286,9 +289,17 @@ namespace SelectML.Client.ViewModels
                 {
                     _isTraceabilityMenuOpen = value;
                     OnPropertyChanged();
-                    if (_isTraceabilityMenuOpen && TraceabilityItems.Count == 0)
+                    if (_isTraceabilityMenuOpen)
                     {
-                        ExecuteAddTraceability(null);
+                        if (AvailableTraceabilityNames.Count == 0)
+                        {
+                            _ = LoadAvailableTraceabilitiesAsync();
+                        }
+
+                        if (TraceabilityItems.Count == 0)
+                        {
+                            ExecuteAddTraceability(null);
+                        }
                     }
                 }
             }
@@ -494,6 +505,32 @@ namespace SelectML.Client.ViewModels
                     else if (!string.IsNullOrWhiteSpace(BatchNumber))
                     {
                         _ = LoadFeaturesForPart();
+                    }
+                }
+            }
+        }
+
+        private bool _isOnlyMappedTraceabilitiesActive;
+        public bool IsOnlyMappedTraceabilitiesActive
+        {
+            get => _isOnlyMappedTraceabilitiesActive;
+            set
+            {
+                if (_isOnlyMappedTraceabilitiesActive != value)
+                {
+                    _isOnlyMappedTraceabilitiesActive = value;
+                    OnPropertyChanged();
+
+                    try
+                    {
+                        var config = _configService.Load();
+                        config.SendOnlyMappedTraceabilities = _isOnlyMappedTraceabilitiesActive;
+                        _configService.Save(config);
+                        Log.Information("SendOnlyMappedTraceabilities changed and saved: {Active}", _isOnlyMappedTraceabilitiesActive);
+                    }
+                    catch (Exception ex)
+                    {
+                        Log.Error(ex, "Failed to save SendOnlyMappedTraceabilities configuration");
                     }
                 }
             }
@@ -1008,6 +1045,18 @@ namespace SelectML.Client.ViewModels
 
         private void OnTraceabilityItemPropertyChanged(object? sender, PropertyChangedEventArgs e)
         {
+            if (sender is TraceabilityItem item && e.PropertyName == nameof(TraceabilityItem.Key))
+            {
+                if (_activeRunTraceabilities.Count > 0 && !string.IsNullOrWhiteSpace(item.Key))
+                {
+                    item.IsUnmappedInRun = !_activeRunTraceabilities.Contains(item.Key);
+                }
+                else
+                {
+                    item.IsUnmappedInRun = false;
+                }
+            }
+
             SaveTraceabilities();
         }
 
@@ -1020,11 +1069,84 @@ namespace SelectML.Client.ViewModels
                 cfg.Traceabilities = TraceabilityItems
                     .Select(t => new TraceabilityItem(t.Key, t.Value))
                     .ToList();
+                cfg.SendOnlyMappedTraceabilities = IsOnlyMappedTraceabilitiesActive;
                 _configService.Save(cfg);
             }
             catch (Exception ex)
             {
                 Log.Warning(ex, "Falha ao salvar configurações de rastreabilidade.");
+            }
+        }
+
+        public async Task LoadAvailableTraceabilitiesAsync(bool forceRefresh = false)
+        {
+            try
+            {
+                if (_databaseService == null) return;
+                var list = await _databaseService.GetAllAvailableTraceabilitiesAsync();
+                if (list != null)
+                {
+                    _availableTraceabilities = list;
+                    TraceabilityItem.CatalogResolver = name =>
+                        _availableTraceabilities.FirstOrDefault(d => string.Equals(d.ListName, name, StringComparison.OrdinalIgnoreCase));
+
+                    await System.Windows.Application.Current.Dispatcher.InvokeAsync(() =>
+                    {
+                        AvailableTraceabilityNames.Clear();
+                        foreach (var def in list)
+                        {
+                            AvailableTraceabilityNames.Add(def.ListName);
+                        }
+
+                        foreach (var item in TraceabilityItems)
+                        {
+                            item.RefreshDefinition();
+                        }
+                    });
+                }
+            }
+            catch (Exception ex)
+            {
+                Log.Warning(ex, "Erro ao carregar catálogo de rastreabilidades.");
+            }
+        }
+
+        private async Task UpdateRunTraceabilitiesAsync(string runName)
+        {
+            if (string.IsNullOrWhiteSpace(runName) || _databaseService == null)
+            {
+                _activeRunTraceabilities.Clear();
+                System.Windows.Application.Current?.Dispatcher.Invoke(() =>
+                {
+                    foreach (var item in TraceabilityItems)
+                    {
+                        if (item != null) item.IsUnmappedInRun = false;
+                    }
+                });
+                return;
+            }
+
+            try
+            {
+                var mappedNames = await _databaseService.GetRunTraceabilitiesAsync(runName);
+                _activeRunTraceabilities = new HashSet<string>(mappedNames ?? Enumerable.Empty<string>(), StringComparer.OrdinalIgnoreCase);
+
+                System.Windows.Application.Current?.Dispatcher.Invoke(() =>
+                {
+                    foreach (var item in TraceabilityItems)
+                    {
+                        if (item != null)
+                        {
+                            item.IsUnmappedInRun = _activeRunTraceabilities.Count > 0 &&
+                                                   !string.IsNullOrWhiteSpace(item.Key) &&
+                                                   !_activeRunTraceabilities.Contains(item.Key);
+                        }
+                    }
+                });
+            }
+            catch (Exception ex)
+            {
+                Log.Warning(ex, "Erro ao atualizar rastreabilidades da corrida para {RunName}", runName);
             }
         }
 
@@ -1136,6 +1258,9 @@ namespace SelectML.Client.ViewModels
             _isListAllFeaturesActive = config.ListAllFeatures;
             OnPropertyChanged(nameof(IsListAllFeaturesActive));
 
+            _isOnlyMappedTraceabilitiesActive = config.SendOnlyMappedTraceabilities;
+            OnPropertyChanged(nameof(IsOnlyMappedTraceabilitiesActive));
+
             // Carregamento de Rastreabilidades (V1.2.9)
             _serialNumberTraceability = config.SerialNumberTraceability ?? string.Empty;
             OnPropertyChanged(nameof(SerialNumberTraceability));
@@ -1150,6 +1275,9 @@ namespace SelectML.Client.ViewModels
                     TraceabilityItems.Add(traceItem);
                 }
             }
+
+            // Inicia carga em segundo plano das rastreabilidades disponíveis do banco
+            _ = LoadAvailableTraceabilitiesAsync();
         }
 
         private async void ExecuteSaveConfig(object obj)
@@ -1218,6 +1346,7 @@ namespace SelectML.Client.ViewModels
                 
                 // Re-initialize database service
                 _databaseService = new DatabaseService(config.ConnectionString);
+                _ = LoadAvailableTraceabilitiesAsync(forceRefresh: true);
 
                 StartWatcher();
 
@@ -1585,6 +1714,9 @@ namespace SelectML.Client.ViewModels
                          // Manually set validation state since we suppressed the automatic check
                          IsBatchNumberValid = !string.IsNullOrEmpty(DetectedStationName) || !string.IsNullOrEmpty(_expectedPartName);
                          if (string.IsNullOrWhiteSpace(data.BatchNumber)) IsBatchNumberValid = true;
+
+                         // Consulta e validação de rastreabilidades da corrida (V1.2.9 - Fase 2)
+                         await UpdateRunTraceabilitiesAsync(data.BatchNumber);
 
                          var expectedFeatures = await _databaseService.GetFeaturesForRunAsync(data.BatchNumber);
                          List<InspectionFeatureInfo>? routineFeatures = null;
@@ -1959,6 +2091,7 @@ namespace SelectML.Client.ViewModels
             try 
             {
                  var features = await _databaseService.GetFeaturesForRunAsync(BatchNumber);
+                 await UpdateRunTraceabilitiesAsync(BatchNumber);
                  List<InspectionFeatureInfo>? routineFeatures = null;
                  if (IsListAllFeaturesActive)
                  {
@@ -2267,9 +2400,10 @@ namespace SelectML.Client.ViewModels
                     sb.AppendLine($"NS|{SanitizeTraceabilityToken(SerialNumberTraceability)}");
                 }
 
-                // Linhas RASTREABILIDADE: emitida uma linha para cada par completo (Nome e Valor)
+                // Linhas RASTREABILIDADE: emitida uma linha para cada par completo, com máscara válida e (se configurado) mapeado na corrida
                 var validTraceabilities = TraceabilityItems
-                    .Where(t => t != null && t.IsComplete)
+                    .Where(t => t != null && t.IsComplete && !t.IsMaskInvalid)
+                    .Where(t => !IsOnlyMappedTraceabilitiesActive || !t.IsUnmappedInRun)
                     .ToList();
 
                 foreach (var trace in validTraceabilities)
@@ -2365,6 +2499,12 @@ namespace SelectML.Client.ViewModels
                 KnownFeatures.Clear(); // Limpa features obsoletas
                 _currentData = null;   // Reseta contexto de dados do arquivo
                 _isProcessingFile = false; // Libera o lock do Modo Arquivo
+
+                _activeRunTraceabilities.Clear();
+                foreach (var item in TraceabilityItems)
+                {
+                    if (item != null) item.IsUnmappedInRun = false;
+                }
                 // IsPendingAction deve ser false aqui, a menos que reativado por dados buferizados
                 
                 // Check Buffers

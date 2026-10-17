@@ -48,6 +48,7 @@ namespace SelectML.Client.Services
         // Traceability (V1.2.9)
         public string SerialNumberTraceability { get; set; } = string.Empty;
         public List<TraceabilityItem> Traceabilities { get; set; } = new();
+        public bool SendOnlyMappedTraceabilities { get; set; } = false;
 
         // UI, Theme & Window Geometry Persistence
         public bool IsDarkMode { get; set; } = true;

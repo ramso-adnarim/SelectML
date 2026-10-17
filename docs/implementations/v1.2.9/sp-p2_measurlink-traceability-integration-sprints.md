@@ -59,7 +59,7 @@ graph LR
   * `SelectML.Client/Services/AppConfig.cs`
   * `SelectML.Client/ViewModels/MainViewModel.cs`
 * **Tarefas Técnicas:**
-  - [ ] Atualizar `TraceabilityItem`:
+  - [x] Atualizar `TraceabilityItem`:
     - Adicionar propriedade `TraceabilityFieldDefinition? Definition` e reatividade na alteração de `Key`:
       - Se `Key` corresponder a uma rastreabilidade cadastrada, vincular a definição, opções e máscara.
       - Se for um texto não cadastrado, operar em modo livre (sem restrições).
@@ -69,9 +69,9 @@ graph LR
       - `IsUnmappedInRun`: Indica se a rastreabilidade não faz parte do `RunTraceabilityList` da corrida ativa.
       - `HasError`: `IsKeyInvalid || IsValueInvalid || IsMaskInvalid` (Prioridade 1 - Vermelho).
       - `HasWarning`: `!HasError && IsComplete && IsUnmappedInRun` (Prioridade 2 - Âmbar).
-  - [ ] Atualizar `AppConfig.cs`:
+  - [x] Atualizar `AppConfig.cs`:
     - Adicionar propriedade persistente: `public bool SendOnlyMappedTraceabilities { get; set; } = false;`.
-  - [ ] Atualizar `MainViewModel.cs`:
+  - [x] Atualizar `MainViewModel.cs`:
     - Adicionar propriedade `IsOnlyMappedTraceabilitiesActive` vinculada a `AppConfig`.
     - Carregar catálogo global de rastreabilidades ao conectar com o banco de dados.
     - Ao processar arquivo (ou alterar lote), consultar `GetRunTraceabilitiesAsync(BatchNumber)` e atualizar o estado `IsUnmappedInRun` dos itens preenchidos no Popover.
@@ -79,9 +79,9 @@ graph LR
       - Omitir itens com `IsMaskInvalid == true`.
       - Se `SendOnlyMappedTraceabilities == true`, omitir itens com `IsUnmappedInRun == true`.
 * **Critério de Aceitação:**
-  * Ao digitar ou selecionar uma rastreabilidade conhecida, o modelo carrega instantaneamente as opções e máscara.
-  * Valores com máscara incorreta geram `IsMaskInvalid = true` e são omitidos na exportação sem quebrar as demais linhas.
-  * A opção "Enviar apenas rastreabilidades mapeadas" é persistida em `appsettings.json` e filtra adequadamente o CSV final.
+  * Ao digitar ou selecionar uma rastreabilidade conhecida, o modelo carrega instantaneamente as opções e máscara. [100% Concluído e Validado]
+  * Valores com máscara incorreta geram `IsMaskInvalid = true` e são omitidos na exportação sem quebrar as demais linhas. [100% Concluído e Validado]
+  * A opção "Enviar apenas rastreabilidades mapeadas" é persistida em `appsettings.json` e filtra adequadamente o CSV final. [100% Concluído e Validado]
 
 ---
 
