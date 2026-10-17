@@ -139,3 +139,34 @@ graph LR
     - Validar leitor serial U-WAVE, modificador de nomes, templates e geração por Keywords. [Validado]
 * **Critério de Aceitação:**
   * 100% dos cenários de teste aprovados com zero erros de compilação e zero exceções não tratadas. [100% Concluído e Validado]
+
+---
+
+### 🔧 Sprint 5: Correções Práticas e Estabilidade de Digitação / Mapeamento
+> **Objetivo:** Resolver pontos levantados durante testes práticos com a aplicação: persistência de rastreabilidades ao clicar em "Salvar e Iniciar", travamento/corrida assíncrona ao digitar rapidamente em Corrida/Rotina, e filtro da combobox de características para restringir apenas a variáveis numéricas.
+
+* **Tarefas Técnicas:**
+  - [x] **Correção 1 - Persistência de Rastreabilidades no "Salvar e Iniciar":**
+    - Identificada causa-raiz: `AvailableTraceabilityNames.Clear()` no carregamento pós-conexão forçava `SelectedItem = null` em ComboBoxes editáveis no WPF, apagando `Key` e `Value` das linhas configuradas e sobrescrevendo `appsettings.json`.
+    - Solução implementada:
+      - Introduzido bloqueio `_isUpdatingTraceabilityCatalog = true` durante recarga de catálogo, suspendendo `SaveTraceabilities()` reentrante.
+      - Sincronização in-loco de `AvailableTraceabilityNames` (apenas itens adicionados/removidos, sem `Clear()` blanket).
+      - Snapshot e restauração resiliente de chaves e valores prévios de `TraceabilityItems` antes de chamar `item.RefreshDefinition()`.
+      - Persistência explícita de `TraceabilityItems` em `ExecuteSaveConfig`.
+  - [x] **Correção 2 - Debounce e Cancelamento de Queries Concorrentes (BatchNumber e PartName):**
+    - Identificada causa-raiz: A cada caractere digitado ou apagado com `UpdateSourceTrigger=PropertyChanged`, dezenas de tarefas SQL assíncronas concorrentes eram disparadas sem debounce e sem cancelamento, causando saturação, bloqueio do dispatcher UI e race condition (respostas antigas sobrescrevendo o estado de validação).
+    - Solução implementada:
+      - Adicionado debounce de 350ms com `CancellationTokenSource` para `BatchNumber` e `PartName`.
+      - Cancelamento de buscas em andamento a cada novo caractere digitado.
+      - Descarte atômico de respostas obsoletas (`if (_batchNumber != batchNumber) return;`).
+      - Tratamento imediato de limpeza de campo sem disparar consultas ao banco de dados.
+  - [x] **Correção 3 - Restrição da Combobox de Características Apenas para Variáveis Numéricas:**
+    - Identificada causa-raiz: No mapeamento de cotas não reconhecidas importadas de arquivos, a ComboBox da coluna `Característica` exibia todas as cotas da rotina, incluindo atributos (ex: `FeatureType = 2/4`). Ao selecionar um atributo, o valor numérico sumia devido à alternância para template de toggle de atributo.
+    - Solução implementada:
+      - Criada coleção dedicada `KnownVariableFeatures` em `MainViewModel`, populada exclusivamente com cotas de rotina do tipo Variável (`!rf.IsAttribute` / `FeatureType = 1`).
+      - ComboBox do template editável da tabela (`FeatureColumnTemplateSelector.EditableTemplate`) vinculada a `KnownVariableFeatures`.
+      - Trava adicional em `TryMergeWithPendingRoutineItem` para garantir que apenas cotas de rotina do tipo Variável recebam valores numéricos de arquivo.
+* **Critério de Aceitação:**
+  * Configurações de rastreabilidade feitas antes ou depois da conexão persistem integralmente ao iniciar monitoramento. [100% Concluído e Validado]
+  * Digitação rápida e apagamento no nome da corrida e rotina fluem com 0 travamento e validação consistente sem borda vermelha espúria. [100% Concluído e Validado]
+  * Dropdown de características não reconhecidas lista apenas variáveis e impede seleção acidental de atributos. [100% Concluído e Validado]

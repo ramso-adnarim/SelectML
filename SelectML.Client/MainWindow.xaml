@@ -343,7 +343,7 @@
             </sel:FeatureColumnTemplateSelector.ReadOnlyTemplate>
             <sel:FeatureColumnTemplateSelector.EditableTemplate>
                 <DataTemplate>
-                    <ComboBox ItemsSource="{Binding DataContext.KnownFeatures, RelativeSource={RelativeSource AncestorType=Window}}" 
+                    <ComboBox ItemsSource="{Binding DataContext.KnownVariableFeatures, RelativeSource={RelativeSource AncestorType=Window}}" 
                               Text="{Binding Characteristic, UpdateSourceTrigger=PropertyChanged}" 
                               IsEnabled="{Binding DataContext.IsPendingAction, RelativeSource={RelativeSource AncestorType=Window}}"
                               Style="{StaticResource CompactComboBoxStyle}"/>

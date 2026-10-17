@@ -258,6 +258,7 @@ namespace SelectML.Client.ViewModels
         public ObservableCollection<string> AvailableDatabases { get; set; }
         public ObservableCollection<ResultItem> MeasuredResults { get; set; }
         public ObservableCollection<string> KnownFeatures { get; set; } = new ObservableCollection<string>();
+        public ObservableCollection<string> KnownVariableFeatures { get; set; } = new ObservableCollection<string>();
         private string _serialNumberTraceability = string.Empty;
         public string SerialNumberTraceability
         {
@@ -278,6 +279,10 @@ namespace SelectML.Client.ViewModels
         public ObservableCollection<string> AvailableTraceabilityNames { get; set; } = new ObservableCollection<string>();
         private List<TraceabilityFieldDefinition> _availableTraceabilities = new();
         private HashSet<string> _activeRunTraceabilities = new(StringComparer.OrdinalIgnoreCase);
+        private bool _isUpdatingTraceabilityCatalog;
+        private CancellationTokenSource? _batchDebounceCts;
+        private CancellationTokenSource? _partDebounceCts;
+        private bool _suppressPartLookup;
 
         private bool _isTraceabilityMenuOpen;
         public bool IsTraceabilityMenuOpen
@@ -504,7 +509,7 @@ namespace SelectML.Client.ViewModels
                     }
                     else if (!string.IsNullOrWhiteSpace(BatchNumber))
                     {
-                        _ = LoadFeaturesForPart();
+                        _ = LoadFeaturesForPartAsync();
                     }
                 }
             }
@@ -718,14 +723,41 @@ namespace SelectML.Client.ViewModels
             get => _partName;
             set
             {
+                if (_partName == value) return;
                 _partName = value;
                 OnPropertyChanged();
-                // Trigger SQL lookup here on lost focus or explicit command?
-                // Prompt: "Ao perder o foco ou digitar, o sistema dispara a query SQL"
                 CommandManager.InvalidateRequerySuggested();
-                // Trigger Lookup
-                _ = LoadFeaturesForPart();
+
                 TriggerValidation();
+
+                if (_suppressPartLookup) return;
+
+                _partDebounceCts?.Cancel();
+                _partDebounceCts?.Dispose();
+                _partDebounceCts = null;
+
+                if (string.IsNullOrWhiteSpace(value)) return;
+
+                var cts = new CancellationTokenSource();
+                _partDebounceCts = cts;
+                var token = cts.Token;
+                var currentPart = value;
+
+                _ = Task.Run(async () =>
+                {
+                    try
+                    {
+                        await Task.Delay(350, token);
+                        if (token.IsCancellationRequested) return;
+
+                        await System.Windows.Application.Current.Dispatcher.InvokeAsync(() =>
+                        {
+                            if (token.IsCancellationRequested || _partName != currentPart) return;
+                            TriggerValidation();
+                        });
+                    }
+                    catch (OperationCanceledException) { }
+                }, token);
             }
         }
 
@@ -736,68 +768,131 @@ namespace SelectML.Client.ViewModels
             get => _batchNumber;
             set
             {
+                if (_batchNumber == value) return;
                 _batchNumber = value;
                 OnPropertyChanged();
                 CommandManager.InvalidateRequerySuggested();
-                
-                // Trigger Station Lookup unless suppressed (programmatic load)
-                if (!_suppressBatchLookup)
+
+                _batchDebounceCts?.Cancel();
+                _batchDebounceCts?.Dispose();
+                _batchDebounceCts = null;
+
+                if (_suppressBatchLookup) return;
+
+                if (string.IsNullOrWhiteSpace(value))
                 {
-                    _ = DetectStationAndFeatures();
+                    DetectedStationName = string.Empty;
+                    _expectedPartName = null;
+                    IsBatchNumberValid = true;
+                    _activeRunTraceabilities.Clear();
+                    foreach (var item in TraceabilityItems)
+                    {
+                        if (item != null) item.IsUnmappedInRun = false;
+                    }
+                    TriggerValidation();
+                    return;
                 }
+
+                var cts = new CancellationTokenSource();
+                _batchDebounceCts = cts;
+                var token = cts.Token;
+                var currentBatch = value;
+
+                _ = Task.Run(async () =>
+                {
+                    try
+                    {
+                        await Task.Delay(350, token);
+                        if (token.IsCancellationRequested) return;
+
+                        await DetectStationAndFeaturesAsync(currentBatch, token);
+                    }
+                    catch (OperationCanceledException) { }
+                    catch (Exception ex)
+                    {
+                        Log.Error(ex, "Erro no debounce do BatchNumber");
+                    }
+                }, token);
             }
         }
 
-        private async Task DetectStationAndFeatures()
+        private async Task DetectStationAndFeaturesAsync(string batchNumber, CancellationToken token = default)
         {
-             try
-             {
-                 if (string.IsNullOrWhiteSpace(BatchNumber)) 
-                 {
-                     IsBatchNumberValid = true; // Empirically, empty is valid until typed? Or pending. Let's say valid to avoid redbox on clear.
-                     return;
-                 }
+            try
+            {
+                if (string.IsNullOrWhiteSpace(batchNumber))
+                {
+                    await System.Windows.Application.Current.Dispatcher.InvokeAsync(() =>
+                    {
+                        IsBatchNumberValid = true;
+                    });
+                    return;
+                }
 
-                 var station = await _databaseService.GetStationNameAsync(BatchNumber);
-                 var routine = await _databaseService.GetRoutineNameAsync(BatchNumber);
+                if (_databaseService == null || token.IsCancellationRequested) return;
 
-                 bool found = false;
+                var station = await _databaseService.GetStationNameAsync(batchNumber);
+                if (token.IsCancellationRequested) return;
 
-                 if (!string.IsNullOrEmpty(station))
-                 {
-                     DetectedStationName = station;
-                     found = true;
-                 }
-                 else
-                 {
-                     DetectedStationName = "Não identificada";
-                 }
+                var routine = await _databaseService.GetRoutineNameAsync(batchNumber);
+                if (token.IsCancellationRequested) return;
 
-                 if (!string.IsNullOrEmpty(routine))
-                 {
-                     _expectedPartName = routine;
-                     found = true;
-                     // Auto-fill if empty
-                     if (string.IsNullOrWhiteSpace(PartName))
-                     {
-                         PartName = routine;
-                     }
-                 }
-                 else
-                 {
-                     _expectedPartName = null;
-                 }
-                 
-                 IsBatchNumberValid = found;
+                await System.Windows.Application.Current.Dispatcher.InvokeAsync(() =>
+                {
+                    if (token.IsCancellationRequested || _batchNumber != batchNumber) return;
 
-                 // Also load features if possible (redundant with PartName trigger but safer)
-                 await LoadFeaturesForPart();
-                 TriggerValidation();
-             }
-             catch (Exception ex)
-             {
-                 Log.Error(ex, "Error detecting station from manual input");
-             }
+                    bool found = false;
+
+                    if (!string.IsNullOrEmpty(station))
+                    {
+                        DetectedStationName = station;
+                        found = true;
+                    }
+                    else
+                    {
+                        DetectedStationName = "Não identificada";
+                    }
+
+                    if (!string.IsNullOrEmpty(routine))
+                    {
+                        _expectedPartName = routine;
+                        found = true;
+                        if (string.IsNullOrWhiteSpace(PartName))
+                        {
+                            _suppressPartLookup = true;
+                            try
+                            {
+                                PartName = routine;
+                            }
+                            finally
+                            {
+                                _suppressPartLookup = false;
+                            }
+                        }
+                    }
+                    else
+                    {
+                        _expectedPartName = null;
+                    }
+
+                    IsBatchNumberValid = found;
+                });
+
+                if (token.IsCancellationRequested || _batchNumber != batchNumber) return;
+
+                await LoadFeaturesForPartAsync(batchNumber, token);
+
+                await System.Windows.Application.Current.Dispatcher.InvokeAsync(() =>
+                {
+                    if (token.IsCancellationRequested || _batchNumber != batchNumber) return;
+                    TriggerValidation();
+                });
+            }
+            catch (OperationCanceledException) { }
+            catch (Exception ex)
+            {
+                Log.Error(ex, "Error detecting station from manual input");
+            }
         }
 
         public string DetectedStationName
@@ -1045,6 +1140,8 @@ namespace SelectML.Client.ViewModels
 
         private void OnTraceabilityItemPropertyChanged(object? sender, PropertyChangedEventArgs e)
         {
+            if (_isUpdatingTraceabilityCatalog) return;
+
             if (sender is TraceabilityItem item && e.PropertyName == nameof(TraceabilityItem.Key))
             {
                 if (_activeRunTraceabilities.Count > 0 && !string.IsNullOrWhiteSpace(item.Key))
@@ -1083,6 +1180,11 @@ namespace SelectML.Client.ViewModels
             try
             {
                 if (_databaseService == null) return;
+                if (forceRefresh)
+                {
+                    DatabaseService.ClearTraceabilityCache();
+                }
+
                 var list = await _databaseService.GetAllAvailableTraceabilitiesAsync();
                 if (list != null)
                 {
@@ -1092,15 +1194,49 @@ namespace SelectML.Client.ViewModels
 
                     await System.Windows.Application.Current.Dispatcher.InvokeAsync(() =>
                     {
-                        AvailableTraceabilityNames.Clear();
-                        foreach (var def in list)
+                        _isUpdatingTraceabilityCatalog = true;
+                        try
                         {
-                            AvailableTraceabilityNames.Add(def.ListName);
-                        }
+                            var snapshot = TraceabilityItems
+                                .Select(t => (Item: t, Key: t.Key, Value: t.Value))
+                                .ToList();
 
-                        foreach (var item in TraceabilityItems)
+                            var newNames = list.Select(d => d.ListName).ToList();
+                            if (!AvailableTraceabilityNames.SequenceEqual(newNames))
+                            {
+                                for (int i = AvailableTraceabilityNames.Count - 1; i >= 0; i--)
+                                {
+                                    if (!newNames.Contains(AvailableTraceabilityNames[i]))
+                                    {
+                                        AvailableTraceabilityNames.RemoveAt(i);
+                                    }
+                                }
+                                foreach (var name in newNames)
+                                {
+                                    if (!AvailableTraceabilityNames.Contains(name))
+                                    {
+                                        AvailableTraceabilityNames.Add(name);
+                                    }
+                                }
+                            }
+
+                            foreach (var snap in snapshot)
+                            {
+                                if (!string.IsNullOrEmpty(snap.Key) && snap.Item.Key != snap.Key)
+                                {
+                                    snap.Item.Key = snap.Key;
+                                }
+                                if (!string.IsNullOrEmpty(snap.Value) && snap.Item.Value != snap.Value)
+                                {
+                                    snap.Item.Value = snap.Value;
+                                }
+                                snap.Item.RefreshDefinition();
+                            }
+                        }
+                        finally
                         {
-                            item.RefreshDefinition();
+                            _isUpdatingTraceabilityCatalog = false;
+                            SaveTraceabilities();
                         }
                     });
                 }
@@ -1111,39 +1247,50 @@ namespace SelectML.Client.ViewModels
             }
         }
 
-        private async Task UpdateRunTraceabilitiesAsync(string runName)
+        private async Task UpdateRunTraceabilitiesAsync(string runName, CancellationToken token = default)
         {
-            if (string.IsNullOrWhiteSpace(runName) || _databaseService == null)
+            if (string.IsNullOrWhiteSpace(runName) || _databaseService == null || token.IsCancellationRequested)
             {
                 _activeRunTraceabilities.Clear();
-                System.Windows.Application.Current?.Dispatcher.Invoke(() =>
+                if (System.Windows.Application.Current?.Dispatcher != null)
                 {
-                    foreach (var item in TraceabilityItems)
+                    await System.Windows.Application.Current.Dispatcher.InvokeAsync(() =>
                     {
-                        if (item != null) item.IsUnmappedInRun = false;
-                    }
-                });
+                        foreach (var item in TraceabilityItems)
+                        {
+                            if (item != null) item.IsUnmappedInRun = false;
+                        }
+                    });
+                }
                 return;
             }
 
             try
             {
                 var mappedNames = await _databaseService.GetRunTraceabilitiesAsync(runName);
+                if (token.IsCancellationRequested) return;
+
                 _activeRunTraceabilities = new HashSet<string>(mappedNames ?? Enumerable.Empty<string>(), StringComparer.OrdinalIgnoreCase);
 
-                System.Windows.Application.Current?.Dispatcher.Invoke(() =>
+                if (System.Windows.Application.Current?.Dispatcher != null)
                 {
-                    foreach (var item in TraceabilityItems)
+                    await System.Windows.Application.Current.Dispatcher.InvokeAsync(() =>
                     {
-                        if (item != null)
+                        if (token.IsCancellationRequested) return;
+
+                        foreach (var item in TraceabilityItems)
                         {
-                            item.IsUnmappedInRun = _activeRunTraceabilities.Count > 0 &&
-                                                   !string.IsNullOrWhiteSpace(item.Key) &&
-                                                   !_activeRunTraceabilities.Contains(item.Key);
+                            if (item != null)
+                            {
+                                item.IsUnmappedInRun = _activeRunTraceabilities.Count > 0 &&
+                                                       !string.IsNullOrWhiteSpace(item.Key) &&
+                                                       !_activeRunTraceabilities.Contains(item.Key);
+                            }
                         }
-                    }
-                });
+                    });
+                }
             }
+            catch (OperationCanceledException) { }
             catch (Exception ex)
             {
                 Log.Warning(ex, "Erro ao atualizar rastreabilidades da corrida para {RunName}", runName);
@@ -1341,6 +1488,12 @@ namespace SelectML.Client.ViewModels
                 config.ConnectionString = ConnectionString;
 
                 config.AutoStartDatabase = true; // Habilita início automático se iniciar com sucesso
+                config.SerialNumberTraceability = SerialNumberTraceability;
+                config.Traceabilities = TraceabilityItems
+                    .Where(t => t != null && (!string.IsNullOrWhiteSpace(t.Key) || !string.IsNullOrWhiteSpace(t.Value)))
+                    .Select(t => new TraceabilityItem(t.Key, t.Value))
+                    .ToList();
+                config.SendOnlyMappedTraceabilities = IsOnlyMappedTraceabilitiesActive;
                 _configService.Save(config);
                 Log.Information("Configuration saved");
                 
@@ -1718,25 +1871,33 @@ namespace SelectML.Client.ViewModels
                          // Consulta e validação de rastreabilidades da corrida (V1.2.9 - Fase 2)
                          await UpdateRunTraceabilitiesAsync(data.BatchNumber);
 
-                         var expectedFeatures = await _databaseService.GetFeaturesForRunAsync(data.BatchNumber);
-                         List<InspectionFeatureInfo>? routineFeatures = null;
-                         if (IsListAllFeaturesActive)
+                         var routineFeatures = await _databaseService.GetInspectionRoutineFeaturesAsync(data.BatchNumber);
+                         var features = await _databaseService.GetFeaturesForRunAsync(data.BatchNumber);
+
+                         var expectedFeatures = (routineFeatures != null && routineFeatures.Any())
+                             ? routineFeatures.Select(rf => rf.FeatureName).ToList()
+                             : features;
+
+                         var variableFeatures = (routineFeatures != null && routineFeatures.Any())
+                             ? routineFeatures.Where(rf => !rf.IsAttribute).Select(rf => rf.FeatureName).ToList()
+                             : expectedFeatures;
+
+                         // Populate KnownFeatures and KnownVariableFeatures for Validation and UI ComboBox
+                         System.Windows.Application.Current.Dispatcher.Invoke(() =>
                          {
-                             routineFeatures = await _databaseService.GetInspectionRoutineFeaturesAsync(data.BatchNumber);
-                             if (routineFeatures != null && routineFeatures.Any())
+                             KnownFeatures.Clear();
+                             KnownVariableFeatures.Clear();
+
+                             if (expectedFeatures != null)
                              {
-                                 expectedFeatures = routineFeatures.Select(rf => rf.FeatureName).ToList();
+                                 foreach (var f in expectedFeatures) KnownFeatures.Add(f);
                              }
-                         }
-                         // Populate KnownFeatures for Validation
-                          System.Windows.Application.Current.Dispatcher.Invoke(() =>
-                          {
-                              KnownFeatures.Clear();
-                              if (expectedFeatures != null)
-                              {
-                                  foreach(var f in expectedFeatures) KnownFeatures.Add(f);
-                              }
-                          });
+
+                             if (variableFeatures != null)
+                             {
+                                 foreach (var vf in variableFeatures) KnownVariableFeatures.Add(vf);
+                             }
+                         });
 
                           // Se o enfileiramento estiver desativado e já houver medições seriais na tela, preservá-las
                           var priorSerialItems = (!EnqueueSerialInput && MeasuredResults.Count > 0)
@@ -2056,9 +2217,11 @@ namespace SelectML.Client.ViewModels
             string targetName = changedItem.Characteristic.Trim();
 
             // Localiza se existe uma cota da rotina (IsFromDbRoutine) que esteja aguardando medição (!HasValue) com esse mesmo nome
+            // Importante: apenas cotas do tipo Variável (!IsAttribute) podem receber dados medidos numéricos
             var targetRoutineItem = MeasuredResults.FirstOrDefault(x =>
                 x != changedItem &&
                 x.IsFromDbRoutine &&
+                !x.IsAttribute &&
                 !x.HasValue &&
                 string.Equals(x.Characteristic?.Trim(), targetName, StringComparison.OrdinalIgnoreCase));
 
@@ -2084,30 +2247,45 @@ namespace SelectML.Client.ViewModels
             return false;
         }
 
-        private async Task LoadFeaturesForPart()
+        private async Task LoadFeaturesForPartAsync(string? batch = null, CancellationToken token = default)
         {
-            if (string.IsNullOrWhiteSpace(BatchNumber)) return;
+            string batchNumber = batch ?? BatchNumber;
+            if (string.IsNullOrWhiteSpace(batchNumber) || _databaseService == null || token.IsCancellationRequested) return;
             
             try 
             {
-                 var features = await _databaseService.GetFeaturesForRunAsync(BatchNumber);
-                 await UpdateRunTraceabilitiesAsync(BatchNumber);
-                 List<InspectionFeatureInfo>? routineFeatures = null;
-                 if (IsListAllFeaturesActive)
-                 {
-                     routineFeatures = await _databaseService.GetInspectionRoutineFeaturesAsync(BatchNumber);
-                 }
+                 var routineFeatures = await _databaseService.GetInspectionRoutineFeaturesAsync(batchNumber);
+                 if (token.IsCancellationRequested) return;
 
-                 System.Windows.Application.Current.Dispatcher.Invoke(() => 
+                 var features = await _databaseService.GetFeaturesForRunAsync(batchNumber);
+                 if (token.IsCancellationRequested) return;
+
+                 await UpdateRunTraceabilitiesAsync(batchNumber, token);
+                 if (token.IsCancellationRequested) return;
+
+                 var expectedFeatures = (routineFeatures != null && routineFeatures.Any())
+                     ? routineFeatures.Select(rf => rf.FeatureName).ToList()
+                     : features;
+
+                 var variableFeatures = (routineFeatures != null && routineFeatures.Any())
+                     ? routineFeatures.Where(rf => !rf.IsAttribute).Select(rf => rf.FeatureName).ToList()
+                     : expectedFeatures;
+
+                 await System.Windows.Application.Current.Dispatcher.InvokeAsync(() => 
                  {
+                     if (token.IsCancellationRequested || _batchNumber != batchNumber) return;
+
                      KnownFeatures.Clear();
-                     if (features != null && features.Any())
+                     KnownVariableFeatures.Clear();
+
+                     if (expectedFeatures != null)
                      {
-                         foreach(var f in features) KnownFeatures.Add(f);
+                         foreach (var f in expectedFeatures) KnownFeatures.Add(f);
                      }
-                     else if (routineFeatures != null && routineFeatures.Any())
+
+                     if (variableFeatures != null)
                      {
-                         foreach(var rf in routineFeatures) KnownFeatures.Add(rf.FeatureName);
+                         foreach (var vf in variableFeatures) KnownVariableFeatures.Add(vf);
                      }
 
                      if (IsListAllFeaturesActive && routineFeatures != null && routineFeatures.Any())
@@ -2117,13 +2295,14 @@ namespace SelectML.Client.ViewModels
                      else
                      {
                          // Re-validate current items against new known features
-                         foreach(var item in MeasuredResults)
+                         foreach (var item in MeasuredResults)
                          {
                               ResultItem_PropertyChanged(item, new PropertyChangedEventArgs(nameof(ResultItem.Characteristic)));
                          }
                      }
                  });
             }
+            catch (OperationCanceledException) { }
             catch (Exception ex)
             {
                 Log.Error(ex, "Failed to load features for part");
@@ -2497,6 +2676,7 @@ namespace SelectML.Client.ViewModels
                 DetectedStationName = string.Empty;
                 MeasuredResults.Clear();
                 KnownFeatures.Clear(); // Limpa features obsoletas
+                KnownVariableFeatures.Clear();
                 _currentData = null;   // Reseta contexto de dados do arquivo
                 _isProcessingFile = false; // Libera o lock do Modo Arquivo
 
