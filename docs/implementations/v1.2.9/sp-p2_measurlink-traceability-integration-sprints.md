@@ -33,21 +33,21 @@ graph LR
   * `SelectML.Core/IDatabaseService.cs`
   * `SelectML.Client/Services/DatabaseService.cs`
 * **Tarefas Técnicas:**
-  - [ ] Criar `TraceMaskInfo` em `SelectML.Core`:
+  - [x] Criar `TraceMaskInfo` em `SelectML.Core`:
     - Implementar `Parse(byte[]? bytes)` para extração do status `IsEnabled`, padrão Regex e texto de exemplo (`Sample`).
     - Implementar `Validate(string? input)` com validação segura por `Regex.IsMatch` protegida por try/catch.
-  - [ ] Criar `TraceabilityFieldDefinition` em `SelectML.Core`:
+  - [x] Criar `TraceabilityFieldDefinition` em `SelectML.Core`:
     - Propriedades: `TraceabilityListID`, `ListName`, `FolderName`, `ItemType`, `Mask` (`TraceMaskInfo`), `PredefinedOptions` (`List<string>`).
-  - [ ] Adicionar assinaturas em `IDatabaseService`:
+  - [x] Adicionar assinaturas em `IDatabaseService`:
     - `Task<List<TraceabilityFieldDefinition>> GetAllAvailableTraceabilitiesAsync();`
     - `Task<List<string>> GetRunTraceabilitiesAsync(string runName);`
-  - [ ] Implementar as consultas otimizadas em `DatabaseService.cs`:
+  - [x] Implementar as consultas otimizadas em `DatabaseService.cs`:
     - Consulta 1: Catálogo de rastreabilidades ativas filtrando `TraceabilityFolderType = 1` e populando opções de `TraceabilityItem`.
     - Consulta 2: Resolução de `@TargetRunID` em `ActiveRun` e `Run` e retorno das rastreabilidades mapeadas em `RunTraceabilityList`.
     - Implementar cache em memória no cliente para o catálogo global, garantindo respostas instantâneas (< 1ms).
 * **Critério de Aceitação:**
-  * Teste unitário e integrado confirmando a decodificação de máscaras reais (`N° Desenho`, `Tempo de peça`, `Operador`) a partir do banco `MeasurLink10`.
-  * Consulta do catálogo retornando os 16 campos oficiais com suas opções pré-definidas sem sobrecarga no banco.
+  * Teste unitário e integrado confirmando a decodificação de máscaras reais (`N° Desenho`, `Tempo de peça`, `Operador`) a partir do banco `MeasurLink10`. [100% Concluído e Validado no banco real]
+  * Consulta do catálogo retornando os 16 campos oficiais com suas opções pré-definidas sem sobrecarga no banco. [100% Concluído e Validado]
 
 ---
 
