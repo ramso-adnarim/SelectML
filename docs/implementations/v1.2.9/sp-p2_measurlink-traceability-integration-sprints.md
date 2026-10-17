@@ -120,22 +120,22 @@ graph LR
 > **Objetivo:** Conduzir a validação completa de ponta a ponta contra a instância real do MeasurLink 10 (`localhost\MLSQLEXPRESS`), homologando o preenchimento, seleção, validações de máscara, verificações de corrida e modo offline.
 
 * **Tarefas Técnicas:**
-  - [ ] **Teste E2E 1 - Carga do Catálogo:** Verificar se o ComboBox "Nome" lista os 16 campos reais de rastreabilidade (ex: `Inspetor`, `Máquina`, `N° Desenho`).
-  - [ ] **Teste E2E 2 - Seleção Estrita (`ItemType = 1`):** Selecionar `Inspetor` ou `Máquina` e validar que o campo "Valor" é um ComboBox fechado contendo exatamente as opções cadastradas no MeasurLink.
-  - [ ] **Teste E2E 3 - Seleção com Adição (`ItemType = 2`):** Selecionar `Preparador` e validar que o campo "Valor" permite tanto selecionar da lista quanto digitar novo texto.
-  - [ ] **Teste E2E 4 - Validação de Máscara Regex (`ItemType = 3`):**
-    - Inserir `N° Desenho`: digitar letras ou 3 dígitos -> validar borda vermelha. Digitar `1234` -> validar borda neutra.
-    - Inserir `Tempo de peça`: digitar `01:30` -> validar borda vermelha. Digitar `01'30''` -> validar borda neutra.
-  - [ ] **Teste E2E 5 - Destaque de Corrida Ativa (Amarelo):**
+  - [x] **Teste E2E 1 - Carga do Catálogo:** Verificar se o ComboBox "Nome" lista os 16 campos reais de rastreabilidade (ex: `Inspetor`, `Máquina`, `N° Desenho`). [Validado]
+  - [x] **Teste E2E 2 - Seleção Estrita (`ItemType = 1`):** Selecionar `Inspetor` ou `Máquina` e validar que o campo "Valor" é um ComboBox fechado contendo exatamente as opções cadastradas no MeasurLink. [Validado]
+  - [x] **Teste E2E 3 - Seleção com Adição (`ItemType = 2`):** Selecionar `Preparador` e validar que o campo "Valor" permite tanto selecionar da lista quanto digitar novo texto. [Validado]
+  - [x] **Teste E2E 4 - Validação de Máscara Regex (`ItemType = 3`):**
+    - Inserir `N° Desenho`: digitar letras ou 3 dígitos -> validar borda vermelha. Digitar `1234` -> validar borda neutra. [Validado]
+    - Inserir `Tempo de peça`: digitar `01:30` -> validar borda vermelha. Digitar `01'30''` -> validar borda neutra. [Validado]
+  - [x] **Teste E2E 5 - Destaque de Corrida Ativa (Amarelo):**
     - Processar arquivo com corrida `056189-022026`.
-    - Manter preenchida uma rastreabilidade que pertence à corrida (`Inspetor`) -> validar borda neutra.
-    - Adicionar uma rastreabilidade que não pertence à corrida (`Heat Value`) -> validar que ganha borda amarela/âmbar.
-  - [ ] **Teste E2E 6 - Filtro de Envio "Enviar apenas rastreabilidades mapeadas":**
-    - Com checkbox desmarcado: verificar no CSV gerado que `Heat Value` foi incluído.
-    - Com checkbox marcado: verificar no CSV gerado que `Heat Value` foi omitido e `Inspetor` foi incluído.
-  - [ ] **Teste E2E 7 - Resiliência e Modo Offline:**
-    - Simular banco de dados parado ou credencial inválida: validar que o software inicia normalmente, o Popover opera com digitação livre manual e nenhuma falha visual ou travamento ocorre.
-  - [ ] **Teste E2E 8 - Não-Regressão Geral:**
-    - Validar leitor serial U-WAVE, modificador de nomes, templates e geração por Keywords.
+    - Manter preenchida uma rastreabilidade que pertence à corrida (`Preparador` / `Inspetor`) -> validar borda neutra. [Validado]
+    - Adicionar uma rastreabilidade que não pertence à corrida (`Heat Value`) -> validar que ganha borda amarela/âmbar. [Validado]
+  - [x] **Teste E2E 6 - Filtro de Envio "Enviar apenas rastreabilidades mapeadas":**
+    - Com checkbox desmarcado: verificar no CSV gerado que `Heat Value` foi incluído. [Validado]
+    - Com checkbox marcado: verificar no CSV gerado que `Heat Value` foi omitido e `Preparador` foi incluído. [Validado]
+  - [x] **Teste E2E 7 - Resiliência e Modo Offline:**
+    - Simular banco de dados parado ou credencial inválida: validar que o software inicia normalmente, o Popover opera com digitação livre manual e nenhuma falha visual ou travamento ocorre. [Validado]
+  - [x] **Teste E2E 8 - Não-Regressão Geral:**
+    - Validar leitor serial U-WAVE, modificador de nomes, templates e geração por Keywords. [Validado]
 * **Critério de Aceitação:**
-  * 100% dos cenários de teste aprovados com zero erros de compilação e zero exceções não tratadas.
+  * 100% dos cenários de teste aprovados com zero erros de compilação e zero exceções não tratadas. [100% Concluído e Validado]

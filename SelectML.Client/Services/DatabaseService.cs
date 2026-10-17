@@ -302,13 +302,27 @@ namespace SelectML.Client.Services
         }
 
         private static List<TraceabilityFieldDefinition>? _cachedTraceabilities;
+        private static string? _cachedConnectionString;
         private static readonly object _cacheLock = new();
+
+        /// <summary>
+        /// Invalida o cache em memória das definições de rastreabilidade.
+        /// </summary>
+        public static void ClearTraceabilityCache()
+        {
+            lock (_cacheLock)
+            {
+                _cachedTraceabilities = null;
+                _cachedConnectionString = null;
+            }
+        }
 
         public async Task<List<TraceabilityFieldDefinition>> GetAllAvailableTraceabilitiesAsync()
         {
             lock (_cacheLock)
             {
-                if (_cachedTraceabilities != null && _cachedTraceabilities.Count > 0)
+                if (_cachedTraceabilities != null && _cachedTraceabilities.Count > 0 &&
+                    string.Equals(_cachedConnectionString, _connectionString, StringComparison.OrdinalIgnoreCase))
                 {
                     return _cachedTraceabilities;
                 }
@@ -398,6 +412,7 @@ namespace SelectML.Client.Services
                 lock (_cacheLock)
                 {
                     _cachedTraceabilities = list;
+                    _cachedConnectionString = _connectionString;
                 }
             }
             catch (Exception ex)
