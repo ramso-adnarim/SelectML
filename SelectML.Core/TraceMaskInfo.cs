@@ -87,7 +87,12 @@ namespace SelectML.Core
             try
             {
                 string cleanPattern = RegexPattern.TrimStart('^').TrimEnd('$');
-                return Regex.IsMatch(input, $"^{cleanPattern}$");
+                return Regex.IsMatch(input, $"^{cleanPattern}$", RegexOptions.None, TimeSpan.FromMilliseconds(250));
+            }
+            catch (RegexMatchTimeoutException)
+            {
+                // Em caso de timeout por backtracking excessivo, não trava a UI
+                return true;
             }
             catch
             {

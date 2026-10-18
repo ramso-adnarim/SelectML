@@ -1,12 +1,12 @@
 # Documentação de Arquitetura SelectML
 
-Este documento serve como a "Fonte da Verdade" técnica para o projeto SelectML. Destina-se à equipe de engenharia e manutenção, detalhando decisões de arquitetura, fluxo de dados e integrações na versão **V1.2.8**.
+Este documento serve como a "Fonte da Verdade" técnica para o projeto SelectML. Destina-se à equipe de engenharia e manutenção, detalhando decisões de arquitetura, fluxo de dados e integrações na versão **V1.2.9**.
 
 ---
 
-## 1. Diagrama de Componentes (V1.2.8)
+## 1. Diagrama de Componentes (V1.2.9)
 
-A arquitetura V1.2.8 consolida um ecossistema modular para recepção híbrida de dados (Arquivos de CMMs/VMMs e Medições Manuais Seriais), inspeção completa de rotinas do MeasurLink e parametrização universal por templates visuais interativos.
+A arquitetura V1.2.9 consolida um ecossistema modular para recepção híbrida de dados (Arquivos de CMMs/VMMs e Medições Manuais Seriais), inspeção completa de rotinas do MeasurLink, parametrização universal por templates visuais interativos e **motor avançado de rastreabilidade integrado ao catálogo SQL do MeasurLink**.
 
 ```mermaid
 graph TD
@@ -17,20 +17,29 @@ graph TD
         VM -->|Carrega Plugins| PL[PluginLoader]
         VM -->|Persistência %AppData%| CS[ConfigService]
         VM -->|Ciclo de Arquivo| FLS[FileLifecycleService]
-        VM -->|Queries Otimizadas| DB[DatabaseService]
+        VM -->|Queries Otimizadas & Catálogo| DB[DatabaseService]
         VM -->|Diálogos Padronizados| MDW[ModernDialogWindow]
         
         View -.->|Configurador ⚙️| TCW[TemplateConfigWindow]
         TCW --> TCVM[TemplateConfigViewModel]
+
+        View -.->|Popover Rastreabilidade 🏷️| TPV[TraceabilityPopoverView]
+        VM -->|Gestão de Rastreabilidades| TRM[Traceability Engine]
     end
 
-    subgraph "SelectML.Core (Contratos e Motor de Regras)"
+    subgraph "SelectML.Core (Contratos, Rastreabilidade e Motor de Regras)"
         IMP[IMachineParser]
         ICP[IConfigurableParser]
         DTO[MeasurementData]
         IFI[InspectionFeatureInfo]
-        ED[EncodingDetector]
+        ED[EncodingDetector: UTF-8 / Latin-1 / UTF-16 Heurístico]
         
+        subgraph "Traceability Engine"
+            TI[TraceabilityItem]
+            TFD[TraceabilityFieldDefinition]
+            TMI[TraceMaskInfo Decodificador e Validador Regex]
+        end
+
         subgraph "Templates Engine"
             TDEF[TemplateDefinition]
             TEE[TemplateExecutionEngine]
@@ -61,6 +70,9 @@ graph TD
     TCVM --> TEE
     TCVM --> TRG
     SS --> STR[ISerialDeviceStrategy]
+    DB --> TFD
+    DB --> TI
+    TRM --> TMI
 ```
 
 ---
@@ -71,7 +83,7 @@ O SelectML opera com um pipeline híbrido e adaptativo, garantindo governança t
 
 ### 2.1 Fluxo de Arquivo (Máquinas Automáticas e Templates)
 1. **Detecção**: O `FileSystemWatcher` detecta a chegada de novo arquivo no diretório monitorado.
-2. **Auto-Detecção de Codificação**: O `EncodingDetector` avalia a presença de BOM e assinaturas para carregar o arquivo com precisão (UTF-8, Latin-1/ANSI).
+2. **Auto-Detecção de Codificação Estendida**: O `EncodingDetector` avalia BOMs e heurísticas de bytes nulos alternados para carregar o arquivo com precisão (UTF-8, Latin-1/ANSI, UTF-16 LE ou UTF-16 BE sem BOM).
 3. **Parsing**: O plugin selecionado (`IMachineParser` ou `IConfigurableParser`) converte o arquivo para `MeasurementData`:
    - **ViciVision CSV**: Lê primeira e última linha.
    - **ViciVision JSON**: Estrutura JSON com extração de tolerâncias.
@@ -80,7 +92,8 @@ O SelectML opera com um pipeline híbrido e adaptativo, garantindo governança t
 4. **Validação e Enriquecimento SQL**: Consulta o SQL Server (`DatabaseService`) para associar a corrida/peça a uma rotina e estação ativa.
    - Se `ListAllFeatures` estiver ativo: mescla as características do arquivo com todas as cotas cadastradas na rotina do MeasurLink (`GetInspectionRoutineFeaturesAsync`), destacando nominais e limites.
 5. **Aplicação de Modificadores de Nome**: Se habilitado, ajusta os rótulos de cotas adicionando diâmetros (`Ø`) e tolerâncias conforme regras de engenharia.
-6. **Roteamento de Saída e Backup**: Grava o CSV final formatado na pasta configurada (`OutputDirectory` ou subpasta da Estação) e move o arquivo original para `/Backup`.
+6. **Injeção de Rastreabilidades**: Adiciona os metadados de rastreabilidade (Número de Série, Lote de Fornecedor, Operador, Turno, etc.) configurados no Popover ou herdados da rotina.
+7. **Roteamento de Saída e Backup**: Grava o CSV final formatado na pasta configurada (`OutputDirectory` ou subpasta da Estação) e move o arquivo original para `/Backup`.
 
 ### 2.2 Fluxo Serial e Concorrência Híbrida (Paquímetros, Micrômetros e U-WAVE)
 1. **Entrada Incremental**: `SerialPortService` recebe dados via RS-232 em thread dedicada.
@@ -90,47 +103,51 @@ O SelectML opera com um pipeline híbrido e adaptativo, garantindo governança t
 3. **Enfileiramento Controlado (`EnqueueSerialInput`)**:
    - **Modo Enfileirado (`true`)**: Medições sem peça aguardam no buffer reverso (`_serialBuffer`) até a definição do Lote/Peça.
    - **Modo Concorrente Híbrido (`false`)**: Permite entrada serial direta na tela mesmo com arquivos sendo preparados, viabilizando preenchimento de cotas manuais complementares antes ou depois do recebimento do arquivo de CMM.
-4. **Preenchimento Sequencial Top-Down**:
+4. **Preenchimento Sequencial Top-Down e Filtragem por Variáveis**:
    - Quando `ListAllFeatures` está ativo, as medições seriais preenchem automaticamente a primeira característica de variável ainda vazia da lista, de cima para baixo.
+   - A ComboBox de características manuais é estritamente restrita a `KnownVariableFeatures`, blindando contra inclusão acidental de atributos em medições numéricas seriais.
 
 ---
 
-## 3. Componentes Chave da Versão V1.2.8
+## 3. Componentes Chave da Versão V1.2.9
 
-### 3.1 Motor Universal de Templates de Texto (Text Template Engine)
-- **Visualizador Interativo com Highlighting**: A janela `TemplateConfigWindow` permite carregar um arquivo de amostra, inspecionar as linhas com marcações coloridas de regras e gerar regras automaticamente com clique de contexto.
-- **Extração Granular de Sub-Linhas**: Suporta separadores padrão (`;`, `,`, `\t`, `|`, espaço) e expressões regulares com grupos de captura nomeados (`(?<feat>...)` e `(?<val>...)`).
-- **Prévia em Tempo Real**: Painel inferior na biblioteca de templates atualizado instantaneamente a cada clique ou edição de regra.
-- **Armazenamento de Templates**: Arquivos salvos em `%APPDATA%\SelectML\Templates\*.json`.
+### 3.1 Motor Avançado de Rastreabilidade (Traceability Engine)
+- **Integração com Catálogo do MeasurLink**: O `DatabaseService` consulta as tabelas de rastreabilidade (`Traceability_Field`, `Traceability_Item_Value`, `Routine_Traceability_Field_Def`) mapeando campos cadastrados, obrigatoriedade por máscara de bits (`RequiredFieldMask`) e tipo de valor.
+- **Tipos de Item de Rastreabilidade**:
+  - `ItemType = 0` (Texto Livre): Permite preenchimento livre com validação sintática contra a máscara cadastrada.
+  - `ItemType = 1` (Lista Pré-definida): Apresenta ComboBox alimentada com os valores permitidos cadastrados no MeasurLink (`Traceability_Item_Value`).
+- **Decodificador e Validador de Máscara (`TraceMaskInfo`)**: Decodifica o payload binário do MeasurLink (`TraceabilityList.Pattern`), extraindo o padrão Regex e a máscara de exemplo (`SampleMask`), aplicando validação com timeout contra backtracking.
+- **Popover Interativo e Acessível**: Botão dedicado no menu superior abre um popover flutuante para gerenciamento dinâmico de rastreabilidades (adicionar/remover campos, editar valores, gerenciar Número de Série e ativar filtro de envio exclusivo de campos mapeados).
+- **Persistência Seguro-Estado**: As seleções do popover persistem antes e após a inicialização de processos ("Salvar e Iniciar"), vinculando-se atômica e transparentemente ao `appsettings.json`.
+- **Validação Proativa na Inicialização de Corridas**: Avisa o operador caso haja campos obrigatórios pendentes ou que não respeitem a máscara ao clicar em "Iniciar Processo".
 
-### 3.2 Listagem de Características da Rotina e Visualização de Tolerâncias
-- **Query de Alta Performance**: `GetInspectionRoutineFeaturesAsync` recupera todas as cotas da rotina vinculada ao lote (`ActiveRun` ou `Run`), incluindo nominais, limites de tolerância superior/inferior (`LSL` / `USL`) e indicador de atributo.
-- **Color Coding de Tolerância**: Destaque em tempo real no DataGrid:
-  - 🟢 **Verde**: Valor medido dentro dos limites de especificação (`LSL <= Valor <= USL`).
-  - 🔴 **Vermelho**: Valor fora de tolerância (`Valor < LSL` ou `Valor > USL`).
-- **Customização de Coluna de Valor**: Seletor dinâmico de template XAML que exibe caixa de texto numérica para variáveis ou um interruptor deslizante (*ToggleSwitch*) para características de atributo (Aprovado/Reprovado).
+### 3.2 Otimizações de Concorrência e Debounce Reativo
+- **Debounce de 350ms em `BatchNumber` e `PartName`**: Utilização de `CancellationTokenSource` em propriedades reativas com digitação rápida. Elimina travamentos na UI, cancela requisições SQL redundantes em trânsito e protege contra *race conditions*.
+- **Restrição de Características Manuais**: A seleção manual de características passa a filtrar apenas cotas do tipo variável (`KnownVariableFeatures`), evitando atribuições inválidas a cotas de atributo.
 
-### 3.3 Remodelagem da Fila Serial e Desfazer U-WAVE
-- Toggle na janela de configurações seriais para habilitar/desabilitar enfileiramento (`EnqueueSerialInput`).
-- Suporte a comando de cancelamento serial U-WAVE.
-- Barreira universal de validação contra cotas sem nome (`EmptyCharacteristicName`).
+### 3.3 Auto-Detecção Estendida de Codificações (Encoding Engine)
+- Detecção heurística de arquivos UTF-16 LE e UTF-16 BE mesmo sem BOM (Byte Order Mark), inspecionando alternância de bytes nulos em blocos iniciais sem degradar performance de arquivos UTF-8 ou ANSI/Latin-1.
 
-### 3.4 Modern Dialogs e Design System
-- Substituição de caixas de diálogo nativas do Windows (`MessageBox`) por `ModernDialogWindow`, com suporte completo a Modo Escuro / Modo Claro e ícones vetoriais contextuais.
+### 3.4 Motor Universal de Templates de Texto (Text Template Engine)
+- Visualizador interativo com destaque sintático, extração granular de sub-linhas por delimitadores ou Regex, prévia em tempo real e repositório JSON em `%APPDATA%\SelectML\Templates\*.json`.
+
+### 3.5 Listagem de Características da Rotina e Visualização de Tolerâncias
+- Consulta rápida de cotas cadastradas (`GetInspectionRoutineFeaturesAsync`) com color coding (verde para aprovado, vermelho para fora de tolerância) e alternância dinâmica entre caixas numéricas e switches deslizantes para atributos.
 
 ---
 
 ## 4. Governança e Resiliência
 
-1. **Proteção Anti-Crash**: Métodos assíncronos de ponto de entrada (`async void` em comandos e manipuladores de eventos) possuem blocos `try-catch` abrangentes com log estruturado no Serilog.
-2. **Regex Resiliente**: O motor de execução e gerador de templates encapsula expressões regulares do usuário em blocos protegidos, prevenindo falhas caso um padrão inválido seja informado.
-3. **Persistência Segura em `%APPDATA%\SelectML`**:
-   - O arquivo `appsettings.json` e a pasta `Templates/` residem em `Environment.SpecialFolder.ApplicationData`, garantindo que atualizações silenciosas via Velopack preservem integralmente as preferências do cliente entre versões (ex: transição transparente de v1.2.7 para v1.2.8).
+1. **Proteção Anti-Crash e Timeout de Regex**: Métodos assíncronos de ponto de entrada (`async void`) contam com proteção de exceção na raiz com logging estruturado. Validações de expressões regulares operam com timeouts explícitos para evitar ataques de DoS por backtracking.
+2. **Persistência Não-Destrutiva em `%APPDATA%\SelectML`**:
+   - O arquivo `appsettings.json` utiliza valores padrão atribuídos nas declarações de propriedades em `AppConfig.cs`.
+   - Atualizações automáticas de versão via Velopack preservam 100% das preferências anteriores, introduzindo novos campos com fallbacks seguros.
+3. **Isolamento de Erros de Banco de Dados**: Falhas de conectividade ou indisponibilidade de catálogo no SQL Server não interrompem o fluxo de arquivos locais; a aplicação degrada suavemente para modo texto livre e notifica o operador via alertas modernos.
 
 ---
 
 ## 5. Estratégia de Codificação (Encoding)
 
-- **Arquivos de Entrada**: Detectados dinamicamente via `EncodingDetector` (respeita UTF-8 e Latin-1).
+- **Arquivos de Entrada**: Detectados dinamicamente via `EncodingDetector` (UTF-8 com/sem BOM, Latin-1/ANSI e UTF-16 LE/BE heurístico).
 - **Comunicação Serial**: Latin-1 (`Encoding.Latin1`) para compatibilidade com caracteres de símbolos industriais (`Ø`, `µ`).
 - **Arquivo CSV de Saída**: Gravado com `UTF8Encoding(true)` (com BOM) para compatibilidade instantânea com o Microsoft Excel e o MeasurLink.

@@ -1429,83 +1429,91 @@ namespace SelectML.Client.ViewModels
 
         private async void ExecuteSaveConfig(object obj)
         {
-            if (IsConfigLocked)
+            try
             {
-                StopWatcher();
-                IsConfigLocked = false;
-                ConfigButtonText = "Salvar e Iniciar";
-                StatusMessage = "Monitoramento pausado. Edite as configurações.";
+                if (IsConfigLocked)
+                {
+                    StopWatcher();
+                    IsConfigLocked = false;
+                    ConfigButtonText = "Salvar e Iniciar";
+                    StatusMessage = "Monitoramento pausado. Edite as configurações.";
 
-                // Desabilita início automático se o usuário parar manualmente
-                var config = _configService.Load();
-                config.AutoStartDatabase = false;
-                _configService.Save(config);
+                    // Desabilita início automático se o usuário parar manualmente
+                    var config = _configService.Load();
+                    config.AutoStartDatabase = false;
+                    _configService.Save(config);
 
-                Log.Information("Configuration unlocked for editing");
+                    Log.Information("Configuration unlocked for editing");
+                }
+                else
+                {
+                    if (string.IsNullOrWhiteSpace(WatchDirectory) || !Directory.Exists(WatchDirectory))
+                    {
+                        System.Windows.MessageBox.Show("Selecione uma pasta válida.", "Erro", MessageBoxButton.OK, MessageBoxImage.Error);
+                        Log.Warning("Invalid watch directory selected: {Directory}", WatchDirectory);
+                        return;
+                    }
+
+                    StatusMessage = "Validando conexão com o banco de dados...";
+                    BuildConnectionString();
+
+                    // Test connection immediately
+                    try
+                    {
+                        var tempDbService = new DatabaseService(ConnectionString);
+                        await tempDbService.TestConnectionThrowingAsync();
+                    }
+                    catch (Exception ex)
+                    {
+                        System.Windows.MessageBox.Show($"Falha de conexão com o banco de dados:\n{ex.Message}", "Erro de Conexão", MessageBoxButton.OK, MessageBoxImage.Error);
+                        Log.Error(ex, "Failed to connect to database during save config");
+                        StatusMessage = "Falha ao iniciar - Verifique as configurações de banco de dados.";
+                        return; // Return immediately, do not lock config or start monitoring!
+                    }
+
+                    var config = _configService.Load(); // Reload to keep existing keys
+                    config.WatchDirectory = WatchDirectory;
+                    config.OutputDirectory = OutputDirectory;
+                    config.UseOutputDirectory = UseOutputDirectory;
+                    config.LastPluginName = SelectedParser?.MachineName ?? ""; // Allow null
+                    if (SelectedParser is IConfigurableParser cpSave)
+                    {
+                        config.LastTemplateName = cpSave.ActiveTemplateName;
+                    }
+
+                    // Save DB fields
+                    config.DbServer = DbServer;
+                    config.DbUseWindowsAuth = DbUseWindowsAuth;
+                    config.DbUser = DbUser;
+                    config.DbPassword = DbPassword;
+                    config.DbName = DbName;
+                    config.ConnectionString = ConnectionString;
+
+                    config.AutoStartDatabase = true; // Habilita início automático se iniciar com sucesso
+                    config.SerialNumberTraceability = SerialNumberTraceability;
+                    config.Traceabilities = TraceabilityItems
+                        .Where(t => t != null && (!string.IsNullOrWhiteSpace(t.Key) || !string.IsNullOrWhiteSpace(t.Value)))
+                        .Select(t => new TraceabilityItem(t.Key, t.Value))
+                        .ToList();
+                    config.SendOnlyMappedTraceabilities = IsOnlyMappedTraceabilitiesActive;
+                    _configService.Save(config);
+                    Log.Information("Configuration saved");
+                    
+                    // Re-initialize database service
+                    _databaseService = new DatabaseService(config.ConnectionString);
+                    _ = LoadAvailableTraceabilitiesAsync(forceRefresh: true);
+
+                    StartWatcher();
+
+                    IsConfigLocked = true;
+                    ConfigButtonText = "Editar";
+                    IsExpanded = false;
+                }
             }
-            else
+            catch (Exception ex)
             {
-                if (string.IsNullOrWhiteSpace(WatchDirectory) || !Directory.Exists(WatchDirectory))
-                {
-                    System.Windows.MessageBox.Show("Selecione uma pasta válida.", "Erro", MessageBoxButton.OK, MessageBoxImage.Error);
-                    Log.Warning("Invalid watch directory selected: {Directory}", WatchDirectory);
-                    return;
-                }
-
-                StatusMessage = "Validando conexão com o banco de dados...";
-                BuildConnectionString();
-
-                // Test connection immediately
-                try
-                {
-                    var tempDbService = new DatabaseService(ConnectionString);
-                    await tempDbService.TestConnectionThrowingAsync();
-                }
-                catch (Exception ex)
-                {
-                    System.Windows.MessageBox.Show($"Falha de conexão com o banco de dados:\n{ex.Message}", "Erro de Conexão", MessageBoxButton.OK, MessageBoxImage.Error);
-                    Log.Error(ex, "Failed to connect to database during save config");
-                    StatusMessage = "Falha ao iniciar - Verifique as configurações de banco de dados.";
-                    return; // Return immediately, do not lock config or start monitoring!
-                }
-
-                var config = _configService.Load(); // Reload to keep existing keys
-                config.WatchDirectory = WatchDirectory;
-                config.OutputDirectory = OutputDirectory;
-                config.UseOutputDirectory = UseOutputDirectory;
-                config.LastPluginName = SelectedParser?.MachineName ?? ""; // Allow null
-                if (SelectedParser is IConfigurableParser cpSave)
-                {
-                    config.LastTemplateName = cpSave.ActiveTemplateName;
-                }
-
-                // Save DB fields
-                config.DbServer = DbServer;
-                config.DbUseWindowsAuth = DbUseWindowsAuth;
-                config.DbUser = DbUser;
-                config.DbPassword = DbPassword;
-                config.DbName = DbName;
-                config.ConnectionString = ConnectionString;
-
-                config.AutoStartDatabase = true; // Habilita início automático se iniciar com sucesso
-                config.SerialNumberTraceability = SerialNumberTraceability;
-                config.Traceabilities = TraceabilityItems
-                    .Where(t => t != null && (!string.IsNullOrWhiteSpace(t.Key) || !string.IsNullOrWhiteSpace(t.Value)))
-                    .Select(t => new TraceabilityItem(t.Key, t.Value))
-                    .ToList();
-                config.SendOnlyMappedTraceabilities = IsOnlyMappedTraceabilitiesActive;
-                _configService.Save(config);
-                Log.Information("Configuration saved");
-                
-                // Re-initialize database service
-                _databaseService = new DatabaseService(config.ConnectionString);
-                _ = LoadAvailableTraceabilitiesAsync(forceRefresh: true);
-
-                StartWatcher();
-
-                IsConfigLocked = true;
-                ConfigButtonText = "Editar";
-                IsExpanded = false;
+                Log.Error(ex, "Erro inesperado ao salvar configuração");
+                StatusMessage = "Erro inesperado ao salvar configuração.";
             }
         }
 

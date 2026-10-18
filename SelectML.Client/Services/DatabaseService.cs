@@ -363,47 +363,53 @@ namespace SelectML.Client.Services
                     var fieldMap = new Dictionary<int, TraceabilityFieldDefinition>();
 
                     using (var cmd = new SqlCommand(fieldsQuery, connection))
-                    using (var reader = await cmd.ExecuteReaderAsync())
                     {
-                        while (await reader.ReadAsync())
+                        cmd.CommandTimeout = 10;
+                        using (var reader = await cmd.ExecuteReaderAsync())
                         {
-                            int id = reader.GetInt32(reader.GetOrdinal("TraceabilityListID"));
-                            string name = reader.GetString(reader.GetOrdinal("ListName"));
-                            string folder = reader.GetString(reader.GetOrdinal("FolderName"));
-                            int itemType = reader.GetInt32(reader.GetOrdinal("ItemType"));
-
-                            TraceMaskInfo? mask = null;
-                            int patternOrd = reader.GetOrdinal("MascaraBytes");
-                            if (!reader.IsDBNull(patternOrd))
+                            while (await reader.ReadAsync())
                             {
-                                byte[] bytes = (byte[])reader["MascaraBytes"];
-                                mask = TraceMaskInfo.Parse(bytes);
+                                int id = reader.GetInt32(reader.GetOrdinal("TraceabilityListID"));
+                                string name = reader.GetString(reader.GetOrdinal("ListName"));
+                                string folder = reader.GetString(reader.GetOrdinal("FolderName"));
+                                int itemType = reader.GetInt32(reader.GetOrdinal("ItemType"));
+
+                                TraceMaskInfo? mask = null;
+                                int patternOrd = reader.GetOrdinal("MascaraBytes");
+                                if (!reader.IsDBNull(patternOrd))
+                                {
+                                    byte[] bytes = (byte[])reader["MascaraBytes"];
+                                    mask = TraceMaskInfo.Parse(bytes);
+                                }
+
+                                var def = new TraceabilityFieldDefinition
+                                {
+                                    TraceabilityListID = id,
+                                    ListName = name,
+                                    FolderName = folder,
+                                    ItemType = itemType,
+                                    Mask = mask
+                                };
+
+                                fieldMap[id] = def;
+                                list.Add(def);
                             }
-
-                            var def = new TraceabilityFieldDefinition
-                            {
-                                TraceabilityListID = id,
-                                ListName = name,
-                                FolderName = folder,
-                                ItemType = itemType,
-                                Mask = mask
-                            };
-
-                            fieldMap[id] = def;
-                            list.Add(def);
                         }
                     }
 
                     using (var cmd = new SqlCommand(optionsQuery, connection))
-                    using (var reader = await cmd.ExecuteReaderAsync())
                     {
-                        while (await reader.ReadAsync())
+                        cmd.CommandTimeout = 10;
+                        using (var reader = await cmd.ExecuteReaderAsync())
                         {
-                            int id = reader.GetInt32(0);
-                            string optName = reader.GetString(1);
-                            if (fieldMap.TryGetValue(id, out var def))
+                            while (await reader.ReadAsync())
                             {
-                                def.PredefinedOptions.Add(optName);
+                                int id = reader.GetInt32(0);
+                                string optName = reader.GetString(1);
+                                if (fieldMap.TryGetValue(id, out var def))
+                                {
+                                    def.PredefinedOptions.Add(optName);
+                                }
                             }
                         }
                     }
@@ -463,6 +469,7 @@ namespace SelectML.Client.Services
                     await connection.OpenAsync();
                     using (var cmd = new SqlCommand(query, connection))
                     {
+                        cmd.CommandTimeout = 10;
                         cmd.Parameters.AddWithValue("@RunName", runName.Trim());
                         using (var reader = await cmd.ExecuteReaderAsync())
                         {
