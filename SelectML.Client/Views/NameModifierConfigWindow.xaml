@@ -14,7 +14,7 @@
             <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
 
-        <TextBlock Text="Formato do Nome da Característica:" FontWeight="SemiBold" Foreground="{DynamicResource Brush.Text.Primary}" Margin="0,0,0,5" Grid.Row="0"/>
+        <TextBlock Text="Formato do nome da característica:" FontWeight="SemiBold" Foreground="{DynamicResource Brush.Text.Primary}" Margin="0,0,0,5" Grid.Row="0"/>
         
         <Grid Grid.Row="1" Margin="0,0,0,10">
             <Border x:Name="TextBoxBorder" BorderThickness="1" CornerRadius="6" Background="{DynamicResource Brush.Input.Background}">
@@ -71,7 +71,7 @@
         </Border>
 
         <StackPanel Grid.Row="4" VerticalAlignment="Center" Margin="0,15,0,0">
-            <TextBlock Text="Exemplo Gerado:" FontWeight="SemiBold" Foreground="{DynamicResource Brush.Text.Primary}"/>
+            <TextBlock Text="Exemplo:" FontWeight="SemiBold" Foreground="{DynamicResource Brush.Text.Primary}"/>
             <TextBlock Text="{Binding PreviewText}" Foreground="{DynamicResource Brush.Text.Secondary}" FontStyle="Italic" FontSize="14" Margin="0,5,0,0"/>
         </StackPanel>
 

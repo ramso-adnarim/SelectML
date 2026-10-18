@@ -85,7 +85,7 @@ namespace SelectML.Parsers.TextTemplate
                 }
                 else
                 {
-                    throw new InvalidOperationException("Nenhum template configurado ou ativo para o Leitor de Arquivos de Texto. Clique no ícone de engrenagem para configurar um template.");
+                    throw new InvalidOperationException("Nenhum template escolhido para o Leitor de Arquivos de Texto. Clique no ícone de engrenagem para configurar.");
                 }
             }
 

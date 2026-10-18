@@ -26,9 +26,8 @@ namespace SelectML.Core.Templates
             var data = new MeasurementData();
             var fileNameWithoutExt = Path.GetFileNameWithoutExtension(filePath);
 
-            // 1. Detectar codificação automaticamente (UTF-8 vs Latin-1)
-            var encoding = EncodingDetector.Detect(filePath);
-            var lines = File.ReadAllLines(filePath, encoding);
+            // 1. Detectar codificação automaticamente (UTF-8, Latin-1, UTF-16 LE/BE, UTF-32) com higienização defensiva
+            var lines = EncodingDetector.DetectAndReadAllLines(filePath);
 
             if (lines.Length == 0)
                 throw new InvalidOperationException("O arquivo de medição está vazio.");

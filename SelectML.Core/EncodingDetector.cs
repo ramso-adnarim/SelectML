@@ -27,17 +27,62 @@ namespace SelectML.Core
             if (bytesRead == 0)
                 return Encoding.UTF8;
 
-            // 1. Verificação de BOM (Byte Order Mark)
+            // 1. Verificação de BOM de 4 bytes (UTF-32)
+            if (bytesRead >= 4)
+            {
+                if (buffer[0] == 0xFF && buffer[1] == 0xFE && buffer[2] == 0x00 && buffer[3] == 0x00)
+                    return Encoding.UTF32; // UTF-32 LE
+
+                if (buffer[0] == 0x00 && buffer[1] == 0x00 && buffer[2] == 0xFE && buffer[3] == 0xFF)
+                    return new UTF32Encoding(true, true); // UTF-32 BE
+            }
+
+            // 2. Verificação de BOM de 3 bytes (UTF-8)
             if (bytesRead >= 3 && buffer[0] == 0xEF && buffer[1] == 0xBB && buffer[2] == 0xBF)
                 return Encoding.UTF8;
 
-            if (bytesRead >= 2 && buffer[0] == 0xFF && buffer[1] == 0xFE)
-                return Encoding.Unicode; // UTF-16 LE
+            // 3. Verificação de BOM de 2 bytes (UTF-16)
+            if (bytesRead >= 2)
+            {
+                if (buffer[0] == 0xFF && buffer[1] == 0xFE)
+                    return Encoding.Unicode; // UTF-16 LE
 
-            if (bytesRead >= 2 && buffer[0] == 0xFE && buffer[1] == 0xFF)
-                return Encoding.BigEndianUnicode; // UTF-16 BE
+                if (buffer[0] == 0xFE && buffer[1] == 0xFF)
+                    return Encoding.BigEndianUnicode; // UTF-16 BE
+            }
 
-            // 2. Análise heurística de UTF-8 vs Latin-1 (ISO-8859-1)
+            // 4. Heurística estatística para detecção de UTF-16 LE ou BE sem BOM
+            // Arquivos industriais emitidos sem BOM contêm códigos de caracteres ocidentais onde o byte alto é 0x00.
+            // Para UTF-16 LE: os bytes ímpares (índices 1, 3, 5...) concentram os 0x00 e os pares contêm dados.
+            // Para UTF-16 BE: os bytes pares (índices 0, 2, 4...) concentram os 0x00 e os ímpares contêm dados.
+            int sampleSize = Math.Min(bytesRead, 2048);
+            if (sampleSize >= 4)
+            {
+                if (sampleSize % 2 != 0) sampleSize--;
+                int totalPairs = sampleSize / 2;
+                int nullEvens = 0;
+                int nullOdds = 0;
+
+                for (int k = 0; k < sampleSize; k += 2)
+                {
+                    if (buffer[k] == 0) nullEvens++;
+                    if (buffer[k + 1] == 0) nullOdds++;
+                }
+
+                // UTF-16 LE sem BOM: alta concentração de 0x00 nos bytes ímpares e quase nenhum nos pares
+                if ((double)nullOdds / totalPairs >= 0.70 && (double)nullEvens / totalPairs < 0.10)
+                {
+                    return Encoding.Unicode; // UTF-16 LE
+                }
+
+                // UTF-16 BE sem BOM: alta concentração de 0x00 nos bytes pares e quase nenhum nos ímpares
+                if ((double)nullEvens / totalPairs >= 0.70 && (double)nullOdds / totalPairs < 0.10)
+                {
+                    return Encoding.BigEndianUnicode; // UTF-16 BE
+                }
+            }
+
+            // 5. Análise heurística de UTF-8 vs Latin-1 (ISO-8859-1)
             bool hasMultiByteUtf8 = false;
             bool isPureAscii = true;
 
@@ -118,13 +163,27 @@ namespace SelectML.Core
         public static string DetectAndReadAllText(string filePath)
         {
             var encoding = Detect(filePath);
-            return File.ReadAllText(filePath, encoding);
+            string text = File.ReadAllText(filePath, encoding);
+            return SanitizeText(text);
         }
 
         public static string[] DetectAndReadAllLines(string filePath)
         {
             var encoding = Detect(filePath);
-            return File.ReadAllLines(filePath, encoding);
+            var lines = File.ReadAllLines(filePath, encoding);
+            for (int i = 0; i < lines.Length; i++)
+            {
+                lines[i] = SanitizeText(lines[i]);
+            }
+            return lines;
+        }
+
+        private static string SanitizeText(string text)
+        {
+            if (string.IsNullOrEmpty(text))
+                return text;
+
+            return text.IndexOf('\0') >= 0 ? text.Replace("\0", string.Empty) : text;
         }
     }
 }

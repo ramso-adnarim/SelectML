@@ -122,7 +122,7 @@
                                     <Setter Property="Text" Value="Adiciona medições à lista do arquivo"/>
                                     <Style.Triggers>
                                         <DataTrigger Binding="{Binding EnqueueSerialInput}" Value="True">
-                                            <Setter Property="Text" Value="Bufferiza dados para envio posterior"/>
+                                            <Setter Property="Text" Value="Enfileira dados para envio posterior"/>
                                         </DataTrigger>
                                     </Style.Triggers>
                                 </Style>

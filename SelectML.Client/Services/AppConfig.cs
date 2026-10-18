@@ -1,6 +1,8 @@
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Text.Json;
+using SelectML.Core;
 
 namespace SelectML.Client.Services
 {
@@ -42,6 +44,11 @@ namespace SelectML.Client.Services
 
         // Inspection Routine Feature Listing
         public bool ListAllFeatures { get; set; } = false;
+
+        // Traceability (V1.2.9)
+        public string SerialNumberTraceability { get; set; } = string.Empty;
+        public List<TraceabilityItem> Traceabilities { get; set; } = new();
+        public bool SendOnlyMappedTraceabilities { get; set; } = false;
 
         // UI, Theme & Window Geometry Persistence
         public bool IsDarkMode { get; set; } = true;

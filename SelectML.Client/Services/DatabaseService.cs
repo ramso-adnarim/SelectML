@@ -300,5 +300,196 @@ namespace SelectML.Client.Services
                 }
             }
         }
+
+        private static List<TraceabilityFieldDefinition>? _cachedTraceabilities;
+        private static string? _cachedConnectionString;
+        private static readonly object _cacheLock = new();
+
+        /// <summary>
+        /// Invalida o cache em memória das definições de rastreabilidade.
+        /// </summary>
+        public static void ClearTraceabilityCache()
+        {
+            lock (_cacheLock)
+            {
+                _cachedTraceabilities = null;
+                _cachedConnectionString = null;
+            }
+        }
+
+        public async Task<List<TraceabilityFieldDefinition>> GetAllAvailableTraceabilitiesAsync()
+        {
+            lock (_cacheLock)
+            {
+                if (_cachedTraceabilities != null && _cachedTraceabilities.Count > 0 &&
+                    string.Equals(_cachedConnectionString, _connectionString, StringComparison.OrdinalIgnoreCase))
+                {
+                    return _cachedTraceabilities;
+                }
+            }
+
+            var list = new List<TraceabilityFieldDefinition>();
+            if (string.IsNullOrWhiteSpace(_connectionString))
+                return list;
+
+            const string fieldsQuery = @"
+                SELECT 
+                    tl.TraceabilityListID,
+                    tl.ListName,
+                    tf.FolderName,
+                    tl.ItemType,
+                    tl.Pattern AS MascaraBytes
+                FROM TraceabilityList tl WITH (NOLOCK)
+                INNER JOIN TraceabilityFolder tf WITH (NOLOCK) ON tl.TraceabilityFolderID = tf.TraceabilityFolderID
+                WHERE tf.TraceabilityFolderType = 1
+                ORDER BY tf.TraceabilityFolderID ASC, tl.TraceabilityListID ASC;";
+
+            const string optionsQuery = @"
+                SELECT 
+                    ti.TraceabilityListID,
+                    ti.ItemName
+                FROM TraceabilityItem ti WITH (NOLOCK)
+                INNER JOIN TraceabilityList tl WITH (NOLOCK) ON ti.TraceabilityListID = tl.TraceabilityListID
+                INNER JOIN TraceabilityFolder tf WITH (NOLOCK) ON tl.TraceabilityFolderID = tf.TraceabilityFolderID
+                WHERE tf.TraceabilityFolderType = 1 AND ti.Active = 1
+                ORDER BY ti.TraceabilityListID ASC, ti.ItemNo ASC;";
+
+            try
+            {
+                using (var connection = new SqlConnection(_connectionString))
+                {
+                    await connection.OpenAsync();
+
+                    var fieldMap = new Dictionary<int, TraceabilityFieldDefinition>();
+
+                    using (var cmd = new SqlCommand(fieldsQuery, connection))
+                    {
+                        cmd.CommandTimeout = 10;
+                        using (var reader = await cmd.ExecuteReaderAsync())
+                        {
+                            while (await reader.ReadAsync())
+                            {
+                                int id = reader.GetInt32(reader.GetOrdinal("TraceabilityListID"));
+                                string name = reader.GetString(reader.GetOrdinal("ListName"));
+                                string folder = reader.GetString(reader.GetOrdinal("FolderName"));
+                                int itemType = reader.GetInt32(reader.GetOrdinal("ItemType"));
+
+                                TraceMaskInfo? mask = null;
+                                int patternOrd = reader.GetOrdinal("MascaraBytes");
+                                if (!reader.IsDBNull(patternOrd))
+                                {
+                                    byte[] bytes = (byte[])reader["MascaraBytes"];
+                                    mask = TraceMaskInfo.Parse(bytes);
+                                }
+
+                                var def = new TraceabilityFieldDefinition
+                                {
+                                    TraceabilityListID = id,
+                                    ListName = name,
+                                    FolderName = folder,
+                                    ItemType = itemType,
+                                    Mask = mask
+                                };
+
+                                fieldMap[id] = def;
+                                list.Add(def);
+                            }
+                        }
+                    }
+
+                    using (var cmd = new SqlCommand(optionsQuery, connection))
+                    {
+                        cmd.CommandTimeout = 10;
+                        using (var reader = await cmd.ExecuteReaderAsync())
+                        {
+                            while (await reader.ReadAsync())
+                            {
+                                int id = reader.GetInt32(0);
+                                string optName = reader.GetString(1);
+                                if (fieldMap.TryGetValue(id, out var def))
+                                {
+                                    def.PredefinedOptions.Add(optName);
+                                }
+                            }
+                        }
+                    }
+                }
+
+                lock (_cacheLock)
+                {
+                    _cachedTraceabilities = list;
+                    _cachedConnectionString = _connectionString;
+                }
+            }
+            catch (Exception ex)
+            {
+                Serilog.Log.Error(ex, "Erro ao obter catálogo de rastreabilidades do MeasurLink");
+            }
+
+            return list;
+        }
+
+        public async Task<List<string>> GetRunTraceabilitiesAsync(string runName)
+        {
+            var result = new List<string>();
+            if (string.IsNullOrWhiteSpace(_connectionString) || string.IsNullOrWhiteSpace(runName))
+                return result;
+
+            const string query = @"
+                DECLARE @TargetRunID INT;
+
+                SELECT TOP 1 @TargetRunID = RunID 
+                FROM dbo.ActiveRun WITH (NOLOCK) 
+                WHERE RunName = @RunName;
+
+                IF @TargetRunID IS NULL
+                BEGIN
+                    SELECT TOP 1 @TargetRunID = RunID 
+                    FROM dbo.Run WITH (NOLOCK) 
+                    WHERE RunName = @RunName 
+                    ORDER BY RunID DESC;
+                END
+
+                IF @TargetRunID IS NOT NULL
+                BEGIN
+                    SELECT tl.ListName
+                    FROM RunTraceabilityList rtl WITH (NOLOCK)
+                    INNER JOIN TraceabilityList tl WITH (NOLOCK) ON rtl.TraceabilityListID = tl.TraceabilityListID
+                    INNER JOIN TraceabilityFolder tf WITH (NOLOCK) ON tl.TraceabilityFolderID = tf.TraceabilityFolderID
+                    WHERE rtl.RunID = @TargetRunID
+                      AND rtl.FeatureID = 0
+                      AND tf.TraceabilityFolderType = 1
+                    ORDER BY rtl.TraceabilityListID ASC;
+                END";
+
+            try
+            {
+                using (var connection = new SqlConnection(_connectionString))
+                {
+                    await connection.OpenAsync();
+                    using (var cmd = new SqlCommand(query, connection))
+                    {
+                        cmd.CommandTimeout = 10;
+                        cmd.Parameters.AddWithValue("@RunName", runName.Trim());
+                        using (var reader = await cmd.ExecuteReaderAsync())
+                        {
+                            while (await reader.ReadAsync())
+                            {
+                                if (!reader.IsDBNull(0))
+                                {
+                                    result.Add(reader.GetString(0));
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Serilog.Log.Error(ex, "Erro ao obter rastreabilidades da corrida para RunName: {RunName}", runName);
+            }
+
+            return result;
+        }
     }
 }

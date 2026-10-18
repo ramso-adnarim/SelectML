@@ -400,5 +400,37 @@ namespace SelectML.Client
             }
             return null;
         }
+
+        private void OnTraceabilityPopupPreviewKeyDown(object sender, System.Windows.Input.KeyEventArgs e)
+        {
+            if (e.Key == System.Windows.Input.Key.Escape)
+            {
+                if (DataContext is MainViewModel vm)
+                {
+                    vm.IsTraceabilityMenuOpen = false;
+                }
+                e.Handled = true;
+            }
+        }
+
+        private void OnTraceabilityTextInput(object sender, TextCompositionEventArgs e)
+        {
+            if (e.Text.Contains(';') || e.Text.Contains('|') || e.Text.Contains('\r') || e.Text.Contains('\n'))
+            {
+                e.Handled = true;
+            }
+        }
+
+        private void OnTraceabilityPasting(object sender, DataObjectPastingEventArgs e)
+        {
+            if (e.DataObject.GetDataPresent(System.Windows.DataFormats.UnicodeText, true))
+            {
+                string text = (string)e.DataObject.GetData(System.Windows.DataFormats.UnicodeText);
+                if (text != null && (text.Contains(';') || text.Contains('|') || text.Contains('\r') || text.Contains('\n')))
+                {
+                    e.CancelCommand();
+                }
+            }
+        }
     }
 }

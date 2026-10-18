@@ -167,6 +167,9 @@ namespace SelectML.Client.ViewModels
             OpenNameModifierConfigCommand = new RelayCommand(ExecuteOpenNameModifierConfig);
             OpenTemplateConfigCommand = new RelayCommand(ExecuteOpenTemplateConfig, CanChangeConfig);
             ClearParserCommand = new RelayCommand(obj => SelectedParser = null, CanChangeConfig);
+            AddTraceabilityCommand = new RelayCommand(ExecuteAddTraceability);
+            RemoveTraceabilityCommand = new RelayCommand(ExecuteRemoveTraceability);
+            ToggleTraceabilityMenuCommand = new RelayCommand(obj => IsTraceabilityMenuOpen = !IsTraceabilityMenuOpen);
 
             LoadParsers();
             LoadConfiguration();
@@ -255,6 +258,57 @@ namespace SelectML.Client.ViewModels
         public ObservableCollection<string> AvailableDatabases { get; set; }
         public ObservableCollection<ResultItem> MeasuredResults { get; set; }
         public ObservableCollection<string> KnownFeatures { get; set; } = new ObservableCollection<string>();
+        public ObservableCollection<string> KnownVariableFeatures { get; set; } = new ObservableCollection<string>();
+        private string _serialNumberTraceability = string.Empty;
+        public string SerialNumberTraceability
+        {
+            get => _serialNumberTraceability;
+            set
+            {
+                var sanitized = SanitizeTraceabilityToken(value);
+                if (_serialNumberTraceability != sanitized)
+                {
+                    _serialNumberTraceability = sanitized;
+                    OnPropertyChanged();
+                    SaveTraceabilities();
+                }
+            }
+        }
+
+        public ObservableCollection<TraceabilityItem> TraceabilityItems { get; set; } = new ObservableCollection<TraceabilityItem>();
+        public ObservableCollection<string> AvailableTraceabilityNames { get; set; } = new ObservableCollection<string>();
+        private List<TraceabilityFieldDefinition> _availableTraceabilities = new();
+        private HashSet<string> _activeRunTraceabilities = new(StringComparer.OrdinalIgnoreCase);
+        private bool _isUpdatingTraceabilityCatalog;
+        private CancellationTokenSource? _batchDebounceCts;
+        private CancellationTokenSource? _partDebounceCts;
+        private bool _suppressPartLookup;
+
+        private bool _isTraceabilityMenuOpen;
+        public bool IsTraceabilityMenuOpen
+        {
+            get => _isTraceabilityMenuOpen;
+            set
+            {
+                if (_isTraceabilityMenuOpen != value)
+                {
+                    _isTraceabilityMenuOpen = value;
+                    OnPropertyChanged();
+                    if (_isTraceabilityMenuOpen)
+                    {
+                        if (AvailableTraceabilityNames.Count == 0)
+                        {
+                            _ = LoadAvailableTraceabilitiesAsync();
+                        }
+
+                        if (TraceabilityItems.Count == 0)
+                        {
+                            ExecuteAddTraceability(null);
+                        }
+                    }
+                }
+            }
+        }
 
         public bool IsConfigLocked
         {
@@ -455,7 +509,33 @@ namespace SelectML.Client.ViewModels
                     }
                     else if (!string.IsNullOrWhiteSpace(BatchNumber))
                     {
-                        _ = LoadFeaturesForPart();
+                        _ = LoadFeaturesForPartAsync();
+                    }
+                }
+            }
+        }
+
+        private bool _isOnlyMappedTraceabilitiesActive;
+        public bool IsOnlyMappedTraceabilitiesActive
+        {
+            get => _isOnlyMappedTraceabilitiesActive;
+            set
+            {
+                if (_isOnlyMappedTraceabilitiesActive != value)
+                {
+                    _isOnlyMappedTraceabilitiesActive = value;
+                    OnPropertyChanged();
+
+                    try
+                    {
+                        var config = _configService.Load();
+                        config.SendOnlyMappedTraceabilities = _isOnlyMappedTraceabilitiesActive;
+                        _configService.Save(config);
+                        Log.Information("SendOnlyMappedTraceabilities changed and saved: {Active}", _isOnlyMappedTraceabilitiesActive);
+                    }
+                    catch (Exception ex)
+                    {
+                        Log.Error(ex, "Failed to save SendOnlyMappedTraceabilities configuration");
                     }
                 }
             }
@@ -643,14 +723,41 @@ namespace SelectML.Client.ViewModels
             get => _partName;
             set
             {
+                if (_partName == value) return;
                 _partName = value;
                 OnPropertyChanged();
-                // Trigger SQL lookup here on lost focus or explicit command?
-                // Prompt: "Ao perder o foco ou digitar, o sistema dispara a query SQL"
                 CommandManager.InvalidateRequerySuggested();
-                // Trigger Lookup
-                _ = LoadFeaturesForPart();
+
                 TriggerValidation();
+
+                if (_suppressPartLookup) return;
+
+                _partDebounceCts?.Cancel();
+                _partDebounceCts?.Dispose();
+                _partDebounceCts = null;
+
+                if (string.IsNullOrWhiteSpace(value)) return;
+
+                var cts = new CancellationTokenSource();
+                _partDebounceCts = cts;
+                var token = cts.Token;
+                var currentPart = value;
+
+                _ = Task.Run(async () =>
+                {
+                    try
+                    {
+                        await Task.Delay(350, token);
+                        if (token.IsCancellationRequested) return;
+
+                        await System.Windows.Application.Current.Dispatcher.InvokeAsync(() =>
+                        {
+                            if (token.IsCancellationRequested || _partName != currentPart) return;
+                            TriggerValidation();
+                        });
+                    }
+                    catch (OperationCanceledException) { }
+                }, token);
             }
         }
 
@@ -661,68 +768,131 @@ namespace SelectML.Client.ViewModels
             get => _batchNumber;
             set
             {
+                if (_batchNumber == value) return;
                 _batchNumber = value;
                 OnPropertyChanged();
                 CommandManager.InvalidateRequerySuggested();
-                
-                // Trigger Station Lookup unless suppressed (programmatic load)
-                if (!_suppressBatchLookup)
+
+                _batchDebounceCts?.Cancel();
+                _batchDebounceCts?.Dispose();
+                _batchDebounceCts = null;
+
+                if (_suppressBatchLookup) return;
+
+                if (string.IsNullOrWhiteSpace(value))
                 {
-                    _ = DetectStationAndFeatures();
+                    DetectedStationName = string.Empty;
+                    _expectedPartName = null;
+                    IsBatchNumberValid = true;
+                    _activeRunTraceabilities.Clear();
+                    foreach (var item in TraceabilityItems)
+                    {
+                        if (item != null) item.IsUnmappedInRun = false;
+                    }
+                    TriggerValidation();
+                    return;
                 }
+
+                var cts = new CancellationTokenSource();
+                _batchDebounceCts = cts;
+                var token = cts.Token;
+                var currentBatch = value;
+
+                _ = Task.Run(async () =>
+                {
+                    try
+                    {
+                        await Task.Delay(350, token);
+                        if (token.IsCancellationRequested) return;
+
+                        await DetectStationAndFeaturesAsync(currentBatch, token);
+                    }
+                    catch (OperationCanceledException) { }
+                    catch (Exception ex)
+                    {
+                        Log.Error(ex, "Erro no debounce do BatchNumber");
+                    }
+                }, token);
             }
         }
 
-        private async Task DetectStationAndFeatures()
+        private async Task DetectStationAndFeaturesAsync(string batchNumber, CancellationToken token = default)
         {
-             try
-             {
-                 if (string.IsNullOrWhiteSpace(BatchNumber)) 
-                 {
-                     IsBatchNumberValid = true; // Empirically, empty is valid until typed? Or pending. Let's say valid to avoid redbox on clear.
-                     return;
-                 }
+            try
+            {
+                if (string.IsNullOrWhiteSpace(batchNumber))
+                {
+                    await System.Windows.Application.Current.Dispatcher.InvokeAsync(() =>
+                    {
+                        IsBatchNumberValid = true;
+                    });
+                    return;
+                }
 
-                 var station = await _databaseService.GetStationNameAsync(BatchNumber);
-                 var routine = await _databaseService.GetRoutineNameAsync(BatchNumber);
+                if (_databaseService == null || token.IsCancellationRequested) return;
 
-                 bool found = false;
+                var station = await _databaseService.GetStationNameAsync(batchNumber);
+                if (token.IsCancellationRequested) return;
 
-                 if (!string.IsNullOrEmpty(station))
-                 {
-                     DetectedStationName = station;
-                     found = true;
-                 }
-                 else
-                 {
-                     DetectedStationName = "Não identificada";
-                 }
+                var routine = await _databaseService.GetRoutineNameAsync(batchNumber);
+                if (token.IsCancellationRequested) return;
 
-                 if (!string.IsNullOrEmpty(routine))
-                 {
-                     _expectedPartName = routine;
-                     found = true;
-                     // Auto-fill if empty
-                     if (string.IsNullOrWhiteSpace(PartName))
-                     {
-                         PartName = routine;
-                     }
-                 }
-                 else
-                 {
-                     _expectedPartName = null;
-                 }
-                 
-                 IsBatchNumberValid = found;
+                await System.Windows.Application.Current.Dispatcher.InvokeAsync(() =>
+                {
+                    if (token.IsCancellationRequested || _batchNumber != batchNumber) return;
 
-                 // Also load features if possible (redundant with PartName trigger but safer)
-                 await LoadFeaturesForPart();
-                 TriggerValidation();
-             }
-             catch (Exception ex)
-             {
-                 Log.Error(ex, "Error detecting station from manual input");
-             }
+                    bool found = false;
+
+                    if (!string.IsNullOrEmpty(station))
+                    {
+                        DetectedStationName = station;
+                        found = true;
+                    }
+                    else
+                    {
+                        DetectedStationName = "Não identificada";
+                    }
+
+                    if (!string.IsNullOrEmpty(routine))
+                    {
+                        _expectedPartName = routine;
+                        found = true;
+                        if (string.IsNullOrWhiteSpace(PartName))
+                        {
+                            _suppressPartLookup = true;
+                            try
+                            {
+                                PartName = routine;
+                            }
+                            finally
+                            {
+                                _suppressPartLookup = false;
+                            }
+                        }
+                    }
+                    else
+                    {
+                        _expectedPartName = null;
+                    }
+
+                    IsBatchNumberValid = found;
+                });
+
+                if (token.IsCancellationRequested || _batchNumber != batchNumber) return;
+
+                await LoadFeaturesForPartAsync(batchNumber, token);
+
+                await System.Windows.Application.Current.Dispatcher.InvokeAsync(() =>
+                {
+                    if (token.IsCancellationRequested || _batchNumber != batchNumber) return;
+                    TriggerValidation();
+                });
+            }
+            catch (OperationCanceledException) { }
+            catch (Exception ex)
+            {
+                Log.Error(ex, "Error detecting station from manual input");
+            }
         }
 
         public string DetectedStationName
@@ -788,6 +958,9 @@ namespace SelectML.Client.ViewModels
         public RelayCommand OpenNameModifierConfigCommand { get; }
         public RelayCommand OpenTemplateConfigCommand { get; }
         public RelayCommand ClearParserCommand { get; }
+        public RelayCommand AddTraceabilityCommand { get; }
+        public RelayCommand RemoveTraceabilityCommand { get; }
+        public RelayCommand ToggleTraceabilityMenuCommand { get; }
 
         // --- Métodos de Configuração e Watcher ---
 
@@ -937,6 +1110,193 @@ namespace SelectML.Client.ViewModels
             }
         }
 
+        private void ExecuteAddTraceability(object? obj)
+        {
+            var newItem = new TraceabilityItem();
+            HookTraceabilityItem(newItem);
+            TraceabilityItems.Add(newItem);
+            SaveTraceabilities();
+        }
+
+        private void ExecuteRemoveTraceability(object? obj)
+        {
+            if (obj is TraceabilityItem item)
+            {
+                UnhookTraceabilityItem(item);
+                TraceabilityItems.Remove(item);
+                SaveTraceabilities();
+            }
+        }
+
+        private void HookTraceabilityItem(TraceabilityItem item)
+        {
+            item.PropertyChanged += OnTraceabilityItemPropertyChanged;
+        }
+
+        private void UnhookTraceabilityItem(TraceabilityItem item)
+        {
+            item.PropertyChanged -= OnTraceabilityItemPropertyChanged;
+        }
+
+        private void OnTraceabilityItemPropertyChanged(object? sender, PropertyChangedEventArgs e)
+        {
+            if (_isUpdatingTraceabilityCatalog) return;
+
+            if (sender is TraceabilityItem item && e.PropertyName == nameof(TraceabilityItem.Key))
+            {
+                if (_activeRunTraceabilities.Count > 0 && !string.IsNullOrWhiteSpace(item.Key))
+                {
+                    item.IsUnmappedInRun = !_activeRunTraceabilities.Contains(item.Key);
+                }
+                else
+                {
+                    item.IsUnmappedInRun = false;
+                }
+            }
+
+            SaveTraceabilities();
+        }
+
+        private void SaveTraceabilities()
+        {
+            try
+            {
+                var cfg = _configService.Load();
+                cfg.SerialNumberTraceability = SerialNumberTraceability;
+                cfg.Traceabilities = TraceabilityItems
+                    .Select(t => new TraceabilityItem(t.Key, t.Value))
+                    .ToList();
+                cfg.SendOnlyMappedTraceabilities = IsOnlyMappedTraceabilitiesActive;
+                _configService.Save(cfg);
+            }
+            catch (Exception ex)
+            {
+                Log.Warning(ex, "Falha ao salvar configurações de rastreabilidade.");
+            }
+        }
+
+        public async Task LoadAvailableTraceabilitiesAsync(bool forceRefresh = false)
+        {
+            try
+            {
+                if (_databaseService == null) return;
+                if (forceRefresh)
+                {
+                    DatabaseService.ClearTraceabilityCache();
+                }
+
+                var list = await _databaseService.GetAllAvailableTraceabilitiesAsync();
+                if (list != null)
+                {
+                    _availableTraceabilities = list;
+                    TraceabilityItem.CatalogResolver = name =>
+                        _availableTraceabilities.FirstOrDefault(d => string.Equals(d.ListName, name, StringComparison.OrdinalIgnoreCase));
+
+                    await System.Windows.Application.Current.Dispatcher.InvokeAsync(() =>
+                    {
+                        _isUpdatingTraceabilityCatalog = true;
+                        try
+                        {
+                            var snapshot = TraceabilityItems
+                                .Select(t => (Item: t, Key: t.Key, Value: t.Value))
+                                .ToList();
+
+                            var newNames = list.Select(d => d.ListName).ToList();
+                            if (!AvailableTraceabilityNames.SequenceEqual(newNames))
+                            {
+                                for (int i = AvailableTraceabilityNames.Count - 1; i >= 0; i--)
+                                {
+                                    if (!newNames.Contains(AvailableTraceabilityNames[i]))
+                                    {
+                                        AvailableTraceabilityNames.RemoveAt(i);
+                                    }
+                                }
+                                foreach (var name in newNames)
+                                {
+                                    if (!AvailableTraceabilityNames.Contains(name))
+                                    {
+                                        AvailableTraceabilityNames.Add(name);
+                                    }
+                                }
+                            }
+
+                            foreach (var snap in snapshot)
+                            {
+                                if (!string.IsNullOrEmpty(snap.Key) && snap.Item.Key != snap.Key)
+                                {
+                                    snap.Item.Key = snap.Key;
+                                }
+                                if (!string.IsNullOrEmpty(snap.Value) && snap.Item.Value != snap.Value)
+                                {
+                                    snap.Item.Value = snap.Value;
+                                }
+                                snap.Item.RefreshDefinition();
+                            }
+                        }
+                        finally
+                        {
+                            _isUpdatingTraceabilityCatalog = false;
+                            SaveTraceabilities();
+                        }
+                    });
+                }
+            }
+            catch (Exception ex)
+            {
+                Log.Warning(ex, "Erro ao carregar catálogo de rastreabilidades.");
+            }
+        }
+
+        private async Task UpdateRunTraceabilitiesAsync(string runName, CancellationToken token = default)
+        {
+            if (string.IsNullOrWhiteSpace(runName) || _databaseService == null || token.IsCancellationRequested)
+            {
+                _activeRunTraceabilities.Clear();
+                if (System.Windows.Application.Current?.Dispatcher != null)
+                {
+                    await System.Windows.Application.Current.Dispatcher.InvokeAsync(() =>
+                    {
+                        foreach (var item in TraceabilityItems)
+                        {
+                            if (item != null) item.IsUnmappedInRun = false;
+                        }
+                    });
+                }
+                return;
+            }
+
+            try
+            {
+                var mappedNames = await _databaseService.GetRunTraceabilitiesAsync(runName);
+                if (token.IsCancellationRequested) return;
+
+                _activeRunTraceabilities = new HashSet<string>(mappedNames ?? Enumerable.Empty<string>(), StringComparer.OrdinalIgnoreCase);
+
+                if (System.Windows.Application.Current?.Dispatcher != null)
+                {
+                    await System.Windows.Application.Current.Dispatcher.InvokeAsync(() =>
+                    {
+                        if (token.IsCancellationRequested) return;
+
+                        foreach (var item in TraceabilityItems)
+                        {
+                            if (item != null)
+                            {
+                                item.IsUnmappedInRun = _activeRunTraceabilities.Count > 0 &&
+                                                       !string.IsNullOrWhiteSpace(item.Key) &&
+                                                       !_activeRunTraceabilities.Contains(item.Key);
+                            }
+                        }
+                    });
+                }
+            }
+            catch (OperationCanceledException) { }
+            catch (Exception ex)
+            {
+                Log.Warning(ex, "Erro ao atualizar rastreabilidades da corrida para {RunName}", runName);
+            }
+        }
+
         private void LoadParsers()
         {
             var path = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Plugins");
@@ -1044,80 +1404,116 @@ namespace SelectML.Client.ViewModels
 
             _isListAllFeaturesActive = config.ListAllFeatures;
             OnPropertyChanged(nameof(IsListAllFeaturesActive));
+
+            _isOnlyMappedTraceabilitiesActive = config.SendOnlyMappedTraceabilities;
+            OnPropertyChanged(nameof(IsOnlyMappedTraceabilitiesActive));
+
+            // Carregamento de Rastreabilidades (V1.2.9)
+            _serialNumberTraceability = config.SerialNumberTraceability ?? string.Empty;
+            OnPropertyChanged(nameof(SerialNumberTraceability));
+
+            TraceabilityItems.Clear();
+            if (config.Traceabilities != null)
+            {
+                foreach (var item in config.Traceabilities)
+                {
+                    var traceItem = new TraceabilityItem(item.Key, item.Value);
+                    HookTraceabilityItem(traceItem);
+                    TraceabilityItems.Add(traceItem);
+                }
+            }
+
+            // Inicia carga em segundo plano das rastreabilidades disponíveis do banco
+            _ = LoadAvailableTraceabilitiesAsync();
         }
 
         private async void ExecuteSaveConfig(object obj)
         {
-            if (IsConfigLocked)
+            try
             {
-                StopWatcher();
-                IsConfigLocked = false;
-                ConfigButtonText = "Salvar e Iniciar";
-                StatusMessage = "Monitoramento pausado. Edite as configurações.";
+                if (IsConfigLocked)
+                {
+                    StopWatcher();
+                    IsConfigLocked = false;
+                    ConfigButtonText = "Salvar e Iniciar";
+                    StatusMessage = "Monitoramento pausado. Edite as configurações.";
 
-                // Desabilita início automático se o usuário parar manualmente
-                var config = _configService.Load();
-                config.AutoStartDatabase = false;
-                _configService.Save(config);
+                    // Desabilita início automático se o usuário parar manualmente
+                    var config = _configService.Load();
+                    config.AutoStartDatabase = false;
+                    _configService.Save(config);
 
-                Log.Information("Configuration unlocked for editing");
+                    Log.Information("Configuration unlocked for editing");
+                }
+                else
+                {
+                    if (string.IsNullOrWhiteSpace(WatchDirectory) || !Directory.Exists(WatchDirectory))
+                    {
+                        System.Windows.MessageBox.Show("Selecione uma pasta válida.", "Erro", MessageBoxButton.OK, MessageBoxImage.Error);
+                        Log.Warning("Invalid watch directory selected: {Directory}", WatchDirectory);
+                        return;
+                    }
+
+                    StatusMessage = "Validando conexão com o banco de dados...";
+                    BuildConnectionString();
+
+                    // Test connection immediately
+                    try
+                    {
+                        var tempDbService = new DatabaseService(ConnectionString);
+                        await tempDbService.TestConnectionThrowingAsync();
+                    }
+                    catch (Exception ex)
+                    {
+                        System.Windows.MessageBox.Show($"Falha de conexão com o banco de dados:\n{ex.Message}", "Erro de Conexão", MessageBoxButton.OK, MessageBoxImage.Error);
+                        Log.Error(ex, "Failed to connect to database during save config");
+                        StatusMessage = "Falha ao iniciar - Verifique as configurações de banco de dados.";
+                        return; // Return immediately, do not lock config or start monitoring!
+                    }
+
+                    var config = _configService.Load(); // Reload to keep existing keys
+                    config.WatchDirectory = WatchDirectory;
+                    config.OutputDirectory = OutputDirectory;
+                    config.UseOutputDirectory = UseOutputDirectory;
+                    config.LastPluginName = SelectedParser?.MachineName ?? ""; // Allow null
+                    if (SelectedParser is IConfigurableParser cpSave)
+                    {
+                        config.LastTemplateName = cpSave.ActiveTemplateName;
+                    }
+
+                    // Save DB fields
+                    config.DbServer = DbServer;
+                    config.DbUseWindowsAuth = DbUseWindowsAuth;
+                    config.DbUser = DbUser;
+                    config.DbPassword = DbPassword;
+                    config.DbName = DbName;
+                    config.ConnectionString = ConnectionString;
+
+                    config.AutoStartDatabase = true; // Habilita início automático se iniciar com sucesso
+                    config.SerialNumberTraceability = SerialNumberTraceability;
+                    config.Traceabilities = TraceabilityItems
+                        .Where(t => t != null && (!string.IsNullOrWhiteSpace(t.Key) || !string.IsNullOrWhiteSpace(t.Value)))
+                        .Select(t => new TraceabilityItem(t.Key, t.Value))
+                        .ToList();
+                    config.SendOnlyMappedTraceabilities = IsOnlyMappedTraceabilitiesActive;
+                    _configService.Save(config);
+                    Log.Information("Configuration saved");
+                    
+                    // Re-initialize database service
+                    _databaseService = new DatabaseService(config.ConnectionString);
+                    _ = LoadAvailableTraceabilitiesAsync(forceRefresh: true);
+
+                    StartWatcher();
+
+                    IsConfigLocked = true;
+                    ConfigButtonText = "Editar";
+                    IsExpanded = false;
+                }
             }
-            else
+            catch (Exception ex)
             {
-                if (string.IsNullOrWhiteSpace(WatchDirectory) || !Directory.Exists(WatchDirectory))
-                {
-                    System.Windows.MessageBox.Show("Selecione um diretório válido.", "Erro", MessageBoxButton.OK, MessageBoxImage.Error);
-                    Log.Warning("Invalid watch directory selected: {Directory}", WatchDirectory);
-                    return;
-                }
-
-                StatusMessage = "Validando conexão com o banco de dados...";
-                BuildConnectionString();
-
-                // Test connection immediately
-                try
-                {
-                    var tempDbService = new DatabaseService(ConnectionString);
-                    await tempDbService.TestConnectionThrowingAsync();
-                }
-                catch (Exception ex)
-                {
-                    System.Windows.MessageBox.Show($"Falha de conexão com o banco de dados:\n{ex.Message}", "Erro de Conexão", MessageBoxButton.OK, MessageBoxImage.Error);
-                    Log.Error(ex, "Failed to connect to database during save config");
-                    StatusMessage = "Falha ao iniciar. Verifique as configurações de banco de dados.";
-                    return; // Return immediately, do not lock config or start monitoring!
-                }
-
-                var config = _configService.Load(); // Reload to keep existing keys
-                config.WatchDirectory = WatchDirectory;
-                config.OutputDirectory = OutputDirectory;
-                config.UseOutputDirectory = UseOutputDirectory;
-                config.LastPluginName = SelectedParser?.MachineName ?? ""; // Allow null
-                if (SelectedParser is IConfigurableParser cpSave)
-                {
-                    config.LastTemplateName = cpSave.ActiveTemplateName;
-                }
-
-                // Save DB fields
-                config.DbServer = DbServer;
-                config.DbUseWindowsAuth = DbUseWindowsAuth;
-                config.DbUser = DbUser;
-                config.DbPassword = DbPassword;
-                config.DbName = DbName;
-                config.ConnectionString = ConnectionString;
-
-                config.AutoStartDatabase = true; // Habilita início automático se iniciar com sucesso
-                _configService.Save(config);
-                Log.Information("Configuration saved");
-                
-                // Re-initialize database service
-                _databaseService = new DatabaseService(config.ConnectionString);
-
-                StartWatcher();
-
-                IsConfigLocked = true;
-                ConfigButtonText = "Editar";
-                IsExpanded = false;
+                Log.Error(ex, "Erro inesperado ao salvar configuração");
+                StatusMessage = "Erro inesperado ao salvar configuração.";
             }
         }
 
@@ -1303,7 +1699,7 @@ namespace SelectML.Client.ViewModels
                             DbConnectionStatus = "Failed";
                             lastFailedState = true;
                             // Balloon tip warning is only shown ONCE when it transitions to Failed
-                            RequestShowBalloonTip?.Invoke("SelectML - Erro", "Falha de conexão com DB. Tentando reconectar...", "Error");
+                            RequestShowBalloonTip?.Invoke("SelectML - Erro", "Falha de conexão, tentando reconectar...", "Error");
                         }
 
                         if (!isReconnectingLogged)
@@ -1480,25 +1876,36 @@ namespace SelectML.Client.ViewModels
                          IsBatchNumberValid = !string.IsNullOrEmpty(DetectedStationName) || !string.IsNullOrEmpty(_expectedPartName);
                          if (string.IsNullOrWhiteSpace(data.BatchNumber)) IsBatchNumberValid = true;
 
-                         var expectedFeatures = await _databaseService.GetFeaturesForRunAsync(data.BatchNumber);
-                         List<InspectionFeatureInfo>? routineFeatures = null;
-                         if (IsListAllFeaturesActive)
+                         // Consulta e validação de rastreabilidades da corrida (V1.2.9 - Fase 2)
+                         await UpdateRunTraceabilitiesAsync(data.BatchNumber);
+
+                         var routineFeatures = await _databaseService.GetInspectionRoutineFeaturesAsync(data.BatchNumber);
+                         var features = await _databaseService.GetFeaturesForRunAsync(data.BatchNumber);
+
+                         var expectedFeatures = (routineFeatures != null && routineFeatures.Any())
+                             ? routineFeatures.Select(rf => rf.FeatureName).ToList()
+                             : features;
+
+                         var variableFeatures = (routineFeatures != null && routineFeatures.Any())
+                             ? routineFeatures.Where(rf => !rf.IsAttribute).Select(rf => rf.FeatureName).ToList()
+                             : expectedFeatures;
+
+                         // Populate KnownFeatures and KnownVariableFeatures for Validation and UI ComboBox
+                         System.Windows.Application.Current.Dispatcher.Invoke(() =>
                          {
-                             routineFeatures = await _databaseService.GetInspectionRoutineFeaturesAsync(data.BatchNumber);
-                             if (routineFeatures != null && routineFeatures.Any())
+                             KnownFeatures.Clear();
+                             KnownVariableFeatures.Clear();
+
+                             if (expectedFeatures != null)
                              {
-                                 expectedFeatures = routineFeatures.Select(rf => rf.FeatureName).ToList();
+                                 foreach (var f in expectedFeatures) KnownFeatures.Add(f);
                              }
-                         }
-                         // Populate KnownFeatures for Validation
-                          System.Windows.Application.Current.Dispatcher.Invoke(() =>
-                          {
-                              KnownFeatures.Clear();
-                              if (expectedFeatures != null)
-                              {
-                                  foreach(var f in expectedFeatures) KnownFeatures.Add(f);
-                              }
-                          });
+
+                             if (variableFeatures != null)
+                             {
+                                 foreach (var vf in variableFeatures) KnownVariableFeatures.Add(vf);
+                             }
+                         });
 
                           // Se o enfileiramento estiver desativado e já houver medições seriais na tela, preservá-las
                           var priorSerialItems = (!EnqueueSerialInput && MeasuredResults.Count > 0)
@@ -1665,8 +2072,8 @@ namespace SelectML.Client.ViewModels
                                   StatusMessage = hasPendingRoutineItems
                                       ? "Rotina carregada com características pendentes. Preencha e clique em Enviar."
                                       : (hasUnrecognized
-                                          ? "Validação necessária. Verifique e envie."
-                                          : "Dados carregados. Verifique e clique em Enviar.");
+                                          ? "Validação necessária - Verifique e envie."
+                                          : "Dados carregados - Verifique e clique em Enviar.");
                                   RequestRestoreWindow?.Invoke();
                               }
                               else if (hasUnrecognized)
@@ -1683,7 +2090,7 @@ namespace SelectML.Client.ViewModels
                                  {
                                      // Fallback to manual if no rule established
                                      IsPendingAction = true;
-                                     StatusMessage = "Validação necessária. Verifique e envie.";
+                                     StatusMessage = "Validação necessária - Verifique e envie.";
                                      RequestRestoreWindow?.Invoke();
                                  }
                              }
@@ -1696,7 +2103,7 @@ namespace SelectML.Client.ViewModels
                          {
                              IsPendingAction = true;
                              _isProcessingFile = true; // Marca como Modo Arquivo (Bloqueia Serial)
-                             StatusMessage = "Dados carregados. Verifique e clique em Enviar.";
+                             StatusMessage = "Dados carregados - Verifique e clique em Enviar.";
                              RequestRestoreWindow?.Invoke();
                          }
                      });
@@ -1818,9 +2225,11 @@ namespace SelectML.Client.ViewModels
             string targetName = changedItem.Characteristic.Trim();
 
             // Localiza se existe uma cota da rotina (IsFromDbRoutine) que esteja aguardando medição (!HasValue) com esse mesmo nome
+            // Importante: apenas cotas do tipo Variável (!IsAttribute) podem receber dados medidos numéricos
             var targetRoutineItem = MeasuredResults.FirstOrDefault(x =>
                 x != changedItem &&
                 x.IsFromDbRoutine &&
+                !x.IsAttribute &&
                 !x.HasValue &&
                 string.Equals(x.Characteristic?.Trim(), targetName, StringComparison.OrdinalIgnoreCase));
 
@@ -1846,29 +2255,45 @@ namespace SelectML.Client.ViewModels
             return false;
         }
 
-        private async Task LoadFeaturesForPart()
+        private async Task LoadFeaturesForPartAsync(string? batch = null, CancellationToken token = default)
         {
-            if (string.IsNullOrWhiteSpace(BatchNumber)) return;
+            string batchNumber = batch ?? BatchNumber;
+            if (string.IsNullOrWhiteSpace(batchNumber) || _databaseService == null || token.IsCancellationRequested) return;
             
             try 
             {
-                 var features = await _databaseService.GetFeaturesForRunAsync(BatchNumber);
-                 List<InspectionFeatureInfo>? routineFeatures = null;
-                 if (IsListAllFeaturesActive)
-                 {
-                     routineFeatures = await _databaseService.GetInspectionRoutineFeaturesAsync(BatchNumber);
-                 }
+                 var routineFeatures = await _databaseService.GetInspectionRoutineFeaturesAsync(batchNumber);
+                 if (token.IsCancellationRequested) return;
 
-                 System.Windows.Application.Current.Dispatcher.Invoke(() => 
+                 var features = await _databaseService.GetFeaturesForRunAsync(batchNumber);
+                 if (token.IsCancellationRequested) return;
+
+                 await UpdateRunTraceabilitiesAsync(batchNumber, token);
+                 if (token.IsCancellationRequested) return;
+
+                 var expectedFeatures = (routineFeatures != null && routineFeatures.Any())
+                     ? routineFeatures.Select(rf => rf.FeatureName).ToList()
+                     : features;
+
+                 var variableFeatures = (routineFeatures != null && routineFeatures.Any())
+                     ? routineFeatures.Where(rf => !rf.IsAttribute).Select(rf => rf.FeatureName).ToList()
+                     : expectedFeatures;
+
+                 await System.Windows.Application.Current.Dispatcher.InvokeAsync(() => 
                  {
+                     if (token.IsCancellationRequested || _batchNumber != batchNumber) return;
+
                      KnownFeatures.Clear();
-                     if (features != null && features.Any())
+                     KnownVariableFeatures.Clear();
+
+                     if (expectedFeatures != null)
                      {
-                         foreach(var f in features) KnownFeatures.Add(f);
+                         foreach (var f in expectedFeatures) KnownFeatures.Add(f);
                      }
-                     else if (routineFeatures != null && routineFeatures.Any())
+
+                     if (variableFeatures != null)
                      {
-                         foreach(var rf in routineFeatures) KnownFeatures.Add(rf.FeatureName);
+                         foreach (var vf in variableFeatures) KnownVariableFeatures.Add(vf);
                      }
 
                      if (IsListAllFeaturesActive && routineFeatures != null && routineFeatures.Any())
@@ -1878,13 +2303,14 @@ namespace SelectML.Client.ViewModels
                      else
                      {
                          // Re-validate current items against new known features
-                         foreach(var item in MeasuredResults)
+                         foreach (var item in MeasuredResults)
                          {
                               ResultItem_PropertyChanged(item, new PropertyChangedEventArgs(nameof(ResultItem.Characteristic)));
                          }
                      }
                  });
             }
+            catch (OperationCanceledException) { }
             catch (Exception ex)
             {
                 Log.Error(ex, "Failed to load features for part");
@@ -2150,12 +2576,34 @@ namespace SelectML.Client.ViewModels
                 string fileName = $"Result_{data.PartName}_{DateTime.Now:yyyyMMdd_HHmmss}.csv";
                 string fullPath = Path.Combine(targetPath, fileName);
 
+                // Geração do CSV no formato de Palavras-Chave (Keywords com separador '|')
                 var sb = new StringBuilder();
-                sb.AppendLine(data.PartName);
-                sb.AppendLine(data.BatchNumber);
-                sb.AppendLine(string.Join(";", data.Results.Keys));
-                var values = data.Results.Values.Select(v => v.ToString(System.Globalization.CultureInfo.InvariantCulture));
-                sb.AppendLine(string.Join(";", values));
+                sb.AppendLine($"ROTINA|{SanitizeTraceabilityToken(data.PartName)}");
+                sb.AppendLine($"CORRIDA|{SanitizeTraceabilityToken(data.BatchNumber)}");
+
+                // Linha NS (Número de Série - Opcional): emitida apenas quando preenchida
+                if (!string.IsNullOrWhiteSpace(SerialNumberTraceability))
+                {
+                    sb.AppendLine($"NS|{SanitizeTraceabilityToken(SerialNumberTraceability)}");
+                }
+
+                // Linhas RASTREABILIDADE: emitida uma linha para cada par completo, com máscara válida e (se configurado) mapeado na corrida
+                var validTraceabilities = TraceabilityItems
+                    .Where(t => t != null && t.IsComplete && !t.IsMaskInvalid)
+                    .Where(t => !IsOnlyMappedTraceabilitiesActive || !t.IsUnmappedInRun)
+                    .ToList();
+
+                foreach (var trace in validTraceabilities)
+                {
+                    sb.AppendLine($"RASTREABILIDADE|{SanitizeTraceabilityToken(trace.Key)};{SanitizeTraceabilityToken(trace.Value)}");
+                }
+
+                // Linhas DADO: emitida uma linha para cada característica medida
+                foreach (var kvp in data.Results)
+                {
+                    string formattedValue = kvp.Value.ToString(System.Globalization.CultureInfo.InvariantCulture);
+                    sb.AppendLine($"DADO|{SanitizeTraceabilityToken(kvp.Key)};{formattedValue}");
+                }
 
                 await File.WriteAllTextAsync(fullPath, sb.ToString(), new UTF8Encoding(true));
 
@@ -2182,6 +2630,19 @@ namespace SelectML.Client.ViewModels
                     System.Windows.MessageBox.Show($"Erro ao salvar: {ex.Message}", "Erro", MessageBoxButton.OK, MessageBoxImage.Error);
                 }
             }
+        }
+
+        private static string SanitizeTraceabilityToken(string? text)
+        {
+            if (string.IsNullOrWhiteSpace(text))
+                return string.Empty;
+
+            return text
+                .Replace(";", "-")
+                .Replace("|", "-")
+                .Replace("\r", string.Empty)
+                .Replace("\n", string.Empty)
+                .Trim();
         }
 
         private void ExecuteCancel(object obj)
@@ -2223,8 +2684,15 @@ namespace SelectML.Client.ViewModels
                 DetectedStationName = string.Empty;
                 MeasuredResults.Clear();
                 KnownFeatures.Clear(); // Limpa features obsoletas
+                KnownVariableFeatures.Clear();
                 _currentData = null;   // Reseta contexto de dados do arquivo
                 _isProcessingFile = false; // Libera o lock do Modo Arquivo
+
+                _activeRunTraceabilities.Clear();
+                foreach (var item in TraceabilityItems)
+                {
+                    if (item != null) item.IsUnmappedInRun = false;
+                }
                 // IsPendingAction deve ser false aqui, a menos que reativado por dados buferizados
                 
                 // Check Buffers
@@ -2258,7 +2726,7 @@ namespace SelectML.Client.ViewModels
                 if (_fileBuffer.Count > 0)
                 {
                     var file = _fileBuffer.Dequeue();
-                    UpdateStatus($"Processando arquivo bufferizado ({_fileBuffer.Count} restantes)...");
+                    UpdateStatus($"Processando arquivo na fila ({_fileBuffer.Count} restantes)...");
                     // Need to call ProcessFile (async)
                     await ProcessFile(file, Path.GetFileName(file));
                 }
@@ -2305,7 +2773,7 @@ namespace SelectML.Client.ViewModels
                 TriggerValidation();
                 // Lock UI for the new serial data
                 IsPendingAction = true;
-                StatusMessage = "Dados seriais recuperados do buffer.";
+                StatusMessage = "Dados seriais recuperados da fila.";
                 RequestRestoreWindow?.Invoke();
             }
         }
@@ -2321,7 +2789,7 @@ namespace SelectML.Client.ViewModels
                     {
                         // Cenário de colisão com arquivo sendo processado
                         _serialBuffer.Enqueue(e);
-                        StatusMessage = $"Dado serial em buffer ({_serialBuffer.Count})...";
+                        StatusMessage = $"Dado serial na fila ({_serialBuffer.Count})...";
                         return;
                     }
 
@@ -2373,7 +2841,7 @@ namespace SelectML.Client.ViewModels
                     {
                         // Cenário A: Colisão. Enfileirar no Buffer Reverso.
                         _serialBuffer.Enqueue(e);
-                        StatusMessage = $"Dado serial em buffer ({_serialBuffer.Count})...";
+                        StatusMessage = $"Dado serial na fila ({_serialBuffer.Count})...";
                     }
                     else
                     {
@@ -2428,7 +2896,7 @@ namespace SelectML.Client.ViewModels
                 list.RemoveAt(list.Count - 1);
                 _serialBuffer = new Queue<SerialMeasurement>(list);
                 UpdateStatus(_serialBuffer.Count > 0 
-                    ? $"Dado serial em buffer desfeito ({_serialBuffer.Count} restantes)..."
+                    ? $"Dado serial na fila desfeito ({_serialBuffer.Count} restantes)..."
                     : "Dados seriais em buffer desfeitos.");
                 Log.Information("Serial buffer item undone via hardware trigger");
                 return;
@@ -2749,7 +3217,7 @@ namespace SelectML.Client.ViewModels
         private void ExecuteSelectOutputDirectory(object obj)
         {
             var dlg = new System.Windows.Forms.FolderBrowserDialog();
-            dlg.Description = "Selecione o diretório de Saída";
+            dlg.Description = "Selecione a pasta de saída";
             if (dlg.ShowDialog() == System.Windows.Forms.DialogResult.OK)
             {
                 OutputDirectory = dlg.SelectedPath;

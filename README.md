@@ -8,26 +8,27 @@
 
 # Interface de monitoramento e entrega de arquivos de medição
 
-![Version](https://img.shields.io/badge/Version-1.2.8-blue)
+![Version](https://img.shields.io/badge/Version-1.2.9-blue)
 ![Build](https://img.shields.io/badge/Build-Passing-brightgreen)
 ![Platform](https://img.shields.io/badge/Platform-Windows_WPF-blueviolet)
 
-> **Versão 1.2.8**
+> **Versão 1.2.9**
 > Novidades:
-> - **Motor Universal de Templates de Texto:** Leitor configurável de arquivos de texto com interface gráfica interativa, destaque sintático por cores, mapeamento granular de colunas e Regex com prévia em tempo real.
-> - **Listagem Completa da Rotina de Inspeção:** Consulta automática de todas as características cadastradas no MeasurLink, visualização com código de cores de tolerância (verde/vermelho) e controles adaptativos para variáveis e atributos.
-> - **Remodelagem da Fila Serial e Desfazer U-WAVE:** Modo concorrente híbrido serial configurável, barreira contra cotas vazias e suporte a comando de desfazer (*Undo*) remoto via U-WAVE.
-> - **Diálogos Modernos e Refinamentos Visuais:** Janelas de diálogo nativas estilizadas nos temas Claro e Escuro, ícones vetoriais contextuais e scrollbars modernos.
+> - **Integração Avançada de Rastreabilidade MeasurLink:** Catálogo de campos do banco SQL, suporte a itens livres com validação por máscara e listas pré-definidas (`Traceability_Item_Value`), popover dedicado no menu superior, campo fixo de número de série com auto-incremento e avisos preventivos de obrigatoriedade.
+> - **Auto-Detecção de Codificação Estendida:** Heurística aprimorada no `EncodingDetector` para detecção de arquivos UTF-16 LE e UTF-16 BE sem BOM, mantendo compatibilidade total com UTF-8 e Latin-1/ANSI.
+> - **Otimização de Desempenho e Concorrência:** Debounce reativo de 350ms em `BatchNumber` e `PartName` com cancelamento assíncrono para digitação fluida sem travamento de interface, e restrição de inserção manual a cotas de variáveis (`KnownVariableFeatures`).
+> - **Dicionário Centralizado de Palavras-Chave:** Padronização multilíngue via `Keywords.csv` com mapeamento abrangente em todas as telas e recursos.
 > 
 > <details>
 > <summary>Histórico de versões anteriores</summary>
 > 
+> - **Versão 1.2.8:** Motor Universal de Templates de Texto configurável com destaque sintático e prévia em tempo real, listagem completa da rotina de inspeção com código de cores de tolerância, remodelagem da fila serial concorrente híbrida com desfazer U-WAVE e diálogos modernos Claro/Escuro.
 > - **Versão 1.2.7:** Persistência de regras de confirmação no `%AppData%`, menu de contexto no botão Enviar, foco automático/elevação de janela e geração de CSV estritamente baseada na UI.
 > - **Versão 1.2.6:** Refinamento da Splash Screen e integridade de inicialização.
 > - **Versão 1.2.5:** Modificador dinâmico de nomes e resiliência de catálogo SQL.
 > </details>
 > 
-> [Baixar última versão](https://github.com/ramso-adnarim/SelectML/releases/tag/v1.2.8) 
+> [Baixar última versão](https://github.com/ramso-adnarim/SelectML/releases/tag/v1.2.9) 
 
 ## 🗺️ Mapa do repositório
 
@@ -47,7 +48,8 @@ O **SelectML** é um **Middleware** desenvolvido em **WPF (.NET 8)**. Ele atua c
 Diferente de um simples "copiador de arquivos", o SelectML oferece uma camada robusta de **governança de dados** e **validação em tempo real**, garantindo que apenas dados limpos e padronizados cheguem ao banco de dados.
 
 **Principais funcionalidades:**
-- **Híbrido (Novo):** Aceita tanto arquivos de CMMs quanto medição serial manual (Paquímetros).
+- **Rastreabilidade Integrada (Novo):** Integração com campos do MeasurLink, máscaras de validação e opções pré-cadastradas.
+- **Híbrido:** Aceita tanto arquivos de CMMs quanto medição serial manual (Paquímetros).
 - **Validação SQL:** Verifica se o Lote e as Características existem no banco de dados antes de processar.
 - **Human-in-the-Loop:** Interface para revisão manual dos dados com destaque visual para erros ou features desconhecidas.
 - **Ciclo de Vida Seguro:** Backup automático de todos os arquivos brutos (Raw Data).

@@ -110,6 +110,230 @@
             </Setter>
         </Style>
 
+        <!-- Estilo ComboBox Base para o Popover de Rastreabilidade (Dark/Light) -->
+        <Style x:Key="PopoverComboBoxStyle" TargetType="ComboBox">
+            <Setter Property="Height" Value="24"/>
+            <Setter Property="FontSize" Value="11.5"/>
+            <Setter Property="Foreground" Value="{DynamicResource Brush.Text.Primary}"/>
+            <Setter Property="Background" Value="{DynamicResource Brush.Surface.Popup}"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource Brush.Border.Base}"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="VerticalContentAlignment" Value="Center"/>
+            <Setter Property="SnapsToDevicePixels" Value="True"/>
+            <Setter Property="ItemContainerStyle">
+                <Setter.Value>
+                    <Style TargetType="ComboBoxItem">
+                        <Setter Property="Foreground" Value="{DynamicResource Brush.Text.Primary}"/>
+                        <Setter Property="Background" Value="Transparent"/>
+                        <Setter Property="Padding" Value="6,4"/>
+                        <Setter Property="FontSize" Value="11.5"/>
+                        <Setter Property="SnapsToDevicePixels" Value="True"/>
+                        <Setter Property="Template">
+                            <Setter.Value>
+                                <ControlTemplate TargetType="ComboBoxItem">
+                                    <Border x:Name="ItemBorder" Background="{TemplateBinding Background}" Padding="{TemplateBinding Padding}" CornerRadius="2" Margin="1">
+                                        <ContentPresenter SnapsToDevicePixels="True" VerticalAlignment="Center"/>
+                                    </Border>
+                                    <ControlTemplate.Triggers>
+                                        <Trigger Property="IsHighlighted" Value="True">
+                                            <Setter TargetName="ItemBorder" Property="Background" Value="{DynamicResource Brush.Surface.Hover}"/>
+                                        </Trigger>
+                                        <Trigger Property="IsSelected" Value="True">
+                                            <Setter TargetName="ItemBorder" Property="Background" Value="{DynamicResource Brush.Action.Primary}"/>
+                                            <Setter Property="Foreground" Value="{DynamicResource Brush.Text.Inverse}"/>
+                                        </Trigger>
+                                    </ControlTemplate.Triggers>
+                                </ControlTemplate>
+                            </Setter.Value>
+                        </Setter>
+                    </Style>
+                </Setter.Value>
+            </Setter>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="ComboBox">
+                        <Border x:Name="MainBorder"
+                                Background="{TemplateBinding Background}"
+                                BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="{TemplateBinding BorderThickness}"
+                                CornerRadius="4"
+                                SnapsToDevicePixels="True">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="18"/>
+                                </Grid.ColumnDefinitions>
+
+                                <!-- ToggleButton cobrindo todo o controle (abre o dropdown) -->
+                                <ToggleButton x:Name="DropDownToggle"
+                                              Grid.ColumnSpan="2"
+                                              Focusable="False"
+                                              ClickMode="Press"
+                                              IsChecked="{Binding IsDropDownOpen, Mode=TwoWay, RelativeSource={RelativeSource TemplatedParent}}"
+                                              Background="Transparent"
+                                              BorderThickness="0">
+                                    <ToggleButton.Template>
+                                        <ControlTemplate TargetType="ToggleButton">
+                                            <Border Background="Transparent" SnapsToDevicePixels="True">
+                                                <Path x:Name="Arrow"
+                                                      Data="M 0 0 L 3.5 3.5 L 7 0 Z"
+                                                      Fill="{DynamicResource Brush.Text.Secondary}"
+                                                      HorizontalAlignment="Right"
+                                                      VerticalAlignment="Center"
+                                                      Margin="0,0,5,0"
+                                                      SnapsToDevicePixels="True"/>
+                                            </Border>
+                                            <ControlTemplate.Triggers>
+                                                <Trigger Property="IsMouseOver" Value="True">
+                                                    <Setter TargetName="Arrow" Property="Fill" Value="{DynamicResource Brush.Text.Primary}"/>
+                                                </Trigger>
+                                            </ControlTemplate.Triggers>
+                                        </ControlTemplate>
+                                    </ToggleButton.Template>
+                                </ToggleButton>
+
+                                <!-- Modo Seleção Fechada (IsEditable = False) -->
+                                <ContentPresenter x:Name="ContentSite"
+                                                  Grid.Column="0"
+                                                  Content="{TemplateBinding SelectionBoxItem}"
+                                                  ContentTemplate="{TemplateBinding SelectionBoxItemTemplate}"
+                                                  ContentTemplateSelector="{TemplateBinding ItemTemplateSelector}"
+                                                  Margin="5,0,0,0"
+                                                  VerticalAlignment="Center"
+                                                  HorizontalAlignment="Left"
+                                                  IsHitTestVisible="False"
+                                                  SnapsToDevicePixels="True"/>
+
+                                <!-- Modo Edição Livre (IsEditable = True) -->
+                                <TextBox x:Name="PART_EditableTextBox"
+                                         Grid.Column="0"
+                                         Style="{x:Null}"
+                                         Background="Transparent"
+                                         Foreground="{TemplateBinding Foreground}"
+                                         BorderThickness="0"
+                                         Padding="4,0,0,0"
+                                         FontSize="{TemplateBinding FontSize}"
+                                         VerticalContentAlignment="Center"
+                                         HorizontalContentAlignment="Left"
+                                         Focusable="True"
+                                         IsReadOnly="{TemplateBinding IsReadOnly}"
+                                         Visibility="Collapsed"/>
+
+                                <!-- Popup Dropdown -->
+                                <Popup x:Name="PART_Popup"
+                                       Placement="Bottom"
+                                       IsOpen="{TemplateBinding IsDropDownOpen}"
+                                       AllowsTransparency="True"
+                                       Focusable="False"
+                                       PopupAnimation="Slide">
+                                    <Grid x:Name="DropDown"
+                                          SnapsToDevicePixels="True"
+                                          MinWidth="{Binding ActualWidth, ElementName=MainBorder}"
+                                          MaxHeight="180">
+                                        <Border x:Name="DropDownBorder"
+                                                Background="{DynamicResource Brush.Surface.Card}"
+                                                BorderThickness="1"
+                                                BorderBrush="{DynamicResource Brush.Border.Base}"
+                                                CornerRadius="4"
+                                                Margin="0,2,0,4">
+                                            <Border.Effect>
+                                                <DropShadowEffect BlurRadius="8" Color="#000000" Opacity="0.3" ShadowDepth="2"/>
+                                            </Border.Effect>
+                                            <ScrollViewer SnapsToDevicePixels="True" CanContentScroll="True" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+                                                <StackPanel IsItemsHost="True" KeyboardNavigation.DirectionalNavigation="Contained" />
+                                            </ScrollViewer>
+                                        </Border>
+                                    </Grid>
+                                </Popup>
+                            </Grid>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsEditable" Value="True">
+                                <Setter TargetName="ContentSite" Property="Visibility" Value="Collapsed"/>
+                                <Setter TargetName="PART_EditableTextBox" Property="Visibility" Value="Visible"/>
+                            </Trigger>
+                            <Trigger Property="HasItems" Value="False">
+                                <Setter TargetName="DropDownBorder" Property="MinHeight" Value="40"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+            <Style.Triggers>
+                <Trigger Property="IsMouseOver" Value="True">
+                    <Setter Property="BorderBrush" Value="{DynamicResource Brush.Action.Primary}"/>
+                </Trigger>
+                <Trigger Property="IsKeyboardFocusWithin" Value="True">
+                    <Setter Property="BorderBrush" Value="{DynamicResource Brush.Border.Focus}"/>
+                </Trigger>
+            </Style.Triggers>
+        </Style>
+
+        <!-- Estilo ComboBox para a Coluna Nome (com validação HasKeyError / HasWarning) -->
+        <Style x:Key="PopoverKeyComboBoxStyle" TargetType="ComboBox" BasedOn="{StaticResource PopoverComboBoxStyle}">
+            <Style.Triggers>
+                <DataTrigger Binding="{Binding HasKeyError}" Value="True">
+                    <Setter Property="BorderBrush" Value="{DynamicResource Brush.Status.Error}"/>
+                    <Setter Property="Background" Value="{DynamicResource Brush.Status.Error.Background}"/>
+                    <Setter Property="ToolTip" Value="{Binding ValidationToolTip}"/>
+                </DataTrigger>
+                <MultiDataTrigger>
+                    <MultiDataTrigger.Conditions>
+                        <Condition Binding="{Binding HasKeyError}" Value="False"/>
+                        <Condition Binding="{Binding HasWarning}" Value="True"/>
+                    </MultiDataTrigger.Conditions>
+                    <Setter Property="BorderBrush" Value="{DynamicResource Brush.Status.Warning}"/>
+                    <Setter Property="ToolTip" Value="{Binding ValidationToolTip}"/>
+                </MultiDataTrigger>
+            </Style.Triggers>
+        </Style>
+
+        <!-- Estilo ComboBox para a Coluna Valor (com validação HasValueError / HasWarning) -->
+        <Style x:Key="PopoverValueComboBoxStyle" TargetType="ComboBox" BasedOn="{StaticResource PopoverComboBoxStyle}">
+            <Style.Triggers>
+                <DataTrigger Binding="{Binding HasValueError}" Value="True">
+                    <Setter Property="BorderBrush" Value="{DynamicResource Brush.Status.Error}"/>
+                    <Setter Property="Background" Value="{DynamicResource Brush.Status.Error.Background}"/>
+                    <Setter Property="ToolTip" Value="{Binding ValidationToolTip}"/>
+                </DataTrigger>
+                <MultiDataTrigger>
+                    <MultiDataTrigger.Conditions>
+                        <Condition Binding="{Binding HasValueError}" Value="False"/>
+                        <Condition Binding="{Binding HasWarning}" Value="True"/>
+                    </MultiDataTrigger.Conditions>
+                    <Setter Property="BorderBrush" Value="{DynamicResource Brush.Status.Warning}"/>
+                    <Setter Property="ToolTip" Value="{Binding ValidationToolTip}"/>
+                </MultiDataTrigger>
+            </Style.Triggers>
+        </Style>
+
+        <!-- Estilo TextBox para a Coluna Valor (com validação HasValueError / HasWarning) -->
+        <Style x:Key="PopoverValueTextBoxStyle" TargetType="TextBox" BasedOn="{StaticResource {x:Type TextBox}}">
+            <Setter Property="Background" Value="{DynamicResource Brush.Surface.Popup}"/>
+            <Setter Property="Foreground" Value="{DynamicResource Brush.Text.Primary}"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource Brush.Border.Base}"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="Height" Value="24"/>
+            <Setter Property="Padding" Value="4,2"/>
+            <Setter Property="FontSize" Value="11.5"/>
+            <Setter Property="VerticalContentAlignment" Value="Center"/>
+            <Style.Triggers>
+                <DataTrigger Binding="{Binding HasValueError}" Value="True">
+                    <Setter Property="BorderBrush" Value="{DynamicResource Brush.Status.Error}"/>
+                    <Setter Property="Background" Value="{DynamicResource Brush.Status.Error.Background}"/>
+                    <Setter Property="ToolTip" Value="{Binding ValidationToolTip}"/>
+                </DataTrigger>
+                <MultiDataTrigger>
+                    <MultiDataTrigger.Conditions>
+                        <Condition Binding="{Binding HasValueError}" Value="False"/>
+                        <Condition Binding="{Binding HasWarning}" Value="True"/>
+                    </MultiDataTrigger.Conditions>
+                    <Setter Property="BorderBrush" Value="{DynamicResource Brush.Status.Warning}"/>
+                    <Setter Property="ToolTip" Value="{Binding ValidationToolTip}"/>
+                </MultiDataTrigger>
+            </Style.Triggers>
+        </Style>
+
         <sel:FeatureColumnTemplateSelector x:Key="FeatureColumnTemplateSelector">
             <sel:FeatureColumnTemplateSelector.ReadOnlyTemplate>
                 <DataTemplate>
@@ -119,7 +343,7 @@
             </sel:FeatureColumnTemplateSelector.ReadOnlyTemplate>
             <sel:FeatureColumnTemplateSelector.EditableTemplate>
                 <DataTemplate>
-                    <ComboBox ItemsSource="{Binding DataContext.KnownFeatures, RelativeSource={RelativeSource AncestorType=Window}}" 
+                    <ComboBox ItemsSource="{Binding DataContext.KnownVariableFeatures, RelativeSource={RelativeSource AncestorType=Window}}" 
                               Text="{Binding Characteristic, UpdateSourceTrigger=PropertyChanged}" 
                               IsEnabled="{Binding DataContext.IsPendingAction, RelativeSource={RelativeSource AncestorType=Window}}"
                               Style="{StaticResource CompactComboBoxStyle}"/>
@@ -481,9 +705,17 @@
                             </StackPanel.Triggers>
                         </StackPanel>
                     </MenuItem.Header>
-                    <MenuItem Header="Ativar" ToolTip="Aplica a regra Default" IsCheckable="True" IsChecked="{Binding IsNameModifierDefaultActive}"/>
+                    <MenuItem Header="Ativar" ToolTip="Aplica a regra padrão" IsCheckable="True" IsChecked="{Binding IsNameModifierDefaultActive}"/>
                     <MenuItem Header="Desativar" IsCheckable="True" IsChecked="{Binding IsNameModifierDisabled}"/>
                     <MenuItem Header="Personalizado" IsCheckable="True" IsChecked="{Binding IsNameModifierCustomActive}" Command="{Binding OpenNameModifierConfigCommand}"/>
+                </MenuItem>
+                <MenuItem Command="{Binding ToggleTraceabilityMenuCommand}"
+                          FontWeight="SemiBold" 
+                          VerticalAlignment="Center"
+                          x:Name="TraceabilityMenuItem">
+                    <MenuItem.Header>
+                        <TextBlock Text="Rastreabilidade" VerticalAlignment="Center"/>
+                    </MenuItem.Header>
                 </MenuItem>
                 <MenuItem FontWeight="SemiBold" VerticalAlignment="Center">
                     <MenuItem.Header>
@@ -492,8 +724,231 @@
                     <MenuItem Header="Listar todas as características" 
                               IsCheckable="True" 
                               IsChecked="{Binding IsListAllFeaturesActive}"/>
+                    <MenuItem Header="Enviar apenas rastreabilidades mapeadas" 
+                              IsCheckable="True" 
+                              IsChecked="{Binding IsOnlyMappedTraceabilitiesActive}"/>
                 </MenuItem>
             </Menu>
+
+            <!-- Popup do Mecanismo de Rastreabilidade (conforme IMG4) -->
+            <Popup x:Name="TraceabilityPopup"
+                   PlacementTarget="{Binding ElementName=TraceabilityMenuItem}"
+                   Placement="Bottom"
+                   AllowsTransparency="True"
+                   StaysOpen="False"
+                   IsOpen="{Binding IsTraceabilityMenuOpen, Mode=TwoWay}"
+                   PopupAnimation="Fade"
+                   PreviewKeyDown="OnTraceabilityPopupPreviewKeyDown">
+                <Border Background="Transparent" Padding="0,4,0,0">
+                    <Border.Effect>
+                        <DropShadowEffect BlurRadius="16" Color="#000000" Opacity="0.45" ShadowDepth="3"/>
+                    </Border.Effect>
+                    <!-- Cartão Compacto sem Cabeçalho (IMG4) -->
+                    <Border Width="255"
+                            Background="{DynamicResource Brush.Surface.Card}"
+                            BorderBrush="{DynamicResource Brush.Border.Base}"
+                            BorderThickness="1"
+                            CornerRadius="8"
+                            Padding="10">
+                        <StackPanel>
+                            <!-- Campo Fixo: Número de Série (MeasurLink NS) -->
+                            <TextBox Text="{Binding SerialNumberTraceability, UpdateSourceTrigger=PropertyChanged}"
+                                     Height="24"
+                                     Padding="5,2"
+                                     FontSize="11.5"
+                                     VerticalContentAlignment="Center"
+                                     PreviewTextInput="OnTraceabilityTextInput"
+                                     DataObject.Pasting="OnTraceabilityPasting"
+                                     ToolTip="Preenche o campo &quot;Número de série&quot; no MeasurLink">
+                                <TextBox.Style>
+                                    <Style TargetType="TextBox" BasedOn="{StaticResource {x:Type TextBox}}">
+                                        <Setter Property="Background" Value="{DynamicResource Brush.Surface.Popup}"/>
+                                        <Setter Property="Foreground" Value="{DynamicResource Brush.Text.Primary}"/>
+                                        <Setter Property="BorderBrush" Value="{DynamicResource Brush.Border.Base}"/>
+                                        <Setter Property="BorderThickness" Value="1"/>
+                                    </Style>
+                                </TextBox.Style>
+                            </TextBox>
+                            <!-- Nota do Campo Fixo -->
+                            <TextBlock Text="*Inserido como &quot;Número de série&quot;"
+                                       FontSize="10"
+                                       Foreground="{DynamicResource Brush.Text.Secondary}"
+                                       Margin="2,2,0,8"
+                                       HorizontalAlignment="Left"/>
+
+                            <!-- Títulos das Colunas: Nome e Valor -->
+                            <Grid Margin="0,0,0,4">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="6"/>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="22"/>
+                                </Grid.ColumnDefinitions>
+                                <TextBlock Grid.Column="0" Text="Nome" FontWeight="SemiBold" FontSize="12"
+                                           Foreground="{DynamicResource Brush.Text.Primary}" HorizontalAlignment="Center"/>
+                                <TextBlock Grid.Column="2" Text="Valor" FontWeight="SemiBold" FontSize="12"
+                                           Foreground="{DynamicResource Brush.Text.Primary}" HorizontalAlignment="Center"/>
+                            </Grid>
+
+                            <!-- Lista Dinâmica de Linhas de Rastreabilidade -->
+                            <ScrollViewer MaxHeight="220" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+                                <ItemsControl ItemsSource="{Binding TraceabilityItems}">
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate>
+                                            <Grid Margin="0,2.5,0,2.5">
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="*"/>
+                                                    <ColumnDefinition Width="6"/>
+                                                    <ColumnDefinition Width="*"/>
+                                                    <ColumnDefinition Width="22"/>
+                                                </Grid.ColumnDefinitions>
+
+                                                <!-- Campo Nome: ComboBox editável conectado ao catálogo MeasurLink -->
+                                                <ComboBox Grid.Column="0"
+                                                          Text="{Binding Key, UpdateSourceTrigger=PropertyChanged}"
+                                                          ItemsSource="{Binding DataContext.AvailableTraceabilityNames, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
+                                                          IsEditable="True"
+                                                          PreviewTextInput="OnTraceabilityTextInput"
+                                                          DataObject.Pasting="OnTraceabilityPasting"
+                                                          Style="{StaticResource PopoverKeyComboBoxStyle}"/>
+
+                                                <!-- Campo Valor: Reativo por ItemType / Catálogo -->
+                                                <Grid Grid.Column="2">
+                                                    <!-- ItemType = 1 (Seleção Estrita): ComboBox fechado, apenas opções oficiais -->
+                                                    <ComboBox SelectedItem="{Binding Value, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                                              ItemsSource="{Binding PredefinedOptions}"
+                                                              IsEditable="False"
+                                                              Style="{StaticResource PopoverValueComboBoxStyle}"
+                                                              Visibility="{Binding IsStrictSelection, Converter={StaticResource BooleanToVisibilityConverter}}"/>
+
+                                                    <!-- ItemType = 2 (Seleção com Adição): ComboBox aberto, opções oficiais ou texto livre -->
+                                                    <ComboBox Text="{Binding Value, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                                              ItemsSource="{Binding PredefinedOptions}"
+                                                              IsEditable="True"
+                                                              PreviewTextInput="OnTraceabilityTextInput"
+                                                              DataObject.Pasting="OnTraceabilityPasting"
+                                                              Style="{StaticResource PopoverValueComboBoxStyle}"
+                                                              Visibility="{Binding IsSelectionWithAdditions, Converter={StaticResource BooleanToVisibilityConverter}}"/>
+
+                                                    <!-- ItemType = 3 ou Não Cadastrado: TextBox com validação Regex e Watermark de amostra -->
+                                                    <Grid Visibility="{Binding HasPredefinedOptions, Converter={StaticResource BooleanToVisibilityConverter}, ConverterParameter=Inverse}">
+                                                        <TextBox x:Name="ValBox"
+                                                                 Text="{Binding Value, UpdateSourceTrigger=PropertyChanged}"
+                                                                 PreviewTextInput="OnTraceabilityTextInput"
+                                                                 DataObject.Pasting="OnTraceabilityPasting"
+                                                                 Style="{StaticResource PopoverValueTextBoxStyle}"/>
+
+                                                        <!-- Watermark / Placeholder de Exemplo da Máscara Regex (Sem ocupar espaço extra) -->
+                                                        <TextBlock Text="{Binding SampleMask}"
+                                                                   FontStyle="Italic"
+                                                                   FontSize="11"
+                                                                   Foreground="{DynamicResource Brush.Text.Inactive}"
+                                                                   IsHitTestVisible="False"
+                                                                   VerticalAlignment="Center"
+                                                                   Margin="5,0,0,0">
+                                                            <TextBlock.Style>
+                                                                <Style TargetType="TextBlock">
+                                                                    <Setter Property="Visibility" Value="Collapsed"/>
+                                                                    <Style.Triggers>
+                                                                        <MultiDataTrigger>
+                                                                            <MultiDataTrigger.Conditions>
+                                                                                <Condition Binding="{Binding Text, ElementName=ValBox}" Value=""/>
+                                                                                <Condition Binding="{Binding HasSampleMask}" Value="True"/>
+                                                                            </MultiDataTrigger.Conditions>
+                                                                            <Setter Property="Visibility" Value="Visible"/>
+                                                                        </MultiDataTrigger>
+                                                                    </Style.Triggers>
+                                                                </Style>
+                                                            </TextBlock.Style>
+                                                        </TextBlock>
+                                                    </Grid>
+                                                </Grid>
+
+                                                <!-- Botão Excluir Linha (✕) -->
+                                                <Button Grid.Column="3"
+                                                        Command="{Binding DataContext.RemoveTraceabilityCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
+                                                        CommandParameter="{Binding}"
+                                                        ToolTip="Remover esta rastreabilidade"
+                                                        Background="Transparent"
+                                                        BorderThickness="0"
+                                                        Cursor="Hand"
+                                                        Width="18"
+                                                        Height="18"
+                                                        HorizontalAlignment="Center"
+                                                        VerticalAlignment="Center">
+                                                    <Button.Style>
+                                                        <Style TargetType="Button">
+                                                            <Setter Property="Opacity" Value="0.6"/>
+                                                            <Setter Property="Template">
+                                                                <Setter.Value>
+                                                                    <ControlTemplate TargetType="Button">
+                                                                        <Border Background="Transparent" CornerRadius="2" x:Name="bdr">
+                                                                            <TextBlock Text="✕" FontSize="10" FontWeight="Bold"
+                                                                                       Foreground="{DynamicResource Brush.Text.Secondary}"
+                                                                                       HorizontalAlignment="Center" VerticalAlignment="Center" x:Name="txt"/>
+                                                                        </Border>
+                                                                        <ControlTemplate.Triggers>
+                                                                            <Trigger Property="IsMouseOver" Value="True">
+                                                                                <Setter TargetName="txt" Property="Foreground" Value="{DynamicResource Brush.Status.Error}"/>
+                                                                                <Setter TargetName="bdr" Property="Background" Value="{DynamicResource Brush.Status.Error.Background}"/>
+                                                                                <Setter Property="Opacity" Value="1.0"/>
+                                                                            </Trigger>
+                                                                        </ControlTemplate.Triggers>
+                                                                    </ControlTemplate>
+                                                                </Setter.Value>
+                                                            </Setter>
+                                                        </Style>
+                                                    </Button.Style>
+                                                </Button>
+                                            </Grid>
+                                        </DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
+                            </ScrollViewer>
+
+                            <!-- Botão Adicionar Linha (+) Perfeitamente Centralizado (IMG4) -->
+                            <Button Command="{Binding AddTraceabilityCommand}"
+                                    Cursor="Hand"
+                                    Background="Transparent"
+                                    BorderThickness="0"
+                                    HorizontalAlignment="Center"
+                                    Margin="0,8,0,2"
+                                    ToolTip="Adicionar nova rastreabilidade">
+                                <Button.Style>
+                                    <Style TargetType="Button">
+                                        <Setter Property="Template">
+                                            <Setter.Value>
+                                                <ControlTemplate TargetType="Button">
+                                                    <Border Width="26" Height="26" CornerRadius="13" 
+                                                            Background="{DynamicResource Brush.Action.Primary}" 
+                                                            x:Name="btnBorder">
+                                                        <Path Data="M 0 5 L 10 5 M 5 0 L 5 10" 
+                                                              Stroke="{DynamicResource Brush.Action.Primary.Foreground}" 
+                                                              StrokeThickness="2" 
+                                                              StrokeStartLineCap="Round" 
+                                                              StrokeEndLineCap="Round"
+                                                              HorizontalAlignment="Center" 
+                                                              VerticalAlignment="Center"
+                                                              SnapsToDevicePixels="True"/>
+                                                    </Border>
+                                                    <ControlTemplate.Triggers>
+                                                        <Trigger Property="IsMouseOver" Value="True">
+                                                            <Setter TargetName="btnBorder" Property="Background" Value="{DynamicResource Brush.Action.Primary.Hover}"/>
+                                                        </Trigger>
+                                                        <Trigger Property="IsPressed" Value="True">
+                                                            <Setter TargetName="btnBorder" Property="Opacity" Value="0.8"/>
+                                                        </Trigger>
+                                                    </ControlTemplate.Triggers>
+                                                </ControlTemplate>
+                                            </Setter.Value>
+                                        </Setter>
+                                    </Style>
+                                </Button.Style>
+                            </Button>
+                        </StackPanel>
+                    </Border>
+                </Border>
+            </Popup>
 
             <!-- Theme Toggle -->
             <Button Grid.Column="1" 
@@ -630,7 +1085,7 @@
                     
                     <!-- Left: Folder -->
                     <StackPanel Grid.Column="0">
-                        <TextBlock Text="Diretório de monitoramento" Style="{StaticResource LabelText}"/>
+                        <TextBlock Text="Pasta de monitoramento" Style="{StaticResource LabelText}"/>
                         <Grid Margin="0,0,0,15">
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="*"/>
@@ -645,7 +1100,7 @@
                         
                         <StackPanel Orientation="Horizontal" Margin="0,5,0,5">
                             <CheckBox IsChecked="{Binding UseOutputDirectory}" IsEnabled="{Binding IsConfigEnabled}" VerticalAlignment="Center" Margin="0,0,5,0" Foreground="{DynamicResource Brush.Text.Primary}"/>
-                            <TextBlock Text="Diretório de Saída Específico" Style="{StaticResource LabelText}" VerticalAlignment="Center" Margin="0,0,0,0"/>
+                            <TextBlock Text="Pasta de saída específica" Style="{StaticResource LabelText}" VerticalAlignment="Center" Margin="0,0,0,0"/>
                         </StackPanel>
                         <Grid IsEnabled="{Binding IsConfigEnabled}">
                             <Grid.ColumnDefinitions>
@@ -662,7 +1117,7 @@
                     
                     <!-- Right: DB Config -->
                     <StackPanel Grid.Column="2">
-                        <TextBlock Text="Banco de Dados" Style="{StaticResource LabelText}"/>
+                        <TextBlock Text="Banco de dados" Style="{StaticResource LabelText}"/>
                         <Border BorderThickness="1" CornerRadius="6" Padding="10">
                             <Border.Style>
                                 <Style TargetType="Border">
@@ -718,7 +1173,7 @@
                                     </StackPanel>
                                 </Grid>
                                 
-                                <TextBlock Text="Base de Dados" FontSize="11" Foreground="{DynamicResource Brush.Text.Secondary}" Margin="0,0,0,5"/>
+                                <TextBlock Text="Base de dados" FontSize="11" Foreground="{DynamicResource Brush.Text.Secondary}" Margin="0,0,0,5"/>
                                 <Grid>
                                     <Grid.ColumnDefinitions>
                                         <ColumnDefinition Width="*"/>
@@ -769,7 +1224,7 @@
                     </Grid.ColumnDefinitions>
                     
                     <StackPanel Grid.Column="0">
-                        <TextBlock Text="Nome da corrida/lote" Style="{StaticResource LabelText}"/>
+                        <TextBlock Text="Nome da corrida" Style="{StaticResource LabelText}"/>
                         <TextBox Text="{Binding BatchNumber, UpdateSourceTrigger=PropertyChanged}"
                                  IsReadOnly="{Binding IsPendingAction, Converter={StaticResource InverseBooleanConverter}}"
                                  FontSize="16" FontWeight="SemiBold" Height="40">
@@ -813,7 +1268,7 @@
                                                     <DataTrigger Binding="{Binding IsBatchNumberValid}" Value="False">
                                                         <Setter Property="BorderBrush" TargetName="border" Value="{DynamicResource Brush.Status.Error}"/>
                                                         <Setter Property="BorderThickness" TargetName="border" Value="2"/>
-                                                        <Setter Property="ToolTip" Value="Corrida/Lote não encontrado no banco de dados."/>
+                                                        <Setter Property="ToolTip" Value="Corrida não encontrada no banco de dados."/>
                                                     </DataTrigger>
                                                 </ControlTemplate.Triggers>
                                             </ControlTemplate>
@@ -947,15 +1402,15 @@
                     Style="{StaticResource PrimaryButton}"
                     ContextMenuService.ShowOnDisabled="True"
                     ToolTipService.ShowOnDisabled="True"
-                    ToolTip="Clique esquerdo para Enviar. Clique direito para opções de preferências de envio.">
+                    ToolTip="Botão esquerdo para Enviar / Botão direito para opções de preferências de envio.">
                 <Button.ContextMenu>
                     <ContextMenu>
-                        <MenuItem Header="Enviar apenas reconhecidas (Sempre)" 
+                        <MenuItem Header="Sempre enviar apenas características reconhecidas" 
                                   IsCheckable="True" 
                                   IsChecked="{Binding IsConfirmationRecognizedOnly, Mode=OneWay}"
                                   Command="{Binding SetConfirmationActionCommand}"
                                   CommandParameter="SendRecognized"/>
-                        <MenuItem Header="Enviar todas as características (Sempre)" 
+                        <MenuItem Header="Sempre enviar todas as características" 
                                   IsCheckable="True" 
                                   IsChecked="{Binding IsConfirmationSendAll, Mode=OneWay}"
                                   Command="{Binding SetConfirmationActionCommand}"

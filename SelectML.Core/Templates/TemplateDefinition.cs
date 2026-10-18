@@ -122,7 +122,7 @@ namespace SelectML.Core.Templates
 
             if (!hasFeatures && !hasValues)
             {
-                errorMessage = "O template precisa conter o mapeamento de Características e Valores Medidos.";
+                errorMessage = "O template precisa conter o mapeamento de Características e Valores.";
                 return false;
             }
 
@@ -137,8 +137,8 @@ namespace SelectML.Core.Templates
             if (!hasValues)
             {
                 errorMessage = hasRowByRow
-                    ? "O formato linha a linha necessita da definição da coluna ou trecho dos Valores Medidos."
-                    : "O template precisa conter o mapeamento de Valores Medidos.";
+                    ? "O formato linha a linha necessita da definição da coluna ou trecho dos Valores."
+                    : "O template precisa conter o mapeamento de Valores.";
                 return false;
             }
 
